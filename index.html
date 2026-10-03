@@ -249,7 +249,7 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
 .note-row.done .note-t small{text-decoration:none}
 .done-link{border:0;background:none;font:inherit;font-size:var(--fs-small);color:var(--muted);text-decoration:underline;padding:10px 12px 0;cursor:pointer}
-.remind{padding:8px 0;border-bottom:1px solid var(--line)}.remind:last-child{border-bottom:0}
+.notes .iron{margin:0;padding:12px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}.remind{padding:8px 0;border-bottom:1px solid var(--line)}.remind:last-child{border-bottom:0}
 .remind-t{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;font-weight:600;color:var(--text);text-align:left;padding:4px 0;cursor:pointer}.remind-t .chev{margin-left:auto}
 .cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.cal-top b{font-size:15px}
 .cal-d.has{background:color-mix(in srgb,var(--family-2) 16%,var(--card-2))}.cal-d.has span{color:var(--family-2)}.cal-d.past{opacity:.55}.cal-d.exp{border:1px dashed var(--laura)}
@@ -3232,7 +3232,7 @@ function mealsToAdd(){
 function quickToday(n, sl){ const keep = HD; HD = today(); try{ return quickMeal(n, sl); } finally{ HD = keep; } }
 function mealsCard(){
   const l = mealsToAdd(), iron = ironCard(today()); if (!l.length) return iron;
-  return `<h2>Meals to add</h2>${iron}<div class="card notes">${l.map(([n, sl])=>{ const q = quickToday(n, sl);
+  return `<h2>Meals to add</h2><div class="card notes">${iron}${l.map(([n, sl])=>{ const q = quickToday(n, sl);
     return `<div class="remind" style="--c:${COLOR[n]}"><button class="remind-t" onclick="homeMeal('${n}','${sl}')"><span class="avatar">${n[0]}</span><span>Add ${esc(n)}'s ${sl.toLowerCase()}</span><span class="chev">&nbsp;&rsaquo;</span></button>
       ${q ? `<button class="quick-drink" onclick="homeQuick('${n}','${sl}')">+ ${esc(q.label)}</button>` : ''}</div>`; }).join('')}</div>`;
 }
