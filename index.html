@@ -3214,9 +3214,8 @@ function pUp(){
   <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App improvement</button></div>
   <div class="card notes">${open.map(noteRow).join('')}
     ${!open.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
-  ${ironCard(today())}
-  ${homeCal()}
   ${mealsCard()}
+  ${homeCal()}
   ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
   ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
   ${app.length ? `<h2>App improvements</h2><div class="card notes">${app.map(noteRow).join('')}</div>` : ''}
@@ -3232,8 +3231,8 @@ function mealsToAdd(){
 }
 function quickToday(n, sl){ const keep = HD; HD = today(); try{ return quickMeal(n, sl); } finally{ HD = keep; } }
 function mealsCard(){
-  const l = mealsToAdd(); if (!l.length) return '';
-  return `<h2>Meals to add</h2><div class="card notes">${l.map(([n, sl])=>{ const q = quickToday(n, sl);
+  const l = mealsToAdd(), iron = ironCard(today()); if (!l.length) return iron;
+  return `<h2>Meals to add</h2>${iron}<div class="card notes">${l.map(([n, sl])=>{ const q = quickToday(n, sl);
     return `<div class="remind" style="--c:${COLOR[n]}"><button class="remind-t" onclick="homeMeal('${n}','${sl}')"><span class="avatar">${n[0]}</span><span>Add ${esc(n)}'s ${sl.toLowerCase()}</span><span class="chev">&nbsp;&rsaquo;</span></button>
       ${q ? `<button class="quick-drink" onclick="homeQuick('${n}','${sl}')">+ ${esc(q.label)}</button>` : ''}</div>`; }).join('')}</div>`;
 }
