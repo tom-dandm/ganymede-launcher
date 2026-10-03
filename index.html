@@ -452,8 +452,12 @@ async function remoteRun(fn, args){
   if (!r.ok || j.error) throw netErr((j.error && j.error.message) || ('Error ' + r.status));
   return j.response ? j.response.result : null;
 }
-/* reads wait behind any saves already on their way, so a reply never undoes a newer change */
-function inOrder(fn, ...args){ const p = apiQ.then(()=>api(fn, ...args)); apiQ = p.catch(()=>{}); return p; }
+/* reads wait behind any saves already on their way but run side by side with each other. A save that
+   finishes while a read is out may not be in that read, so the read is asked again. */
+let WGEN = 0;
+async function inOrder(fn, ...args){
+  for (let i = 0; ; i++){ await apiQ; const g = WGEN, r = await api(fn, ...args); if (g === WGEN || i >= 2) return r; }
+}
 
 /* ---- Google sign-in for REMOTE: a token in the page, renewed by a quick redirect when it runs out ---- */
 const AUTH_KEY = 'ganymede-auth';
@@ -534,7 +538,7 @@ async function flushRun(){
 }
 /* send what is waiting, then fetch what anyone else has changed */
 function syncNow(){ drawSync(); if (REMOTE && !authed()) signIn(true); if (!canSend()) return; flush().then(()=>{ load(); hLoad(); pLoad(); }); }
-function refreshNow(){ if (!canSend()) return toast(REMOTE && !authed() && navigator.onLine ? 'Tap Sign in to sync at the top' : 'No signal. Showing what is saved on this phone.'); syncNow(); }
+function refreshNow(){ if (!canSend()) return toast(REMOTE && !authed() && navigator.onLine ? 'Tap Sign in to sync at the top' : 'No signal. Showing what is saved on this phone.'); pFresh = true; syncNow(); }
 function syncText(at){
   if (DEMO && !window.DEMO_OFFLINE) return 'Demo data';
   const n = OUTBOX.length, w = n ? ' · ' + n + ' change' + (n>1?'s':'') + ' to send' : '';
@@ -561,7 +565,7 @@ function working(on){
 }
 function queued(fn, args, block){
   pendingN++; if (block) blockN++; working(true);
-  const p = apiQ.then(()=>api(fn, ...args)); apiQ = p.catch(()=>{});
+  const p = apiQ.then(()=>api(fn, ...args)).finally(()=>{ WGEN++; }); apiQ = p.catch(()=>{});
   return p.finally(()=>{ if (block) blockN--; if (--pendingN === 0) working(false); else working(true); });
 }
 const newId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-5);
@@ -3110,13 +3114,15 @@ function pExpand(raw){
 }
 function pSave(raw){ PRAW = raw; if (DEMO) return; try{ localStorage.setItem(P_KEY, JSON.stringify(raw)); }catch(e){} }
 function takeP(raw){ if (!raw || !Array.isArray(raw.items)) return; if (raw.events === undefined && PRAW){ raw.events = PRAW.events; raw.cal = PRAW.cal; } pSave(raw); }
+let pFresh = false;   // the refresh button: skip the server's 2-minute calendar copy
 function pLoad(){ return pLoading || (pLoading = pLoadRun().finally(()=>{ pLoading = null; setSync(false); drawSync(); })); }
 async function pLoadRun(){
   if (!PRAW && !DEMO){ try{ const c = JSON.parse(localStorage.getItem(P_KEY)); if (c && Array.isArray(c.items)) PRAW = c; }catch(e){} }
   if (!P && PRAW) showP();
   if (!canSend()){ if (!P && MODE==='plans') $('#app').innerHTML = masterHTML() + noData('pLoad()'); return; }
   setSync(true);
-  try{ takeP(await inOrder('getPlans')); showP(); }
+  const o = pFresh ? {fresh:true} : undefined; pFresh = false;
+  try{ takeP(await inOrder('getPlans', o)); showP(); }
   catch(e){ if (e.auth) signIn(true);
     if (!P && MODE==='plans') $('#app').innerHTML = masterHTML() + (e.retry ? noData('pLoad()') : `<div class="loading">Couldn't load: ${esc(e.message||e)}<br><br><button class="secondary" onclick="pLoad()">Try again</button></div>`); }
 }
@@ -3221,7 +3227,8 @@ function noteRow(n){
     <button class="note-t" onclick="openNote('${n.id}')">${esc(n.text)}${n.done && n.doneBy ? `<small>${esc(n.doneBy)}, ${esc(dayLabel(n.doneAt.slice(0,10)).toLowerCase())}</small>` : n.by && n.by !== P.me ? `<small>${esc(n.by)}</small>` : ''}</button></div>`;
 }
 function pUp(){
-  const ev = upcoming(7), due = markStats().filter(s=>s.next && dayN(s.next)-dayN(today()) <= 7 && dayN(s.next)-dayN(today()) >= -10 && s.since > 2);
+  let ev = upcoming(7); if (ev.length < 3) ev = upcoming(60).slice(0, 3);   // a quiet week still shows what is next
+  const due = markStats().filter(s=>s.next && dayN(s.next)-dayN(today()) <= 7 && dayN(s.next)-dayN(today()) >= -10 && s.since > 2);
   const open = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), done = P.items.filter(n=>n.done).sort((a,b)=>a.doneAt<b.doneAt?1:-1);
   let last = '';
   return `<div class="up-day">${esc(new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'}))}</div>
@@ -3230,7 +3237,7 @@ function pUp(){
     ${due.map(s=>`<button class="item tap ev" onclick="openKind(${jsA(s.what)})"><div class="ev-when"><b>${esc(dayLabel(s.next < today() ? today() : s.next))}</b><span>Expected</span></div>
       <div class="mid"><div class="t">${esc(s.what)}</div><div class="d">Due ${esc(inText(dayN(s.next)-dayN(today())))}, about every ${s.gap} days</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`).join('')}
     ${ev.slice(0,10).map(e=>{ const d = evDay(e), first = d!==last; last = d; return evRow(e, first); }).join('')}
-    ${!ev.length && !due.length ? `<div class="empty">Nothing on in the next 7 days.</div>` : ''}
+    ${!ev.length && !due.length ? `<div class="empty">Nothing on in the next 60 days.</div>` : ''}
     <button class="link-btn" onclick="openAddEvent()">+ Add to the calendar</button>
   </div>
   <div class="sec-h"><h2>Notes</h2>${done.length?`<button class="link" onclick="clearTicked()">Clear ticked (${done.length})</button>`:''}</div>
