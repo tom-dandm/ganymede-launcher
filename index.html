@@ -213,7 +213,11 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
 .note-row.done .note-t small{text-decoration:none}
-.notes-done{border-top:1px solid var(--line)}
+.done-link{border:0;background:none;font:inherit;font-size:var(--fs-small);color:var(--muted);text-decoration:underline;padding:10px 12px 0;cursor:pointer}
+.remind{padding:8px 0;border-bottom:1px solid var(--line)}.remind:last-child{border-bottom:0}
+.remind-t{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;font-weight:600;color:var(--text);text-align:left;padding:4px 0;cursor:pointer}.remind-t .chev{margin-left:auto}
+.cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.cal-top b{font-size:15px}
+.cal-d.has{background:color-mix(in srgb,var(--family-2) 16%,var(--card-2))}.cal-d.has span{color:var(--family-2)}.cal-d.past{opacity:.55}.cal-d.exp{border:1px dashed var(--laura)}
 .kind{display:block;width:100%;text-align:left;font:inherit;color:var(--text);margin-top:12px;cursor:pointer}
 .kind-h{display:flex;justify-content:space-between;align-items:center;font-size:16px}
 .kind-next{margin-top:6px;font-weight:600;color:var(--family-2);font-size:var(--fs-small)}
@@ -718,7 +722,7 @@ function showM(){
   const m = mineM();
   if (TXK && TXK.sig===m._txSig) m.transactions = TXK.list; else { expand(m); TXK = {sig:m._txSig, list:m.transactions}; }
   D = m;
-  if (MODE==='money' && !(had && open)){ SOFT = had; try{ render(); } finally{ SOFT = false; } if (had) scrollTo(0,y); } else drawSync();
+  if ((MODE==='money' || onHome()) && !(had && open)){ SOFT = had; try{ render(); } finally{ SOFT = false; } if (had) scrollTo(0,y); } else drawSync();
 }
 /* a reply from the sheet becomes the new saved copy; a category or pot change sends back only the rows it touched */
 let IMPORTED = [];
@@ -797,11 +801,12 @@ function run(fn, args, msg, undo){
   return args;
 }
 
+const onHome = () => MODE==='plans' && pview==='up';
 const canP = () => !D || D.canSeeParents !== false;   // only Tom sees the parents' money
 
 /* ============ master switch: Money / Health ============ */
-let MODE = (()=>{ try{ const m = localStorage.getItem('ganymede-mode'); return m==='health' || m==='plans' ? m : 'money'; }catch(e){ return 'money'; } })();
-const NAV = {money:`<button data-view="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+let MODE = 'plans';   // the app always opens on Home
+const NAV = {money:`<button data-view="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg>Overview</button>
   <button data-view="spending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>In &amp; out</button>
   <button data-view="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>History</button>
   <button data-view="topups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>Top-ups</button>
@@ -810,13 +815,13 @@ const NAV = {money:`<button data-view="home" class="on"><svg viewBox="0 0 24 24"
   <button data-view="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Stats</button>
   <button data-view="body"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9a5 5 0 0 1 8 0M12 9l1.5-2"/></svg>Body</button>
   <button data-view="foods"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Meals</button>`,
-  plans:`<button data-view="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="18" cy="16" r="3"/></svg>Coming up</button>
+  plans:`<button data-view="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
   <button data-view="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</button>
   <button data-view="track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Track</button>`};
 function masterHTML(){
-  return `<div class="master" role="tablist"><button class="${MODE==='money'?'on':''}" onclick="setMode('money')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>Money</button>
-    <button class="${MODE==='health'?'on':''}" onclick="setMode('health')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Health</button>
-    <button class="${MODE==='plans'?'on':''}" onclick="setMode('plans')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 15l2 2 4-4"/></svg>Plans</button></div>`;
+  return `<div class="master" role="tablist"><button class="${MODE==='plans'?'on':''}" onclick="pgo('up')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button class="${MODE==='money'?'on':''}" onclick="setMode('money')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>Money</button>
+    <button class="${MODE==='health'?'on':''}" onclick="setMode('health')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Health</button></div>`;
 }
 function setNav(){
   const n = document.querySelector('nav .in');
@@ -861,7 +866,7 @@ function render(){
   if (!canP() && view==='parents') view='home';
   setNav();
   const synced = new Date(D.syncedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const head = masterHTML() + `<header><div><h1>${{home:'Ganymede',payments:'Payments',spending:'Money in &amp; out',history:'History',topups:'Top-ups',parents:'Parent Savings',settings:'Settings'}[view]}</h1>
+  const head = masterHTML() + `<header><div><h1>${{home:'Money',payments:'Payments',spending:'Money in &amp; out',history:'History',topups:'Top-ups',parents:'Parent Savings',settings:'Settings'}[view]}</h1>
       <div class="sync" data-at="${synced}">${syncText(synced)}</div></div>
       <div style="display:flex;gap:8px"><button class="icon-btn" onclick="go('settings')" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="icon-btn" id="refresh" onclick="refreshNow()" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button></div></header>
@@ -897,7 +902,6 @@ function vHome(){
       </button>`).join('')}
   </div>
   ${paceCard()}
-  ${checkCard()}
   <div style="text-align:center;margin-top:14px"><button class="chip" onclick="histFilter='All';go('history')">Pot history</button></div>`;
 }
 
@@ -917,8 +921,8 @@ function inOutCard(){
 }
 
 /* Good news first: the best few things going right, scored so the biggest win leads */
-function winsCard(){
-  const tx = D.transactions||[]; if (!tx.length) return '';
+function moneyWins(){
+  const tx = D.transactions||[]; if (!tx.length) return [];
   const W = [], cm = currentMonth(), full = lastFullMonths(24), X = txIndex();
   const mon = m => monthName(m).split(' ')[0];
   if (full.length){
@@ -958,10 +962,14 @@ function winsCard(){
   if (mort && daysBetween(mort,today())>45){ const mo = Math.floor(daysBetween(mort,today())/30.44), y = Math.floor(mo/12), r = mo%12;
     W.push([25, '&#x1F3E0;', `Mortgage-free for <b>${y?y+' year'+(y>1?'s':''):''}${y&&r?' and ':''}${r?r+' month'+(r>1?'s':''):''}</b>`]); }
   if (p && p.monthsCovered>=6) W.push([20, '&#x1F6E1;&#xFE0F;', `Savings would cover <b>${Math.floor(p.monthsCovered)} months</b> of spending`]);
-  const top = lead.concat(W.sort((a,b)=>b[0]-a[0])).slice(0,3);
+  return lead.concat(W.sort((a,b)=>b[0]-a[0]));
+}
+const greeting = () => { const hr = new Date().getHours(); return hr<12 ? 'Good morning' : hr<18 ? 'Good afternoon' : 'Good evening'; };
+function winsCard(){
+  if (!(D.transactions||[]).length) return '';
+  const top = moneyWins().slice(0,3);
   if (!top.length) top.push([0, '&#x2728;', 'Every payment is tracked. Keep going.']);
-  const hr = new Date().getHours(), greet = hr<12 ? 'Good morning' : hr<18 ? 'Good afternoon' : 'Good evening';
-  return `<div class="wins"><div class="wins-h">${greet}<span>Here's what's going well</span></div>
+  return `<div class="wins"><div class="wins-h">${greeting()}<span>Here's what's going well</span></div>
     <ul>${top.map(w=>`<li><span class="wi">${w[1]}</span><span>${w[2]}</span></li>`).join('')}</ul></div>`;
 }
 
@@ -1650,13 +1658,6 @@ function checks(){
 const isChecked = f => (D.checked||[]).includes(f.key);
 const CHK_ICON = {dup:'&#x1F501;', twice:'&#x1F4C5;', stopped:'&#x23F8;&#xFE0F;', jump:'&#x1F4C8;'};
 const chkRow = f => `<button class="stat-row${isChecked(f)?'':' alert'}" onclick="openCheck(${jsA(f.key)})"><span class="k">${CHK_ICON[f.kind]} ${esc(f.title)}<br><small>${esc(f.sub)}</small></span><span class="v">${gbp(f.amt)}&nbsp;&rsaquo;</span></button>`;
-function checkCard(){
-  if (!canP()) return '';
-  const l = checks().filter(f=>!isChecked(f)); if (!l.length) return '';
-  return `<h2>Worth checking</h2><div class="card">${l.slice(0,3).map(chkRow).join('')}
-    ${l.length>3?`<button class="chip" style="margin-top:8px" onclick="openChecks()">See all ${l.length}</button>`:''}
-    <div class="hint">Payments that might be a mistake: taken twice, stopped, or a bill that jumped. Tap one to see the payments.</div></div>`;
-}
 function openCheck(key){
   const f = checks().find(x=>x.key===key); if (!f) return;
   const done = isChecked(f);
@@ -1665,15 +1666,6 @@ function openCheck(key){
     <div class="list">${f.list.slice().sort((a,b)=>a.date<b.date?1:-1).map(txItem).join('')}</div>
     <button class="secondary" style="margin-top:12px" onclick="run('setChecked',[${jsA(f.key)},${!done}],${jsA(done?'Back on the list':'Marked as fine')})">${done?'Put it back on the list':'Checked, it is fine'}</button>`);
 }
-function openChecks(){
-  const l = checks(), open = l.filter(f=>!isChecked(f)), done = l.filter(isChecked);
-  showSheet(`<div class="grab"></div><h3 style="margin:0 0 8px">Worth checking</h3>
-    ${open.map(chkRow).join('') || '<div class="empty">Nothing to check</div>'}
-    ${done.length?`<h3 style="margin:16px 0 8px">Checked, fine</h3>${done.map(chkRow).join('')}`:''}
-    <div class="hint">The last three years of payments. Tap one and mark it fine to take it off the list.</div>
-    <button class="secondary" onclick="closeSheet()">Close</button>`);
-}
-
 /* ---- bills and subscriptions: anything that comes out on a regular cycle ---- */
 function recurring(){
   const X = txIndex(); if (!X.last) return [];
@@ -1963,7 +1955,7 @@ function showH(){
   if (!HRAW) return;
   const had = !!H, y = scrollY, open = sheetShown();
   H = mineH();
-  if (MODE==='health' && !(had && open)){ SOFT = had; try{ render(); } finally{ SOFT = false; } if (had) scrollTo(0,y); } else drawSync();
+  if ((MODE==='health' || onHome()) && !(had && open)){ SOFT = had; try{ render(); } finally{ SOFT = false; } if (had) scrollTo(0,y); } else drawSync();
 }
 /* everything eaten goes on our menu (menuFromMeals_ in Health.js): the foods in list not yet saved, one adult portion each */
 function menuNew(names, list){
@@ -2006,7 +1998,7 @@ function hRun(fn, args, msg, undo, opts){
   if (!opts.keep) closeSheet();
   outPush('h', fn, args, '');
   const r = {local:true, batch:args[2]};
-  requestAnimationFrame(()=>{ if (MODE==='health'){ const y = scrollY; render(); scrollTo(0,y); } if (opts.keep) redraw(); });
+  requestAnimationFrame(()=>{ if (MODE==='health' || onHome()){ const y = scrollY; render(); scrollTo(0,y); } if (opts.keep) redraw(); });
   if (msg) toast(msg, undo ? ()=>undo(r) : null);
   return Promise.resolve(r);
 }
@@ -2111,7 +2103,7 @@ function hRender(){
   if (hview==='stats') setTimeout(()=>{ hDrawStats(); if (y) window.scrollTo(0,y); },0);
   if (hview==='body') setTimeout(()=>{ hDrawBody(); if (y) window.scrollTo(0,y); },0);
 }
-function hgo(v){ if (v!==hview || MODE!=='health') navPush(); hview = v; render(); }
+function hgo(v){ if (v!==hview || MODE!=='health') navPush(); if (MODE!=='health'){ MODE = 'health'; try{ localStorage.setItem('ganymede-mode','health'); }catch(e){} } hview = v; render(); }
 
 function setupCard(){
   const miss = PEOPLE.filter(n=>!hp(n).sex || (!hp(n).dob && ageYears(n)==null));
@@ -2360,8 +2352,8 @@ function slotRemove(id){
 function slotChange(id){ editMeal(id); EM.all = false; emSwap();
 }
 /* the Health side's good news: streaks, fruit and veg, fewer takeaways, weight going the right way, kids growing */
-function healthWins(){
-  if (!H.meals.length && !H.body.length) return '';
+function healthWinList(){
+  if (!H.meals.length && !H.body.length) return [];
   const W = [], t = today(), logged = new Set(H.meals.map(e=>e.date));
   let n = 0; for (let d = logged.has(t) ? t : addDays(t,-1); logged.has(d); d = addDays(d,-1)) n++;
   if (n >= 3) W.push([60+n, '&#x1F525;', `<b>${n} days in a row</b> of meals logged`, `HM=today().slice(0,7);hgo('month')`]);
@@ -2378,7 +2370,10 @@ function healthWins(){
     const w = B.filter(b=>b.kg!=null), w1 = w[w.length-1], w0 = w1 && w.filter(b=>b.date<=addDays(w1.date,-60))[0], g = hp(p).goal, bi = bmiInfo(p);
     if (!w0) return; const d = w1.kg - w0.kg, want = g ? Math.sign(g - w0.kg) : bi && bi.hi && w0.kg > bi.hi ? -1 : bi && bi.lo && w0.kg < bi.lo ? 1 : 0;
     if (want && Math.sign(d) === want && Math.abs(d) >= 1) W.push([55+Math.abs(d)*3, '&#x1F4AA;', `${esc(p)} is <b>${d<0?'down':'up'} ${Math.abs(d).toFixed(1)} kg</b> since ${esc(dOf(w0.date).toLocaleDateString('en-GB',{month:'long'}))}${g?', heading for '+kgF(g):''}`, `BW='${p}';hgo('body')`]); });
-  const top = W.sort((a,b)=>b[0]-a[0]).slice(0,3); if (!top.length) return '';
+  return W.sort((a,b)=>b[0]-a[0]);
+}
+function healthWins(){
+  const top = healthWinList().slice(0,3); if (!top.length) return '';
   return `<div class="wins"><div class="wins-h">Going well<span>From your meals and weigh-ins</span></div><ul>${top.map(w=>`<li>${w[3]?`<button class="win-tap" onclick="${w[3]}">`:''}<span class="wi">${w[1]}</span><span>${w[2]}</span>${w[3]?'<span class="chev">›</span></button>':''}</li>`).join('')}</ul></div>`;
 }
 function mealItem(e){
@@ -3103,8 +3098,7 @@ Object.assign(Mock, PMock);
 
 /* ============ Plans: what is coming up, notes we tick off, the shared calendar, marked days ============ */
 const P_KEY = 'ganymede-plans-v1';
-let PRAW = null, P = null, pLoading = null, pview = (()=>{ try{ return localStorage.getItem('ganymede-pview') || 'up'; }catch(e){ return 'up'; } })();
-if (!['up','cal','track'].includes(pview)) pview = 'up';
+let PRAW = null, P = null, pLoading = null, pview = 'up';   // Home
 const nowStamp = () => { const d = new Date(); return iso(d) + 'T' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
 function pExpand(raw){
   return {me:raw.me||'', syncedAt:raw.syncedAt, cal:raw.cal||null,
@@ -3199,7 +3193,7 @@ const inText = n => n===0 ? 'today' : n===1 ? 'tomorrow' : n < 0 ? (-n===1 ? '1 
 
 /* ---- screens ---- */
 function pRender(){
-  const titles = {up:'Coming up', cal:'Calendar', track:'Track'};
+  const titles = {up:'Home', cal:'Calendar', track:'Track'};
   const synced = P ? new Date(P.syncedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
   setNav();
   const head = masterHTML() + `<header><div><h1>${titles[pview]}</h1>
@@ -3226,24 +3220,97 @@ function noteRow(n){
   return `<div class="note-row ${n.done?'done':''}"><button class="tick" aria-label="${n.done?'Untick':'Tick'}" onclick="tickNote('${n.id}', ${!n.done})">${n.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
     <button class="note-t" onclick="openNote('${n.id}')">${esc(n.text)}${n.done && n.doneBy ? `<small>${esc(n.doneBy)}, ${esc(dayLabel(n.doneAt.slice(0,10)).toLowerCase())}</small>` : n.by && n.by !== P.me ? `<small>${esc(n.by)}</small>` : ''}</button></div>`;
 }
+/* Home: good news, meals still to add today, what needs a look, the to-do list (notes and payments to check), the calendar */
 function pUp(){
+  const open = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
+  const nDone = P.items.filter(n=>n.done).length + (D && canP() ? checks().filter(isChecked).length : 0);
+  return `${homeWins()}
+  ${mealsCard()}
+  ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}${D ? paceCard() : ''}
+  <h2>To do</h2>
+  <div class="note-add"><input class="inp" id="noteIn" placeholder="Add a note or reminder" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
+  <div class="card notes">${open.map(noteRow).join('')}${chk.map(checkTask).join('')}
+    ${!open.length && !chk.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
+  ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}
+  ${homeCal()}`;
+}
+function homeWins(){
+  const m = D ? moneyWins() : [], h = H ? healthWinList() : [], wk = addDays(today(), -6);
+  const ticked = P.items.filter(n=>n.done && n.doneAt && n.doneAt.slice(0,10) >= wk).length;
+  const l = [m[0] && [...m[0], "go('home')"], h[0], ticked >= 3 ? [0, '&#x2705;', `<b>${ticked} things</b> ticked off this week`, 'openDone()'] : null,
+    m[1] && [...m[1], "go('home')"], h[1]].filter(Boolean).slice(0, 3);
+  const day = esc(new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'}));
+  if (!l.length) return `<div class="up-day">${day}</div>`;
+  return `<div class="wins"><div class="wins-h">${greeting()}${P.me ? ', ' + esc(P.me) : ''}<span>${day}</span></div>
+    <ul>${l.map(w=>`<li><button class="win-tap" onclick="${w[3]}"><span class="wi">${w[1]}</span><span>${w[2]}</span><span class="chev">&rsaquo;</span></button></li>`).join('')}</ul></div>`;
+}
+/* a meal counts as missing from this hour of the day */
+const MEAL_DUE = [['Breakfast', 10], ['Lunch', 14], ['Dinner', 19]];
+function mealsToAdd(){
+  if (!H) return [];
+  const t = today(), hr = new Date().getHours(), out = [];
+  MEAL_DUE.forEach(([sl, h])=>{ if (hr >= h) EATERS.forEach(n=>{ if (!H.meals.some(e=>e.date===t && e.person===n && e.meal===sl)) out.push([n, sl]); }); });
+  return out;
+}
+function quickToday(n, sl){ const keep = HD; HD = today(); try{ return quickMeal(n, sl); } finally{ HD = keep; } }
+function mealsCard(){
+  const l = mealsToAdd(); if (!l.length) return '';
+  return `<h2>Meals to add</h2><div class="card notes">${l.map(([n, sl])=>{ const q = quickToday(n, sl);
+    return `<div class="remind" style="--c:${COLOR[n]}"><button class="remind-t" onclick="homeMeal('${n}','${sl}')"><span class="avatar">${n[0]}</span><span>Add ${esc(n)}'s ${sl.toLowerCase()}</span><span class="chev">&nbsp;&rsaquo;</span></button>
+      ${q ? `<button class="quick-drink" onclick="homeQuick('${n}','${sl}')">+ ${esc(q.label)}</button>` : ''}</div>`; }).join('')}</div>`;
+}
+function homeMeal(n, sl){ HD = today(); hview = 'today'; setMode('health'); openSlot(n, sl); }
+function homeQuick(n, sl){ HD = today(); quickMealAdd(n, sl); }
+/* payments that might be a mistake (Tom only): ticking one says it was checked and is fine */
+const TICK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>';
+const checkTasks = () => D && canP() ? checks().filter(f=>!isChecked(f)) : [];
+function checkTask(f){
+  return `<div class="note-row"><button class="tick" aria-label="Tick" onclick="tickCheck(${jsA(f.key)}, true)"></button>
+    <button class="note-t" onclick="openCheck(${jsA(f.key)})">${CHK_ICON[f.kind]} ${esc(f.title)}<small>Worth checking &middot; ${esc(f.sub)} &middot; ${gbp(f.amt)}</small></button></div>`;
+}
+const inDone = () => sheetShown() && !!document.getElementById('doneSheet');
+function tickCheck(key, on){ const d = inDone();
+  run('setChecked', [key, on], d ? null : on ? 'Checked, off the list' : 'Back on the list', on && !d ? ()=>run('setChecked', [key, false], 'Back on the list') : null);
+  if (d) openDone(); }
+function openDone(){
+  const notes = P.items.filter(n=>n.done).sort((a,b)=>a.doneAt<b.doneAt?1:-1), ch = D && canP() ? checks().filter(isChecked) : [];
+  showSheet(`<h3 id="doneSheet" style="margin:0 0 8px">Done</h3>
+    ${notes.length ? `<div class="card notes">${notes.map(noteRow).join('')}</div>` : ''}
+    ${ch.length ? `<h3 style="margin:16px 0 8px">Payments checked</h3><div class="card notes">${ch.map(f=>`<div class="note-row done"><button class="tick" aria-label="Untick" onclick="tickCheck(${jsA(f.key)}, false)">${TICK_SVG}</button>
+      <button class="note-t" onclick="openCheck(${jsA(f.key)})">${esc(f.title)}<small>${esc(f.sub)}</small></button></div>`).join('')}</div>` : ''}
+    ${!notes.length && !ch.length ? '<div class="empty">Nothing done yet.</div>' : '<div class="hint">Untick one to put it back on the list.</div>'}
+    ${notes.length ? `<button class="secondary" onclick="clearTicked()">Clear the ticked notes (${notes.length})</button>` : ''}`);
+}
+/* the shared calendar as a month: a dot for each thing on, tap a day to see it or add to it */
+let HCM = today().slice(0, 7);
+const evOn = (e, d) => e.allDay ? e.start.slice(0,10) <= d && e.end.slice(0,10) > d : e.start.slice(0,10) <= d && e.end.slice(0,10) >= d && !(e.end.slice(0,10) === d && e.end.slice(11) === '00:00' && e.start.slice(0,10) < d);
+const dayEvents = d => (P.events||[]).filter(e=>evOn(e, d)).sort((a,b)=>a.allDay===b.allDay ? (a.start<b.start?-1:1) : a.allDay?-1:1);
+function homeCal(){
+  const t = today(), first = dOf(HCM + '-01'), lead = (first.getDay() + 6) % 7, n = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+  const days = Array.from({length:n}, (_, i)=>HCM + '-' + String(i + 1).padStart(2, '0'));
+  const due = markStats().filter(s=>s.next && dayN(s.next)-dayN(t) <= 7 && dayN(s.next)-dayN(t) >= -10 && s.since > 2);
+  const cells = Array(lead).fill('<span></span>').concat(days.map(d=>{ const k = dayEvents(d).length;
+    return `<button class="cal-d ${d===t?'now':''} ${k?'has':''} ${d<t?'past':''} ${due.some(x=>x.next===d)?'exp':''}" onclick="openCalDay('${d}')"><b>${+d.slice(8)}</b><span>${k ? '&bull;'.repeat(Math.min(3, k)) : ''}</span></button>`; })).join('');
   let ev = upcoming(7); if (ev.length < 3) ev = upcoming(60).slice(0, 3);   // a quiet week still shows what is next
-  const due = markStats().filter(s=>s.next && dayN(s.next)-dayN(today()) <= 7 && dayN(s.next)-dayN(today()) >= -10 && s.since > 2);
-  const open = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), done = P.items.filter(n=>n.done).sort((a,b)=>a.doneAt<b.doneAt?1:-1);
   let last = '';
-  return `<div class="up-day">${esc(new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'}))}</div>
+  return `<div class="sec-h"><h2>Calendar</h2><button class="link" onclick="pgo('cal')">See all</button></div>
   ${calNote()}
+  <div class="card cal"><div class="cal-top"><button class="icon-btn" onclick="HCM=shiftMonth(HCM,-1);render()" ${HCM<=t.slice(0,7)?'disabled':''} aria-label="Month before">&lsaquo;</button>
+      <b>${esc(monthName(HCM))}</b><button class="icon-btn" onclick="HCM=shiftMonth(HCM,1);render()" ${HCM>=shiftMonth(t.slice(0,7),3)?'disabled':''} aria-label="Month after">&rsaquo;</button></div>
+    <div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div></div>
   <div class="card list up-list">
-    ${due.map(s=>`<button class="item tap ev" onclick="openKind(${jsA(s.what)})"><div class="ev-when"><b>${esc(dayLabel(s.next < today() ? today() : s.next))}</b><span>Expected</span></div>
-      <div class="mid"><div class="t">${esc(s.what)}</div><div class="d">Due ${esc(inText(dayN(s.next)-dayN(today())))}, about every ${s.gap} days</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`).join('')}
-    ${ev.slice(0,10).map(e=>{ const d = evDay(e), first = d!==last; last = d; return evRow(e, first); }).join('')}
+    ${due.map(s=>`<button class="item tap ev" onclick="openKind(${jsA(s.what)})"><div class="ev-when"><b>${esc(dayLabel(s.next < t ? t : s.next))}</b><span>Expected</span></div>
+      <div class="mid"><div class="t">${esc(s.what)}</div><div class="d">Due ${esc(inText(dayN(s.next)-dayN(t)))}, about every ${s.gap} days</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`).join('')}
+    ${ev.slice(0,10).map(e=>{ const d = evDay(e), f = d!==last; last = d; return evRow(e, f); }).join('')}
     ${!ev.length && !due.length ? `<div class="empty">Nothing on in the next 60 days.</div>` : ''}
     <button class="link-btn" onclick="openAddEvent()">+ Add to the calendar</button>
-  </div>
-  <div class="sec-h"><h2>Notes</h2>${done.length?`<button class="link" onclick="clearTicked()">Clear ticked (${done.length})</button>`:''}</div>
-  <div class="note-add"><input class="inp" id="noteIn" placeholder="Add a note or reminder" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
-  <div class="card notes">${open.map(noteRow).join('') || '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>'}
-    ${done.length ? `<div class="notes-done">${done.slice(0, 15).map(noteRow).join('')}</div>` : ''}</div>`;
+  </div>`;
+}
+function openCalDay(d){
+  const l = dayEvents(d);
+  showSheet(`<h3 style="margin:0 0 8px">${esc(dayLabel(d))} &middot; ${esc(niceDate(d))}</h3>
+    ${l.length ? `<div class="card list" style="margin-top:0">${l.map(e=>evRow(e, false)).join('')}</div>` : `<div class="empty">${P.events ? 'Nothing on.' : 'The calendar shows once this phone has synced.'}</div>`}
+    <button class="primary" onclick="openAddEvent('${d}')">+ Add on this day</button>`);
 }
 function addNoteNow(){
   const el = $('#noteIn'), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
@@ -3251,7 +3318,7 @@ function addNoteNow(){
   lines.forEach(t=>pRun('addNote', [{id:newId(), text:t}], null, null, true));
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#noteIn'); if (i){ i.value = ''; i.focus(); } }));
 }
-function tickNote(id, on){ pRun('setNoteDone', [id, on], null, null, true); }
+function tickNote(id, on){ const d = inDone(); pRun('setNoteDone', [id, on], null, null, true); if (d) openDone(); }
 function clearTicked(){ const ids = P.items.filter(n=>n.done).map(n=>n.id), keep = P.items.filter(n=>n.done);
   pRun('clearDone', [ids], `Cleared ${ids.length} ticked`, ()=>keep.forEach(n=>{ pRun('addNote', [{id:newId(), text:n.text}], null, null, true); })); }
 function openNote(id){
