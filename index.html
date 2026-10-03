@@ -3259,7 +3259,7 @@ function noteRow(n){
   return `<div class="note-row ${n.done?'done':''}"><button class="tick" aria-label="${n.done?'Untick':'Tick'}" onclick="tickNote('${n.id}', ${!n.done})">${n.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
     <button class="note-t" onclick="openNote('${n.id}')">${esc(n.text)}${n.done && n.doneBy ? `<small>${esc(n.doneBy)}, ${esc(dayLabel(n.doneAt.slice(0,10)).toLowerCase())}</small>` : n.by && n.by !== P.me ? `<small>${esc(n.by)}</small>` : ''}</button></div>`;
 }
-/* Home: good news, meals still to add today, what needs a look, the to-do list (notes and payments to check), the calendar */
+/* Home: the to-do list, the calendar, meals still to add today, what needs a look, payments to check, Heads up last */
 function pUp(){
   const open = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
   const nDone = P.items.filter(n=>n.done).length + (D && canP() ? checks().filter(isChecked).length : 0);
@@ -3268,10 +3268,11 @@ function pUp(){
   <div class="note-add"><input class="inp" id="noteIn" placeholder="Add a note or reminder" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
   <div class="card notes">${open.map(noteRow).join('')}
     ${!open.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
-  ${mealsCard()}
-  ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}${D ? paceCard() : ''}
   ${homeCal()}
+  ${mealsCard()}
+  ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
   ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
+  ${D ? paceCard() : ''}
   ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}`;
 }
 function homeWins(){
@@ -3325,21 +3326,26 @@ function openDone(){
 let HCM = today().slice(0, 7);
 const evOn = (e, d) => e.allDay ? e.start.slice(0,10) <= d && e.end.slice(0,10) > d : e.start.slice(0,10) <= d && e.end.slice(0,10) >= d && !(e.end.slice(0,10) === d && e.end.slice(11) === '00:00' && e.start.slice(0,10) < d);
 const dayEvents = d => (P.events||[]).filter(e=>evOn(e, d)).sort((a,b)=>a.allDay===b.allDay ? (a.start<b.start?-1:1) : a.allDay?-1:1);
-function homeCal(){
+/* the month grid with its key: on Home and at the top of the Calendar tab */
+function calMonth(due){
   const t = today(), first = dOf(HCM + '-01'), lead = (first.getDay() + 6) % 7, n = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   const days = Array.from({length:n}, (_, i)=>HCM + '-' + String(i + 1).padStart(2, '0'));
-  const due = markStats().filter(s=>s.next && dayN(s.next)-dayN(t) <= 7 && dayN(s.next)-dayN(t) >= -10 && s.since > 2);
   const cells = Array(lead).fill('<span></span>').concat(days.map(d=>{ const k = dayEvents(d);
     return `<button class="cal-d ${d===t?'now':''} ${k.length?'has':''} ${d<t?'past':''} ${due.some(x=>x.next===d)?'exp':''}" onclick="openCalDay('${d}')"><b>${+d.slice(8)}</b>${spendByDay()[d] ? `<em class="cal-s k-${dayKind(d)}">&pound;</em>` : ''}<span>${k.slice(0,3).map(e=>`<i style="color:${evCol(e)}">&bull;</i>`).join('')}</span></button>`; })).join('');
+  return `<div class="card cal"><div class="cal-top"><button class="icon-btn" onclick="HCM=shiftMonth(HCM,-1);render()" ${HCM<=calMin()?'disabled':''} aria-label="Month before">&lsaquo;</button>
+      <button class="cal-mon" onclick="openMonthPick()">${esc(monthName(HCM))} &#9662;</button><button class="icon-btn" onclick="HCM=shiftMonth(HCM,1);render()" ${HCM>=shiftMonth(t.slice(0,7),3)?'disabled':''} aria-label="Month after">&rsaquo;</button></div>
+    <div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div>
+    ${D && D.transactions ? `<div class="cal-from-l cal-key">${PAY_KINDS.map(k=>`<span><em class="cal-s k-${k[0]}">&pound;</em>${k[1]}</span>`).join('')}</div>` : ''}
+    ${P.cal && P.cal.shown && P.cal.shown.length ? `<button class="cal-from-l cal-key" onclick="pgo('cal')">${P.cal.shown.map(c=>`<span><i class="ev-dot" style="background:${evCol(c)}"></i>${esc(c.name)}</span>`).join('')}</button>` : ''}</div>`;
+}
+function homeCal(){
+  const t = today();
+  const due = markStats().filter(s=>s.next && dayN(s.next)-dayN(t) <= 7 && dayN(s.next)-dayN(t) >= -10 && s.since > 2);
   let ev = upcoming(7); if (ev.length < 3) ev = upcoming(60).slice(0, 3);   // a quiet week still shows what is next
   let last = '';
   return `<div class="sec-h"><h2>Calendar</h2><button class="link" onclick="pgo('cal')">See all</button></div>
   ${calNote()}
-  <div class="card cal"><div class="cal-top"><button class="icon-btn" onclick="HCM=shiftMonth(HCM,-1);render()" ${HCM<=calMin()?'disabled':''} aria-label="Month before">&lsaquo;</button>
-      <button class="cal-mon" onclick="openMonthPick()">${esc(monthName(HCM))} &#9662;</button><button class="icon-btn" onclick="HCM=shiftMonth(HCM,1);render()" ${HCM>=shiftMonth(t.slice(0,7),3)?'disabled':''} aria-label="Month after">&rsaquo;</button></div>
-    <div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div>
-    ${D && D.transactions ? `<div class="cal-from-l cal-key">${PAY_KINDS.map(k=>`<span><em class="cal-s k-${k[0]}">&pound;</em>${k[1]}</span>`).join('')}</div>` : ''}
-    ${P.cal && P.cal.shown && P.cal.shown.length ? `<button class="cal-from-l cal-key" onclick="pgo('cal')">${P.cal.shown.map(c=>`<span><i class="ev-dot" style="background:${evCol(c)}"></i>${esc(c.name)}</span>`).join('')}</button>` : ''}</div>
+  ${calMonth(due)}
   <div class="card list up-list">
     ${due.map(s=>`<button class="item tap ev" onclick="openKind(${jsA(s.what)})"><div class="ev-when"><b>${esc(dayLabel(s.next < t ? t : s.next))}</b><span>Expected</span></div>
       <div class="mid"><div class="t">${esc(s.what)}</div><div class="d">Due ${esc(inText(dayN(s.next)-dayN(t)))}, about every ${s.gap} days</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`).join('')}
@@ -3424,8 +3430,9 @@ function pCal(){
   const ev = upcoming(CAL_SHOWN);
   let last = '';
   const out = ev.length ? `<div class="card list up-list">${ev.map(e=>{ const d = evDay(e), f = d!==last; last = d; return evRow(e, f); }).join('')}</div>` : '';
-  return `<button class="primary" style="margin-top:0" onclick="openAddEvent()">+ Add to the calendar</button>
-    ${calNote()}
+  const t = today(), due = markStats().filter(s=>s.next && dayN(s.next)-dayN(t) <= 7 && dayN(s.next)-dayN(t) >= -10 && s.since > 2);
+  return `${calNote()}${calMonth(due)}
+    <button class="primary" onclick="openAddEvent()">+ Add to the calendar</button>
     ${out || (P.events ? '<div class="card empty" style="margin-top:12px">Nothing on the calendar yet.</div>' : '')}
     ${calsShown()}`;
 }
