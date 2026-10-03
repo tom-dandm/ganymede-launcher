@@ -3025,13 +3025,15 @@ const PMock = (() => {
       ['e4','Half term',addDays(T,9),addDays(T,14),true,'','','',false,'tom@example.com','Tom Poon','#039be5',false],
       ['e6',"Emily's birthday",addDays(T,6),addDays(T,7),true,'','','',true,'addressbook#contacts','Birthdays','#33b679',true],
       ['e5','Evy jabs',st(addDays(T,4),'10:20'),st(addDays(T,4),'10:40'),false,'GP surgery','','',false,'family@example.com','Family','#7986cb',false]],
-    cal:{name:'Family', id:'family@example.com', shown:[{id:'tom@example.com',name:'Tom Poon',color:'#039be5'},{id:'bins@example.com',name:'Bins',color:'#616161'},{id:'addressbook#contacts',name:'Birthdays',color:'#33b679'},{id:'family@example.com',name:'Family',color:'#7986cb'}]}};
+    cal:{name:'Family', id:'family@example.com', shown:[{id:'tom@example.com',name:'Tom Poon',color:'#039be5',w:true},{id:'bins@example.com',name:'Bins',color:'#616161',w:true},{id:'addressbook#contacts',name:'Birthdays',color:'#33b679'},{id:'family@example.com',name:'Family',color:'#7986cb',w:true}]}};
   for (let k = 5; k >= 1; k--) for (let j = 0; j < 4; j++) s.marks.push(['m'+k+j, addDays(T, -k*28 + 6 + j), "Laura's period", '', 'Laura']);
   s.marks.push(['mh', addDays(T,-12), 'Haircut, Nathan', '', 'Tom']);
   const me = () => Mock.getData().canSeeParents === false ? 'Laura' : 'Tom';
   const now = () => { const d = new Date(); return iso(d) + 'T' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
   const out = cal => { const r = {items:s.items, marks:s.marks, me:me(), syncedAt:new Date().toISOString()}; if (cal){ r.events = s.events; r.cal = s.cal; } return JSON.parse(JSON.stringify(r)); };
-  const end = e => evEnd(e);
+  s.rules = {};
+  const viaP = (fn, args) => { const p = pExpand({events:s.events, cal:s.cal}); PLOCAL[fn](p, ...args);
+    s.events = p.events.map(x=>[x.id || 'g'+x.cid, x.title, x.start, x.end, x.allDay, x.loc, x.note, x.cid, x.rec, x.calId, x.calName, x.color || '#7986cb', x.ro]); return out(true); };
   return {
     getPlans:()=>out(true),
     addNote(n){ if (!String(n.text||'').trim()) throw new Error('Type a note'); if (!s.items.some(x=>x[0]===n.id)) s.items.push([n.id, String(n.text).trim(), false, me(), now(), '', '']); return out(false); },
@@ -3041,9 +3043,11 @@ const PMock = (() => {
     clearDone(ids){ s.items = s.items.filter(x=>!(x[2] && ids.includes(x[0]))); return out(false); },
     addMark(m){ if (!s.marks.some(x=>x[0]===m.id)) s.marks.push([m.id, m.date, String(m.what).trim(), m.note||'', me()]); return out(false); },
     deleteMark(id){ s.marks = s.marks.filter(x=>x[0]!==id); return out(false); },
-    addEvent(e){ if (!s.events.some(x=>x[7]===e.cid)) s.events.push(['g'+e.cid, e.title, e.time ? e.date+'T'+e.time : e.date, end(e), !e.time, '', e.note||'', e.cid, false, s.cal.id, s.cal.name, '#7986cb', false]); return out(true); },
-    deleteEvent(k){ if (s.events.some(x=>((k.cid && x[7]===k.cid) || (x[0]===k.id && x[2]===k.start)) && x[8])) throw new Error('That one repeats. Remove it in Google Calendar');
-      s.events = s.events.filter(x=>!((k.cid && x[7]===k.cid) || (x[0]===k.id && x[2]===k.start))); return out(true); },
+    addEvent(e){ if (e.rrule) s.rules[e.cid] = e.rrule; return viaP('addEvent', [e]); },
+    updateEvent(k, e, sc){ if (e.rrule!==undefined) s.rules[sc==='following' ? e.cid : k.cid||k.id] = e.rrule; return viaP('updateEvent', [k, e, sc]); },
+    deleteEvent(k){ return viaP('deleteEvent', [k]); },
+    getEventDetail(k){ const x = s.events.find(x=>x[2]===k.start && ((k.cid && x[7]===k.cid) || x[0]===k.id)); if (!x) throw new Error('That event was not found');
+      return {rrule:s.rules[k.cid||k.id] || s.rules[k.id] || (x[8] ? 'RRULE:FREQ=WEEKLY;BYDAY='+WD2[dOf(x[2].slice(0,10)).getDay()] : ''), remind:'default', first:true}; },
     getPlanCalendars:()=>({cur:s.cal.id, list:[{id:s.cal.id, name:s.cal.name, mine:true},{id:'en.uk#holiday@group.v.calendar.google.com', name:'Holidays in the UK', mine:false}]}),
     setPlanCalendar(id){ if (me()!=='Tom') throw new Error('Only Tom can change this'); return out(true); }
   };
@@ -3097,9 +3101,29 @@ const PLOCAL = {
     if (!p.marks.some(x=>x.id===m.id)) p.marks.push({id:m.id, date:m.date, what:String(m.what).trim(), note:m.note||'', by:p.me}); },
   deleteMark(p, id){ p.marks = p.marks.filter(x=>x.id!==id); },
   addEvent(p, e){ if (!String(e.title||'').trim()) throw new Error('Give it a name'); if (!e.date) throw new Error('Pick a date');
-    if (p.events && !p.events.some(x=>x.cid===e.cid)) p.events.push({id:'', cid:e.cid, title:String(e.title).trim(), start:e.time ? e.date+'T'+e.time : e.date, end:evEnd(e), allDay:!e.time, loc:'', note:e.note||'', rec:false, calId:(p.cal&&p.cal.id)||'', calName:(p.cal&&p.cal.name)||''}); },
-  deleteEvent(p, k){ if (p.events) p.events = p.events.filter(x=>!((k.cid && x.cid===k.cid) || (x.id===k.id && x.start===k.start))); }
+    if (p.events && !p.events.some(x=>x.cid===e.cid)) p.events.push(...evLocal(p, e, e.cid, '')); },
+  updateEvent(p, k, e, scope){ if (!String(e.title||'').trim()) throw new Error('Give it a name'); if (!e.date) throw new Error('Pick a date');
+    if (!p.events) return; const x = p.events.find(y=>evIs(y, k)); if (!x) return; if (x.ro) throw new Error('Change it in Google Calendar');
+    if (!x.rec || scope==='one'){ const rows = evLocal(p, Object.assign({}, e, {rrule:x.rec ? '' : e.rrule||'', cal:x.rec ? x.calId : e.cal}), x.cid, x.id);
+      if (x.rec) rows.forEach(r=>r.rec = true); p.events.splice(p.events.indexOf(x), 1, ...rows); return; }
+    const all = evSeries(p, x), part = scope==='all' ? all : all.filter(y=>y.start >= x.start), shift = dayN(e.date) - dayN(x.start.slice(0,10));
+    if (e.rrule===undefined){ part.forEach(y=>{ const r = evLocal(p, Object.assign({}, e, {date:addDays(y.start.slice(0,10), shift), rrule:''}), scope==='all' ? y.cid : e.cid, scope==='all' ? y.id : '')[0]; r.rec = true; Object.assign(y, r); }); return; }
+    p.events = p.events.filter(y=>!part.includes(y));
+    const from = scope==='all' ? addDays(all.map(y=>y.start.slice(0,10)).sort()[0], shift) : e.date;
+    p.events.push(...evLocal(p, Object.assign({}, e, {date:from}), scope==='all' ? x.cid : e.cid, scope==='all' ? x.id : '')); },
+  deleteEvent(p, k){ if (!p.events) return; const x = p.events.find(y=>evIs(y, k)); if (!x) return;
+    const part = !x.rec || !k.scope || k.scope==='one' ? [x] : evSeries(p, x).filter(y=>k.scope==='all' || y.start >= x.start);
+    p.events = p.events.filter(y=>!part.includes(y)); }
 };
+/* k = {id, cid, start}: one occurrence; a series shares its id (and the phone's cid) */
+const evIs = (x, k) => x.start===k.start && ((k.cid && x.cid===k.cid) || (k.id && x.id===k.id));
+const evSeries = (p, x) => p.events.filter(y=>y.calId===x.calId && ((x.id && y.id===x.id) || (x.cid && y.cid===x.cid)));
+function evLocal(p, e, cid, id){
+  const cal = e.cal || (p.cal && p.cal.id) || '', sh = (p.cal && p.cal.shown || []).find(c=>c.id===cal) || {};
+  const dates = e.rrule ? ruleExpand(e.rrule, e.date, addDays(today(), 151)) : [e.date];
+  return dates.map(d=>({id, cid, title:String(e.title).trim(), start:e.time ? d+'T'+e.time : d, end:evEnd(Object.assign({}, e, {date:d})), allDay:!e.time,
+    loc:e.loc||'', note:e.note||'', rec:!!e.rrule, calId:cal, calName:sh.name || (cal===(p.cal&&p.cal.id) ? p.cal.name : '') || '', color:sh.color||'', ro:false}));
+}
 function pRun(fn, args, msg, undo, keep){
   if (P && PLOCAL[fn]){ const p = structuredClone(P);
     try{ PLOCAL[fn](p, ...args); }catch(e){ toast('\u26a0 ' + (e.message||e)); return false; }
@@ -3382,38 +3406,181 @@ function calsShown(){
     ${P.cal.as ? `Signed in as ${esc(P.cal.as)}. ` : ''}New events go in <b>${esc(P.cal.name)}</b>.${P.me==='Tom' ? ' <button class="linkish" onclick="pickCalendar()">Change</button>' : ''}</div></div>`;
 }
 const CAL_SHOWN = 120;
-let AE = null;
-function openAddEvent(date){ AE = {date:date||today(), time:'', mins:60, days:1}; drawAddEvent(); }
-function drawAddEvent(){
-  const t = $('#evT') ? $('#evT').value : '', n = $('#evN') ? $('#evN').value : '';
-  showSheet(`<h3>Add to the calendar</h3>
-    <label class="f" style="margin-top:0">What</label><input class="inp" id="evT" placeholder="e.g. Nathan's swimming" value="${esc(t)}">
-    <div class="two"><div><label class="f">Date</label><input class="inp" id="evD" type="date" value="${AE.date}" onchange="AE.date=this.value"></div>
-      <div><label class="f">Time</label><input class="inp" id="evH" type="time" value="${AE.time}" onchange="AE.time=this.value;drawAddEvent()"></div></div>
-    <div class="hint">${AE.time ? '' : 'No time: an all-day event.'}</div>
-    ${AE.time ? `<label class="f">How long</label><div class="chips wrap">${[[30,'30 min'],[60,'1 hour'],[90,'1&frac12; hours'],[120,'2 hours'],[180,'3 hours']].map(([m,l])=>`<button class="chip ${AE.mins===m?'on':''}" onclick="AE.mins=${m};drawAddEvent()">${l}</button>`).join('')}
-      <button class="chip" onclick="AE.time='';drawAddEvent()">All day instead</button></div>`
-    : `<label class="f">Days</label><div class="chips wrap">${[1,2,3,4,5,7,14].map(d=>`<button class="chip ${AE.days===d?'on':''}" onclick="AE.days=${d};drawAddEvent()">${d}</button>`).join('')}</div>`}
-    <label class="f">Note <span class="opt">(optional)</span></label><input class="inp" id="evN" value="${esc(n)}">
-    <button class="primary" onclick="saveEvent()">Add it</button>`);
+/* ---- repeat rules, as Google Calendar keeps them (RRULE) ---- */
+const WD2 = ['SU','MO','TU','WE','TH','FR','SA'], WDN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const ORD = {1:'first', 2:'second', 3:'third', 4:'fourth', 5:'fifth', '-1':'last'};
+function ruleParse(r){
+  const o = {freq:'', interval:1, byday:[], monthday:[], count:0, until:'', odd:false};
+  String(r||'').replace(/^RRULE:/,'').split(';').forEach(p=>{ const [k,v] = p.split('='); if (!v) return;
+    if (k==='FREQ') o.freq = v; else if (k==='INTERVAL') o.interval = Math.max(1, +v||1); else if (k==='COUNT') o.count = +v||0;
+    else if (k==='UNTIL') o.until = v.slice(0,4)+'-'+v.slice(4,6)+'-'+v.slice(6,8);
+    else if (k==='BYDAY') o.byday = v.split(',').map(d=>{ const m = d.match(/^([+-]?\d)?([A-Z]{2})$/); return m ? {n:m[1] ? +m[1] : 0, d:WD2.indexOf(m[2])} : null; }).filter(x=>x && x.d>=0);
+    else if (k==='BYMONTHDAY') o.monthday = v.split(',').map(Number);
+    else if (k!=='WKST') o.odd = true; });
+  if (o.freq==='MONTHLY' && o.byday.some(b=>!b.n)) o.odd = true;
+  return o;
 }
-function saveEvent(){
-  const e = {cid:newId(), title:$('#evT').value.trim(), date:$('#evD').value, time:AE.time, mins:AE.mins, days:AE.days, note:$('#evN').value.trim()};
-  if (!e.title) return toast('Give it a name');
-  pRun('addEvent', [e], `Added for ${dayLabel(e.date)}`, ()=>pRun('deleteEvent', [{cid:e.cid, start:e.time ? e.date+'T'+e.time : e.date}], 'Taken off'));
+const nthOf = d => { const n = Math.ceil(dOf(d).getDate()/7); return n > 4 ? -1 : n; };
+const nthText = d => ORD[nthOf(d)] + ' ' + WDN[dOf(d).getDay()];
+function ruleText(r, date){
+  if (!r) return 'Does not repeat';
+  const o = ruleParse(r), x = dOf(date), unit = {DAILY:'day', WEEKLY:'week', MONTHLY:'month', YEARLY:'year'}[o.freq];
+  if (!unit || o.odd) return 'Repeats (set in Google Calendar)';
+  let t = o.interval > 1 ? `Every ${o.interval} ${unit}s` : 'Every ' + unit;
+  if (o.freq==='WEEKLY'){ const ds = (o.byday.length ? o.byday.map(b=>b.d) : [x.getDay()]).sort((a,b)=>(a+6)%7-(b+6)%7);
+    t = ds.length===5 && ds.every(d=>d>=1 && d<=5) && o.interval===1 ? 'Every weekday (Mon to Fri)' : t + ' on ' + (ds.length===1 ? WDN[ds[0]] : ds.map(d=>WDN[d].slice(0,3)).join(', ')); }
+  if (o.freq==='MONTHLY') t += o.byday.length ? ` on the ${ORD[o.byday[0].n] || o.byday[0].n+'th'} ${WDN[o.byday[0].d]}` : (o.monthday[0]||x.getDate()) < 0 ? ' on the last day' : ` on day ${o.monthday[0]||x.getDate()}`;
+  if (o.freq==='YEARLY') t += ' on ' + x.toLocaleDateString('en-GB',{day:'numeric', month:'long'});
+  return t + (o.count ? `, ${o.count} times` : o.until ? ', until ' + niceDate(o.until) + ' ' + o.until.slice(0,4) : '');
+}
+/* the choices Google offers for a date: [label, rule, kind] */
+function ruleOptions(date){
+  const x = dOf(date), wd = WD2[x.getDay()], md = x.getDate(), n = Math.ceil(md/7), last = md + 7 > new Date(x.getFullYear(), x.getMonth()+1, 0).getDate();
+  const l = [['','none'], ['RRULE:FREQ=DAILY','daily'], ['RRULE:FREQ=WEEKLY;BYDAY='+wd,'weekly'], ['RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR','weekdays'], ['RRULE:FREQ=MONTHLY;BYMONTHDAY='+md,'monthday']];
+  if (n < 5) l.push(['RRULE:FREQ=MONTHLY;BYDAY='+n+wd,'monthnth']);
+  if (last) l.push(['RRULE:FREQ=MONTHLY;BYDAY=-1'+wd,'monthlast']);
+  l.push(['RRULE:FREQ=YEARLY','yearly']);
+  return l.map(([r,k])=>[ruleText(r, date), r, k]);
+}
+/* the dates a rule gives from start to limit (shown at once, before the calendar replies) */
+function ruleExpand(r, start, limit){
+  const o = ruleParse(r); if (!o.freq || o.odd) return [start];
+  const s = dOf(start), sm = s.getFullYear()*12 + s.getMonth(), wk = d => Math.floor((dayN(d) - (dOf(d).getDay()+6)%7 + 3) / 7), out = [];
+  const end = o.until && o.until < limit ? o.until : limit;
+  for (let d = start, i = 0; d <= end && i < 4000; d = addDays(d, 1), i++){
+    const x = dOf(d), wd = x.getDay(), md = x.getDate(), dim = new Date(x.getFullYear(), x.getMonth()+1, 0).getDate();
+    let ok = d === start;
+    if (o.freq==='DAILY') ok = ok || (dayN(d)-dayN(start)) % o.interval === 0;
+    else if (o.freq==='WEEKLY') ok = ok || (wk(d)-wk(start)) % o.interval === 0 && (o.byday.length ? o.byday.some(b=>b.d===wd) : wd===s.getDay());
+    else if (o.freq==='MONTHLY') ok = ok || (x.getFullYear()*12 + x.getMonth() - sm) % o.interval === 0 && (o.byday.length ? o.byday.some(b=>b.d===wd && (b.n > 0 ? Math.ceil(md/7)===b.n : md+7 > dim))
+      : o.monthday.length ? o.monthday.some(m=>m > 0 ? m===md : dim+m+1===md) : md===s.getDate());
+    else if (o.freq==='YEARLY') ok = ok || (x.getFullYear()-s.getFullYear()) % o.interval === 0 && x.getMonth()===s.getMonth() && md===s.getDate();
+    if (ok){ out.push(d); if (o.count && out.length >= o.count) break; }
+  }
+  return out;
+}
+
+/* ---- adding and editing an event, Google Calendar style ---- */
+let EF = null, SCOPE_CB = null;
+const EVD = {};   // repeat rule and reminders per occurrence, fetched when an event is opened
+const evKeyS = k => (k.cid||'') + '|' + (k.id||'') + '|' + k.start;
+function openAddEvent(date){ EF = {mode:'add', date:date||today(), time:'', mins:60, days:1, rrule:'', remind:'default', cal:'', title:'', loc:'', note:''}; drawEv(true); }
+function editEvent(k){
+  const x = (P.events||[]).find(y=>evIs(y, k)); if (!x) return;
+  const d = EVD[evKeyS(k)];
+  EF = {mode:'edit', x, k:{id:x.id, start:x.start, cid:x.cid, cal:x.calId}, date:x.start.slice(0,10), time:x.allDay ? '' : x.start.slice(11,16),
+    mins:x.allDay ? 60 : Math.round((new Date(x.end) - new Date(x.start))/60000), days:x.allDay ? Math.max(1, dayN(x.end)-dayN(x.start)) : 1,
+    rrule:d ? (d.other ? undefined : d.rrule) : x.rec ? undefined : '', remind:d ? d.remind : undefined, cal:x.calId, title:x.title, loc:x.loc||'', note:x.note||''};
+  EF.ruleWas = EF.rrule;
+  drawEv(true);
+  if (!d && canSend()) evDetail(EF.k).then(v=>{ if (!EF || EF.x!==x || !v) return; efKeep();
+    if (EF.rrule===undefined && !v.other){ EF.rrule = EF.ruleWas = v.rrule; } if (EF.remind===undefined) EF.remind = v.remind; drawEv(); });
+}
+function evDetail(k){ const s = evKeyS(k); return EVD[s] ? Promise.resolve(EVD[s]) : queued('getEventDetail', [k], false).then(v=>EVD[s] = v).catch(()=>null); }
+function efKeep(){ if (EF && $('#evT')){ EF.title = $('#evT').value; EF.loc = $('#evL').value; EF.note = $('#evN').value; } }
+function efDate(v){ if (!v) return; efKeep();
+  const o = ruleOptions(EF.date).find(o=>o[1]===EF.rrule); EF.date = v;
+  if (o && o[2]!=='none'){ const n = ruleOptions(v); EF.rrule = (n.find(z=>z[2]===o[2]) || n.find(z=>/^month(nth|last)$/.test(z[2]) && /^month/.test(o[2])) || n[0])[1]; }
+  else if (EF.custom) efBuild();
+  drawEv(); }
+function efEnd(v){ if (!v || !EF.time) return; const m = t => { const [h,mm] = t.split(':').map(Number); return h*60+mm; };
+  let n = m(v) - m(EF.time); if (n <= 0) n += 1440; efKeep(); EF.mins = n; drawEv(); }
+function efRule(v){ efKeep();
+  if (v==='custom'){ const o = ruleParse(EF.rrule || 'RRULE:FREQ=WEEKLY'), wd = dOf(EF.date).getDay();
+    EF.c = {freq:o.freq||'WEEKLY', interval:o.interval, days:o.freq==='WEEKLY' && o.byday.length ? o.byday.map(b=>b.d) : [wd], mby:o.freq==='MONTHLY' && o.byday.length ? 'nth' : 'day',
+      end:o.count ? 'count' : o.until ? 'until' : 'never', count:o.count||10, until:o.until||addDays(EF.date, 91)};
+    EF.custom = true; efBuild(); }
+  else { EF.custom = false; EF.rrule = v; }
+  drawEv(); }
+function efBuild(){
+  const c = EF.c, x = dOf(EF.date), p = ['FREQ='+c.freq];
+  if (c.interval > 1) p.push('INTERVAL='+c.interval);
+  if (c.freq==='WEEKLY') p.push('BYDAY='+(c.days.length ? [1,2,3,4,5,6,0].filter(d=>c.days.includes(d)) : [x.getDay()]).map(d=>WD2[d]).join(','));
+  if (c.freq==='MONTHLY') p.push(c.mby==='nth' ? 'BYDAY='+nthOf(EF.date)+WD2[x.getDay()] : 'BYMONTHDAY='+x.getDate());
+  if (c.end==='count') p.push('COUNT='+c.count); else if (c.end==='until' && c.until) p.push('UNTIL='+c.until.replace(/-/g,'')+(EF.time ? 'T235959Z' : ''));
+  EF.rrule = 'RRULE:'+p.join(';');
+  const t = $('#evRuleTxt'); if (t) t.textContent = ruleText(EF.rrule, EF.date);
+}
+function efDay(d){ const l = EF.c.days; EF.c.days = l.includes(d) ? l.filter(x=>x!==d) : l.concat(d); efBuild(); efKeep(); drawEv(); }
+function customHTML(){
+  const c = EF.c, U = {DAILY:'day', WEEKLY:'week', MONTHLY:'month', YEARLY:'year'};
+  return `<div class="card" style="padding:12px;margin:8px 0 0">
+    <div class="two"><div><label class="f" style="margin-top:0">Every</label><input class="inp" type="number" min="1" max="99" value="${c.interval}" onchange="efKeep();EF.c.interval=Math.max(1,Math.min(99,Math.round(+this.value)||1));efBuild();drawEv()"></div>
+      <div><label class="f" style="margin-top:0">&nbsp;</label><select class="inp" onchange="efKeep();EF.c.freq=this.value;efBuild();drawEv()">${Object.entries(U).map(([f,u])=>`<option value="${f}" ${c.freq===f?'selected':''}>${u}${c.interval>1?'s':''}</option>`).join('')}</select></div></div>
+    ${c.freq==='WEEKLY' ? `<label class="f">On</label><div class="chips wrap">${[1,2,3,4,5,6,0].map(d=>`<button class="chip ${c.days.includes(d)?'on':''}" onclick="efDay(${d})">${WDN[d].slice(0,3)}</button>`).join('')}</div>` : ''}
+    ${c.freq==='MONTHLY' ? `<div class="seg" style="grid-template-columns:1fr 1fr;margin:10px 0 0"><button class="${c.mby==='day'?'on':''}" onclick="efKeep();EF.c.mby='day';efBuild();drawEv()">On day ${dOf(EF.date).getDate()}</button><button class="${c.mby==='nth'?'on':''}" onclick="efKeep();EF.c.mby='nth';efBuild();drawEv()">On the ${nthText(EF.date)}</button></div>` : ''}
+    <label class="f">Ends</label><div class="seg" style="margin-bottom:8px">${[['never','Never'],['until','On a date'],['count','After']].map(([k,l])=>`<button class="${c.end===k?'on':''}" onclick="efKeep();EF.c.end='${k}';efBuild();drawEv()">${l}</button>`).join('')}</div>
+    ${c.end==='until' ? `<input class="inp" type="date" value="${c.until}" onchange="EF.c.until=this.value;efBuild()">`
+      : c.end==='count' ? `<div class="two"><input class="inp" type="number" min="1" max="999" value="${c.count}" onchange="EF.c.count=Math.max(1,Math.min(999,Math.round(+this.value)||1));efBuild()"><div class="hint" style="margin:12px 0 0">times</div></div>` : ''}
+    <div class="hint" id="evRuleTxt" style="margin-bottom:0">${esc(ruleText(EF.rrule, EF.date))}</div></div>`;
+}
+function remindHTML(){
+  const ad = !EF.time, key = EF.remind===undefined ? 'keep' : EF.remind==='default' ? 'default' : EF.remind.length ? EF.remind.join(',') : 'none';
+  const l = [['default','Default reminder'], ['none','No reminder']].concat(ad ? [['900','Day before at 9am'], ['420','Day before at 5pm']]
+    : [['0','At the time'], ['10','10 minutes before'], ['30','30 minutes before'], ['60','1 hour before'], ['1440','1 day before']]);
+  if (!l.some(o=>o[0]===key)) l.unshift([key, key==='keep' ? (EF.mode==='edit' && canSend() ? 'Loading\u2026' : 'As it is') : EF.remind.map(m=>m>=1440 && m%1440===0 ? m/1440+' day'+(m>1440?'s':'') : m>=60 && m%60===0 ? m/60+' hour'+(m>60?'s':'') : m+' min').join(', ') + ' before']);
+  return `<select class="inp" onchange="efKeep();EF.remind=this.value==='default'?'default':this.value==='none'?[]:this.value==='keep'?undefined:this.value.split(',').map(Number)">${l.map(([v,t])=>`<option value="${v}" ${v===key?'selected':''}>${esc(t)}</option>`).join('')}</select>`;
+}
+function drawEv(fresh){
+  if (!fresh) efKeep();
+  const ad = !EF.time, opts = ruleOptions(EF.date), known = EF.rrule !== undefined, inList = known && opts.some(o=>o[1]===EF.rrule);
+  const cals = P.me==='Tom' && P.cal && P.cal.shown ? P.cal.shown.filter(c=>c.w) : [];
+  if (cals.length && EF.cal && !cals.some(c=>c.id===EF.cal) && EF.x) cals.unshift({id:EF.cal, name:EF.x.calName});
+  showSheet(`<h3>${EF.mode==='add' ? 'Add to the calendar' : 'Edit event'}</h3>
+    <label class="f" style="margin-top:0">What</label><input class="inp" id="evT" placeholder="e.g. Nathan's swimming" value="${esc(EF.title)}">
+    <div class="two"><div><label class="f">Date</label><input class="inp" id="evD" type="date" value="${EF.date}" onchange="efDate(this.value)"></div>
+      <div><label class="f">Time</label><input class="inp" id="evH" type="time" value="${EF.time}" onchange="efKeep();EF.time=this.value;if(EF.custom)efBuild();drawEv()"></div></div>
+    ${ad ? `<div class="hint">No time: an all-day event.</div>
+      <label class="f">Days</label><div class="chips wrap">${[1,2,3,4,5,7,14].map(d=>`<button class="chip ${EF.days===d?'on':''}" onclick="efKeep();EF.days=${d};drawEv()">${d}</button>`).join('')}</div>
+      <label class="f">Last day</label><input class="inp" type="date" min="${EF.date}" value="${addDays(EF.date, EF.days-1)}" onchange="if(this.value){efKeep();EF.days=Math.max(1,Math.min(366,dayN(this.value)-dayN(EF.date)+1));drawEv()}">`
+    : `<label class="f">How long</label><div class="chips wrap">${[[30,'30 min'],[60,'1 hour'],[90,'1&frac12; hours'],[120,'2 hours'],[180,'3 hours']].map(([m,l])=>`<button class="chip ${EF.mins===m?'on':''}" onclick="efKeep();EF.mins=${m};drawEv()">${l}</button>`).join('')}
+        <button class="chip" onclick="efKeep();EF.time='';if(EF.custom)efBuild();drawEv()">All day instead</button></div>
+      <label class="f">Ends at</label><input class="inp" type="time" value="${evEnd(EF).slice(11,16)}" onchange="efEnd(this.value)">`}
+    <label class="f">Repeats</label>${known ? `<select class="inp" id="evR" onchange="efRule(this.value)">${opts.map(o=>`<option value="${esc(o[1])}" ${!EF.custom && o[1]===EF.rrule?'selected':''}>${esc(o[0])}</option>`).join('')}
+        ${!inList && !EF.custom ? `<option value="${esc(EF.rrule)}" selected>${esc(ruleText(EF.rrule, EF.date))}</option>` : ''}<option value="custom" ${EF.custom?'selected':''}>Custom&hellip;</option></select>${EF.custom ? customHTML() : ''}`
+      : `<select class="inp" disabled><option>${EF.x && EF.x.rec ? (canSend() ? 'Loading\u2026' : 'As it is (needs a signal to change)') : 'Does not repeat'}</option></select>`}
+    <label class="f">Where <span class="opt">(optional)</span></label><input class="inp" id="evL" value="${esc(EF.loc)}">
+    <label class="f">Note <span class="opt">(optional)</span></label><textarea class="inp" id="evN" rows="2">${esc(EF.note)}</textarea>
+    <label class="f">Reminder</label>${remindHTML()}
+    ${cals.length > 1 ? `<label class="f">Calendar</label><select class="inp" onchange="efKeep();EF.cal=this.value">${cals.map(c=>`<option value="${esc(c.id)}" ${(EF.cal||P.cal.id)===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>` : ''}
+    <button class="primary" onclick="saveEv()">${EF.mode==='add' ? 'Add it' : 'Save'}</button>`);
+}
+function askScope(title, noOne, cb){
+  SCOPE_CB = cb;
+  showSheet(`<h3>${esc(title)}</h3><div class="hint">This one repeats.</div>
+    ${noOne ? '' : `<button class="secondary" onclick="SCOPE_CB('one')">This event</button>`}
+    <button class="secondary" onclick="SCOPE_CB('following')">This and following events</button>
+    <button class="secondary" onclick="SCOPE_CB('all')">All events</button>`);
+}
+const evStartOf = e => e.time ? e.date+'T'+e.time : e.date;
+function saveEv(){
+  efKeep(); if (!EF.title.trim()) return toast('Give it a name'); if (!EF.date) return toast('Pick a date');
+  const e = {cid:newId(), title:EF.title.trim(), date:EF.date, time:EF.time, mins:EF.mins, days:EF.days, loc:EF.loc.trim(), note:EF.note.trim(), rrule:EF.rrule, remind:EF.remind, cal:EF.cal};
+  if (EF.mode==='add'){ e.rrule = e.rrule || '';
+    return pRun('addEvent', [e], e.rrule ? 'Added, ' + ruleText(e.rrule, e.date).toLowerCase() : `Added for ${dayLabel(e.date)}`,
+      ()=>pRun('deleteEvent', [{cid:e.cid, start:evStartOf(e), cal:e.cal, scope:'all'}], 'Taken off')); }
+  const x = EF.x, k = EF.k;
+  if (!x.rec){ const back = {cid:x.cid, title:x.title, date:x.start.slice(0,10), time:x.allDay ? '' : x.start.slice(11,16), mins:x.allDay ? 60 : Math.round((new Date(x.end) - new Date(x.start))/60000),
+      days:x.allDay ? Math.max(1, dayN(x.end)-dayN(x.start)) : 1, loc:x.loc||'', note:x.note||'', rrule:'', cal:x.calId};
+    return pRun('updateEvent', [k, e, 'one'], 'Saved', e.rrule ? null : ()=>pRun('updateEvent', [{id:x.id, cid:x.cid, start:evStartOf(e), cal:e.cal||x.calId}, back, 'one'], 'Put back')); }
+  askScope('Change which?', e.rrule!==undefined && e.rrule!==EF.ruleWas, s=>pRun('updateEvent', [k, e, s], s==='one' ? 'Saved this one' : s==='all' ? 'Saved for all of them' : 'Saved for this and the ones after'));
 }
 function openEvent(k){
-  const e = (P.events||[]).find(x=>(k.cid && x.cid===k.cid) || (x.id===k.id && x.start===k.start)); if (!e) return;
+  const e = (P.events||[]).find(x=>evIs(x, k)); if (!e) return;
+  const key = {id:e.id, start:e.start, cid:e.cid, cal:e.calId}, d = EVD[evKeyS(key)];
   const again = {cid:newId(), title:e.title, date:e.start.slice(0,10), time:e.allDay ? '' : e.start.slice(11,16), days:e.allDay ? dayN(e.end)-dayN(e.start) : 1,
-    mins:e.allDay ? 60 : Math.round((new Date(e.end) - new Date(e.start))/60000), note:e.note};
+    mins:e.allDay ? 60 : Math.round((new Date(e.end) - new Date(e.start))/60000), note:e.note, loc:e.loc||'', cal:e.calId};
   showSheet(`<h3>${esc(e.title)}</h3>
     <div class="stat-row"><span class="k">${esc(dayLabel(e.start.slice(0,10)))} &middot; ${esc(niceDate(e.start.slice(0,10)))}</span><span class="v">${esc(evWhen(e))}</span></div>
+    ${e.rec ? `<div class="stat-row"><span class="k">Repeats</span><span class="v" id="evRep">${d ? esc(d.other ? 'Yes' : ruleText(d.rrule, e.start.slice(0,10))) : 'Yes'}</span></div>` : ''}
     ${e.loc ? `<div class="stat-row"><span class="k">Where</span><span class="v">${esc(e.loc)}</span></div>` : ''}
     ${e.calName ? `<div class="stat-row"><span class="k">Calendar</span><span class="v"><i class="ev-dot" style="background:${evCol(e)}"></i>${esc(e.calName)}</span></div>` : ''}
     ${e.note ? `<div class="hint" style="white-space:pre-wrap">${esc(e.note)}</div>` : ''}
     ${e.ro ? `<div class="hint">This one comes from ${esc(e.calName || 'another calendar')}. Change it in Google Calendar.</div>`
-      : e.rec ? `<div class="hint">This one repeats. Change or remove it in Google Calendar.</div>`
-      : `<button class="secondary neg" onclick="pRun('deleteEvent', [${jsA({id:e.id, start:e.start, cid:e.cid, cal:e.calId})}], 'Taken off the calendar', ()=>pRun('addEvent', [${jsA(again)}], 'Put back'))">Take it off the calendar</button>`}`);
+      : `<button class="primary" onclick="editEvent(${jsA(key)})">Edit</button>
+        ${e.rec ? `<button class="secondary neg" onclick="askScope('Delete which?', false, s=>pRun('deleteEvent', [Object.assign(${jsA(key)}, {scope:s})], s==='one' ? 'Taken off' : 'Taken off the calendar'))">Delete</button>`
+        : `<button class="secondary neg" onclick="pRun('deleteEvent', [${jsA(key)}], 'Taken off the calendar', ()=>pRun('addEvent', [${jsA(again)}], 'Put back'))">Take it off the calendar</button>`}`}`);
+  if (!e.ro && !d && e.id && canSend()) evDetail(key).then(v=>{ const el = $('#evRep'); if (v && el) el.textContent = v.other ? 'Yes' : ruleText(v.rrule, e.start.slice(0,10)); });
 }
 async function pickCalendar(){
   if (!canSend()) return toast('Needs a signal');
