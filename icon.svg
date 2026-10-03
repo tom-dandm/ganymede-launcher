@@ -3,24 +3,36 @@
     <radialGradient id="bg" cx="70%" cy="20%" r="95%">
       <stop offset="0" stop-color="#2a1f5c"/><stop offset=".55" stop-color="#121018"/><stop offset="1" stop-color="#08080a"/>
     </radialGradient>
-    <radialGradient id="moon" cx="36%" cy="32%" r="75%">
-      <stop offset="0" stop-color="#d9d0ff"/><stop offset=".45" stop-color="#9b85ff"/><stop offset="1" stop-color="#3b2a8f"/>
-    </radialGradient>
-    <radialGradient id="shade" cx="85%" cy="85%" r="70%">
-      <stop offset="0" stop-color="#08080a" stop-opacity=".75"/><stop offset="1" stop-color="#08080a" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glow"><stop offset=".6" stop-color="#7c5cff" stop-opacity=".28"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></radialGradient>
-    <clipPath id="m"><circle cx="256" cy="256" r="150"/></clipPath>
+    <radialGradient id="glow"><stop offset=".55" stop-color="#7c5cff" stop-opacity=".3"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c8925a"/><stop offset="1" stop-color="#8a5a2e"/>
+    </linearGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d29b62"/><stop offset="1" stop-color="#9a6634"/>
+    </linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
   <circle cx="256" cy="256" r="230" fill="url(#glow)"/>
-  <circle cx="256" cy="256" r="150" fill="url(#moon)"/>
-  <g clip-path="url(#m)" fill="#2d2170" opacity=".35">
-    <path d="M90 222 C160 206 250 240 430 212 L430 230 C250 258 160 224 90 238 Z" opacity=".7"/>
-    <circle cx="206" cy="318" r="30"/><circle cx="318" cy="180" r="18"/><circle cx="330" cy="312" r="12"/>
+  <g transform="translate(0 18)">
+  <ellipse cx="262" cy="372" rx="150" ry="16" fill="#000" opacity=".35"/>
+  <!-- legs -->
+  <rect x="172" y="320" width="34" height="54" rx="14" fill="#7a4e27"/>
+  <rect x="318" y="320" width="34" height="54" rx="14" fill="#7a4e27"/>
+  <!-- body -->
+  <path d="M150 300 C150 222 214 186 296 186 C372 186 410 232 410 288 C410 336 372 356 300 356 L206 356 C170 356 150 336 150 300 Z" fill="url(#fur)"/>
+  <!-- head: the blunt square snout -->
+  <path d="M98 214 C98 168 132 140 184 140 C230 140 262 164 266 210 L270 262 C272 292 252 308 220 308 L140 308 C112 308 98 292 98 266 Z" fill="url(#head)"/>
+  <!-- ear -->
+  <ellipse cx="236" cy="146" rx="20" ry="16" fill="#7a4e27"/>
+  <ellipse cx="236" cy="148" rx="10" ry="8" fill="#5c3a1c"/>
+  <!-- eye, sleepy -->
+  <path d="M168 196 q14 -9 28 0" fill="none" stroke="#2b1a0c" stroke-width="7" stroke-linecap="round"/>
+  <!-- nose and mouth -->
+  <ellipse cx="112" cy="204" rx="8" ry="5" fill="#3a2412"/>
+  <path d="M104 272 q18 10 38 0" fill="none" stroke="#5c3a1c" stroke-width="6" stroke-linecap="round"/>
+  <!-- a yuzu on its head -->
+  <circle cx="180" cy="122" r="26" fill="#f2a516"/>
+  <circle cx="172" cy="114" r="7" fill="#ffd36b" opacity=".8"/>
+  <path d="M182 97 q12 -14 26 -8 q-8 12 -26 8 Z" fill="#4caf50"/>
   </g>
-  <g clip-path="url(#m)" fill="#ece7ff" opacity=".35">
-    <circle cx="200" cy="170" r="10"/><circle cx="238" cy="344" r="7"/>
-  </g>
-  <circle cx="256" cy="256" r="150" fill="url(#shade)"/>
 </svg>
