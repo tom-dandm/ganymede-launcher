@@ -138,6 +138,24 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .slot-h{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin:0 2px 6px}
 .slot-both{border:0;background:none;color:var(--family-2);font:inherit;font-weight:600;font-size:var(--fs-small);padding:4px 0;cursor:pointer}
 .slot-cells{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.meal-table{display:grid;grid-template-columns:62px repeat(var(--cols),minmax(0,1fr));gap:6px;align-items:stretch}
+.meal-table .slot-row,.meal-table .slot-cells{display:contents}
+.meal-table .slot-h{flex-direction:column;justify-content:center;align-items:flex-start;gap:0;margin:0;font-size:12px;line-height:1.2;padding:2px 0}
+.meal-table .mt-i{font-size:16px}
+.meal-table .slot-both{padding:4px 0 0;font-size:12px}
+.mt-who{display:flex;align-items:center;gap:6px;min-width:0;font:inherit;font-size:var(--fs-small);color:var(--text);background:none;border:0;border-bottom:3px solid var(--c);padding:2px 2px 6px;cursor:pointer;text-align:left}
+.mt-who .avatar{width:22px;height:22px;font-size:11px;flex:none}
+.mt-who .mt-n{margin-left:auto;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.meal-table .slot{min-height:46px;padding:6px 8px;font-size:var(--fs-small);border-left-width:3px}
+.meal-table .slot .who{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.meal-table .slot{position:relative}
+.meal-table .slot .f{font-weight:600;-webkit-line-clamp:3}
+.meal-table .slot .it{display:flex;justify-content:space-between;gap:8px;width:100%}
+.meal-table .slot .ate{flex:none;font-size:12px;font-weight:600;color:var(--muted)}.meal-table .slot .ate.some{color:var(--laura)}
+.meal-table .slot .nt{font-size:12px;color:var(--muted);font-style:italic;line-height:1.3;margin-top:2px}
+.meal-table .slot.free .add{margin:auto 0;font-size:12px}
+.meal-table .quick-drink{margin-top:4px;padding:4px 6px;font-size:12px}
+.meal-table .qm small{font-size:10px}.meal-table .qm span{-webkit-line-clamp:1}
 .slot{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:78px;text-align:left;font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-left:3px solid var(--c);border-radius:var(--r-sm);padding:9px 11px;cursor:pointer;min-width:0}
 .slot .who{display:flex;justify-content:space-between;width:100%;font-size:var(--fs-small);color:var(--muted);font-weight:600}
 .slot .f{font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:100%}
@@ -1968,12 +1986,12 @@ function removeEntry(id){
    (WHO Child Growth Standards 0-5, WHO 2007 reference 5-19). */
 const BMI_LMS = ["-0.3053,13.407,0.0956;0.2738,14.914,0.09035;0.1113,16.323,0.08676;0.0077,16.895,0.08496;-0.0732,17.159,0.08378;-0.1366,17.291,0.08297;-0.1919,17.342,0.08233;-0.2384,17.329,0.08183;-0.2808,17.263,0.08139;-0.3177,17.166,0.08102;-0.3512,17.05,0.08068;-0.383,16.923,0.08037;-0.4113,16.799,0.08009;-0.4384,16.673,0.07982;-0.4629,16.555,0.07958;-0.4867,16.439,0.07934;-0.5082,16.334,0.07913;-0.5286,16.234,0.07893;-0.5485,16.139,0.07873;-0.5667,16.054,0.07854;-0.5847,15.974,0.07836;-0.6013,15.904,0.07818;-0.6176,15.841,0.07802;-0.6328,15.785,0.07786;-0.6473,15.736,0.07771;-0.584,15.98,0.07792;-0.5501,15.942,0.07799;-0.5164,15.903,0.07809;-0.4853,15.867,0.07818;-0.4549,15.83,0.07829;-0.4275,15.795,0.07841;-0.4013,15.76,0.07854;-0.3782,15.727,0.07867;-0.3575,15.694,0.07882;-0.3388,15.661,0.07897;-0.3233,15.63,0.07913;-0.31,15.599,0.07931;-0.3,15.569,0.07949;-0.2927,15.541,0.07969;-0.2884,15.514,0.0799;-0.2869,15.488,0.08013;-0.2881,15.464,0.08036;-0.2918,15.442,0.08061;-0.2982,15.421,0.08087;-0.3066,15.402,0.08114;-0.3175,15.383,0.08144;-0.3302,15.365,0.08174;-0.3455,15.348,0.08206;-0.3622,15.333,0.08238;-0.3808,15.318,0.08272;-0.402,15.303,0.08307;-0.4243,15.289,0.08343;-0.449,15.276,0.08381;-0.4745,15.263,0.08418;-0.5022,15.251,0.08457;-0.5302,15.24,0.08496;-0.5594,15.229,0.08535;-0.5906,15.219,0.08577;-0.6219,15.209,0.08617;-0.6554,15.2,0.08659;-0.6889,15.192,0.08699;-0.7387,15.264,0.0839;-0.7621,15.262,0.08414;-0.7856,15.26,0.08439;-0.8089,15.261,0.08464;-0.8322,15.262,0.0849;-0.8554,15.264,0.08516;-0.8785,15.268,0.08543;-0.9015,15.274,0.0857;-0.9243,15.28,0.08597;-0.9471,15.288,0.08625;-0.9697,15.296,0.08653;-0.9921,15.306,0.08682;-1.0144,15.317,0.08711;-1.0365,15.329,0.08741;-1.0584,15.341,0.08771;-1.0801,15.354,0.08802;-1.1017,15.368,0.08833;-1.123,15.383,0.08865;-1.1441,15.398,0.08898;-1.1649,15.414,0.08931;-1.1856,15.43,0.08964;-1.206,15.447,0.08998;-1.2261,15.465,0.09033;-1.246,15.483,0.09068;-1.2656,15.502,0.09103;-1.2849,15.521,0.09139;-1.304,15.541,0.09176;-1.3228,15.561,0.09213;-1.3414,15.581,0.09251;-1.3596,15.602,0.09289;-1.3776,15.624,0.09327;-1.3953,15.646,0.09366;-1.4126,15.668,0.09406;-1.4297,15.69,0.09445;-1.4464,15.713,0.09486;-1.4629,15.737,0.09526;-1.479,15.761,0.09567;-1.4947,15.785,0.09609;-1.5101,15.809,0.09651;-1.5252,15.834,0.09693;-1.5399,15.86,0.09735;-1.5542,15.886,0.09778;-1.5681,15.912,0.09821;-1.5817,15.938,0.09864;-1.5948,15.965,0.09907;-1.6076,15.992,0.09951;-1.6199,16.02,0.09994;-1.6318,16.049,0.10038;-1.6433,16.078,0.10082;-1.6544,16.108,0.10126;-1.6651,16.138,0.1017;-1.6753,16.169,0.10214;-1.6851,16.201,0.10259;-1.6944,16.233,0.10303;-1.7032,16.267,0.10347;-1.7116,16.3,0.10391;-1.7196,16.335,0.10435;-1.7271,16.37,0.10478;-1.7341,16.407,0.10522;-1.7407,16.443,0.10566;-1.7468,16.481,0.10609;-1.7525,16.519,0.10652;-1.7578,16.558,0.10695;-1.7626,16.597,0.10738;-1.767,16.638,0.1078;-1.771,16.679,0.10823;-1.7745,16.72,0.10865;-1.7777,16.763,0.10906;-1.7804,16.806,0.10948;-1.7828,16.85,0.10989;-1.7847,16.894,0.1103;-1.7862,16.939,0.1107;-1.7873,16.985,0.1111;-1.7881,17.031,0.1115;-1.7884,17.078,0.11189;-1.7884,17.126,0.11228;-1.788,17.175,0.11266;-1.7873,17.224,0.11304;-1.7861,17.273,0.11342;-1.7846,17.324,0.11379;-1.7828,17.375,0.11415;-1.7806,17.427,0.11451;-1.778,17.48,0.11487;-1.7751,17.533,0.11522;-1.7719,17.588,0.11556;-1.7684,17.643,0.1159;-1.7645,17.698,0.11623;-1.7604,17.755,0.11656;-1.7559,17.812,0.11688;-1.7511,17.87,0.1172;-1.7461,17.929,0.11751;-1.7408,17.989,0.11781;-1.7352,18.049,0.11811;-1.7293,18.11,0.11841;-1.7232,18.171,0.11869;-1.7168,18.233,0.11898;-1.7102,18.296,0.11925;-1.7033,18.359,0.11952;-1.6962,18.422,0.11979;-1.6888,18.486,0.12005;-1.6811,18.55,0.1203;-1.6732,18.615,0.12055;-1.6651,18.68,0.12079;-1.6568,18.744,0.12102;-1.6482,18.809,0.12125;-1.6394,18.875,0.12148;-1.6304,18.94,0.1217;-1.6211,19.005,0.12191;-1.6116,19.07,0.12212;-1.602,19.135,0.12233;-1.5921,19.2,0.12253;-1.5821,19.265,0.12272;-1.5719,19.329,0.12291;-1.5615,19.394,0.1231;-1.551,19.458,0.12328;-1.5403,19.522,0.12346;-1.5294,19.585,0.12363;-1.5185,19.649,0.1238;-1.5074,19.712,0.12396;-1.4961,19.774,0.12412;-1.4848,19.837,0.12428;-1.4733,19.899,0.12443;-1.4617,19.96,0.12458;-1.45,20.021,0.12473;-1.4382,20.082,0.12487;-1.4263,20.143,0.12501;-1.4143,20.203,0.12514;-1.4022,20.262,0.12528;-1.39,20.321,0.12541;-1.3777,20.38,0.12554;-1.3653,20.438,0.12567;-1.3529,20.495,0.12579;-1.3403,20.552,0.12591;-1.3277,20.608,0.12603;-1.3149,20.664,0.12615;-1.3021,20.72,0.12627;-1.2892,20.774,0.12638;-1.2762,20.829,0.1265;-1.2631,20.882,0.12661;-1.2499,20.936,0.12672;-1.2366,20.988,0.12683;-1.2233,21.04,0.12694;-1.2098,21.091,0.12704;-1.1962,21.142,0.12715;-1.1826,21.192,0.12726;-1.1688,21.242,0.12736;-1.155,21.291,0.12746;-1.141,21.34,0.12756;-1.127,21.388,0.12767;-1.1129,21.435,0.12777;-1.0986,21.482,0.12787;-1.0843,21.529,0.12797;-1.0699,21.574,0.12807;-1.0553,21.619,0.12816;-1.0407,21.664,0.12826;-1.026,21.708,0.12836;-1.0112,21.751,0.12845;-0.9962,21.794,0.12855;-0.9812,21.836,0.12864;-0.9661,21.877,0.12874;-0.9509,21.918,0.12883;-0.9356,21.959,0.12893;-0.9202,21.998,0.12902;-0.9048,22.037,0.12911;-0.8892,22.076,0.1292;-0.8735,22.114,0.1293;-0.8578,22.151,0.12939;-0.8419,22.188,0.12948",
   "-0.0631,13.336,0.09272;0.3481,14.542,0.09559;0.1743,15.771,0.09371;0.0652,16.353,0.09255;-0.0197,16.672,0.09166;-0.086,16.838,0.09096;-0.1436,16.909,0.09035;-0.1915,16.902,0.08984;-0.2351,16.839,0.08938;-0.2726,16.74,0.08898;-0.3064,16.62,0.08862;-0.3382,16.487,0.08827;-0.3665,16.358,0.08797;-0.3934,16.23,0.08768;-0.4176,16.113,0.08741;-0.441,16.001,0.08716;-0.4623,15.902,0.08693;-0.4823,15.811,0.08671;-0.5018,15.726,0.0865;-0.5197,15.652,0.08631;-0.5374,15.585,0.08611;-0.5536,15.528,0.08594;-0.5697,15.478,0.08576;-0.5846,15.438,0.0856;-0.5989,15.405,0.08545;-0.5684,15.659,0.08452;-0.5684,15.631,0.08449;-0.5684,15.604,0.08446;-0.5684,15.578,0.08444;-0.5684,15.552,0.08443;-0.5684,15.528,0.08444;-0.5684,15.503,0.08448;-0.5684,15.48,0.08455;-0.5684,15.457,0.08467;-0.5684,15.435,0.08484;-0.5684,15.416,0.08506;-0.5684,15.397,0.08535;-0.5684,15.38,0.08569;-0.5684,15.364,0.08609;-0.5684,15.349,0.08654;-0.5684,15.336,0.08704;-0.5684,15.323,0.08757;-0.5684,15.312,0.08813;-0.5684,15.301,0.08872;-0.5684,15.291,0.08931;-0.5684,15.281,0.08992;-0.5684,15.273,0.0905;-0.5684,15.266,0.0911;-0.5684,15.26,0.09168;-0.5684,15.256,0.09227;-0.5684,15.252,0.09287;-0.5684,15.25,0.09345;-0.5684,15.25,0.09404;-0.5684,15.25,0.0946;-0.5684,15.252,0.09516;-0.5684,15.254,0.09567;-0.5684,15.258,0.09617;-0.5684,15.261,0.09665;-0.5684,15.265,0.09708;-0.5684,15.27,0.0975;-0.5684,15.275,0.09789;-0.8886,15.244,0.09692;-0.9068,15.243,0.09738;-0.9248,15.243,0.09783;-0.9427,15.244,0.09829;-0.9605,15.245,0.09875;-0.978,15.246,0.0992;-0.9954,15.249,0.09966;-1.0126,15.252,0.10012;-1.0296,15.255,0.10058;-1.0464,15.259,0.10104;-1.063,15.264,0.10149;-1.0794,15.27,0.10195;-1.0956,15.276,0.10241;-1.1115,15.283,0.10287;-1.1272,15.291,0.10333;-1.1427,15.3,0.10379;-1.1579,15.309,0.10425;-1.1728,15.32,0.10471;-1.1875,15.331,0.10517;-1.2019,15.344,0.10562;-1.216,15.357,0.10608;-1.2298,15.372,0.10654;-1.2433,15.387,0.107;-1.2565,15.404,0.10746;-1.2693,15.421,0.10792;-1.2819,15.44,0.10837;-1.2941,15.459,0.10883;-1.306,15.48,0.10929;-1.3175,15.501,0.10974;-1.3287,15.524,0.1102;-1.3395,15.548,0.11065;-1.3499,15.572,0.1111;-1.36,15.598,0.11156;-1.3697,15.625,0.11201;-1.379,15.652,0.11246;-1.388,15.681,0.11291;-1.3966,15.711,0.11335;-1.4047,15.742,0.1138;-1.4125,15.773,0.11424;-1.4199,15.806,0.11469;-1.427,15.839,0.11513;-1.4336,15.874,0.11557;-1.4398,15.909,0.11601;-1.4456,15.945,0.11644;-1.4511,15.982,0.11688;-1.4561,16.019,0.11731;-1.4607,16.058,0.11774;-1.465,16.096,0.11816;-1.4688,16.136,0.11859;-1.4723,16.176,0.11901;-1.4753,16.217,0.11943;-1.478,16.258,0.11985;-1.4803,16.3,0.12026;-1.4823,16.343,0.12067;-1.4838,16.386,0.12108;-1.485,16.43,0.12148;-1.4859,16.475,0.12188;-1.4864,16.52,0.12228;-1.4866,16.566,0.12268;-1.4864,16.613,0.12307;-1.4859,16.661,0.12346;-1.4851,16.71,0.12384;-1.4839,16.759,0.12422;-1.4825,16.81,0.1246;-1.4807,16.861,0.12497;-1.4787,16.914,0.12534;-1.4763,16.967,0.12571;-1.4737,17.021,0.12607;-1.4708,17.076,0.12643;-1.4677,17.132,0.12678;-1.4642,17.188,0.12713;-1.4606,17.246,0.12748;-1.4567,17.304,0.12782;-1.4526,17.364,0.12816;-1.4482,17.424,0.12849;-1.4436,17.485,0.12882;-1.4389,17.546,0.12914;-1.4339,17.609,0.12946;-1.4288,17.672,0.12978;-1.4235,17.736,0.13009;-1.418,17.8,0.1304;-1.4123,17.865,0.1307;-1.4065,17.931,0.13099;-1.4006,17.997,0.13129;-1.3945,18.063,0.13158;-1.3883,18.13,0.13186;-1.3819,18.197,0.13214;-1.3755,18.264,0.13241;-1.3689,18.331,0.13268;-1.3621,18.399,0.13295;-1.3553,18.466,0.13321;-1.3483,18.533,0.13347;-1.3413,18.601,0.13372;-1.3341,18.668,0.13397;-1.3269,18.735,0.13421;-1.3195,18.801,0.13445;-1.3121,18.867,0.13469;-1.3046,18.933,0.13492;-1.297,18.999,0.13514;-1.2894,19.064,0.13537;-1.2816,19.129,0.13559;-1.2739,19.193,0.1358;-1.2661,19.257,0.13601;-1.2583,19.32,0.13622;-1.2504,19.382,0.13642;-1.2425,19.444,0.13662;-1.2345,19.505,0.13681;-1.2266,19.565,0.137;-1.2186,19.624,0.13719;-1.2107,19.682,0.13738;-1.2027,19.74,0.13756;-1.1947,19.797,0.13774;-1.1867,19.852,0.13791;-1.1788,19.907,0.13808;-1.1708,19.961,0.13825;-1.1629,20.013,0.13841;-1.1549,20.065,0.13858;-1.147,20.115,0.13873;-1.139,20.164,0.13889;-1.1311,20.212,0.13904;-1.1232,20.259,0.1392;-1.1153,20.305,0.13934;-1.1074,20.35,0.13949;-1.0996,20.393,0.13963;-1.0917,20.436,0.13977;-1.0838,20.477,0.13991;-1.076,20.517,0.14005;-1.0681,20.556,0.14018;-1.0603,20.594,0.14031;-1.0525,20.631,0.14044;-1.0447,20.666,0.14057;-1.0368,20.701,0.1407;-1.029,20.734,0.14082;-1.0212,20.767,0.14094;-1.0134,20.798,0.14106;-1.0055,20.829,0.14118;-0.9977,20.858,0.1413;-0.9898,20.886,0.14142;-0.9819,20.914,0.14153;-0.974,20.94,0.14164;-0.9661,20.966,0.14176;-0.9582,20.99,0.14187;-0.9503,21.014,0.14198;-0.9423,21.037,0.14208;-0.9344,21.059,0.14219;-0.9264,21.08,0.1423;-0.9184,21.101,0.1424;-0.9104,21.121,0.1425;-0.9024,21.14,0.14261;-0.8944,21.159,0.14271;-0.8863,21.177,0.14281;-0.8783,21.194,0.14291;-0.8703,21.212,0.14301;-0.8623,21.228,0.14311;-0.8542,21.244,0.1432;-0.8462,21.26,0.1433;-0.8382,21.276,0.1434;-0.8301,21.291,0.14349;-0.8221,21.305,0.14359;-0.814,21.32,0.14368;-0.806,21.334,0.14377;-0.798,21.348,0.14386;-0.7899,21.362,0.14396;-0.7819,21.375,0.14405;-0.7738,21.388,0.14414;-0.7658,21.401,0.14423;-0.7577,21.414,0.14432;-0.7496,21.427,0.14441"];
-const SLOTS = ['Breakfast','Lunch','Dinner','Snack'], ALL_SLOTS = [...SLOTS, 'Drinks'];   // Drinks: a box of its own, not a meal
+const SLOTS = ['Breakfast','Lunch','Dinner','Snack'], ALL_SLOTS = SLOTS;   // drinks are no longer tracked (Tom, 3 Oct 2026)
 const SLOT_ICON = {Breakfast:'🥣',Lunch:'🥪',Dinner:'🍲',Snack:'🍎'};
 SLOT_ICON.Drinks = '\u{1F964}';
 const GROUPS = ['Meal','Fruit & veg','Snack','Drink','Takeaway'];
 const grp = g => g==='Treat' ? 'Snack' : g;   // Treat was merged into Snack (Tom)
-const EATERS = ['Laura','Nathan'];   // food is tracked for these two; weight and height for all four
+const EATERS = ['Nathan'];   // food is tracked for Nathan only (Tom, 3 Oct 2026); weight and height for all four
 const GROUP_ICON = {'Meal':'🍽️','Fruit & veg':'🥕','Snack':'🥨','Drink':'🥤','Takeaway':'🍟'};
 const ACTIVITY = [[1.2,'Mostly sitting'],[1.375,'A bit active'],[1.55,'Active most days'],[1.725,'Very active']];
 const H_KEY = 'ganymede-health-v1';
@@ -2183,12 +2201,6 @@ function hToday(){
   ${ironCard(HD)}
   ${isToday?eatingWatch():''}
   ${takeawayCard(HD)}
-  <div class="grid">${EATERS.map(n=>{ const e = day.filter(x=>x.person===n);
-    const mains = ['Breakfast','Lunch','Dinner'].filter(sl=>e.some(x=>x.meal===sl && x.food!=='Skipped' && x.eaten>0.05)).length;
-    return `<button class="pot" style="--c:${COLOR[n]}" onclick="HS.who='${n}';hgo('stats')">
-      <div class="name"><span class="avatar">${n[0]}</span>${n}<span class="chev" style="margin-left:auto">›</span></div>
-      <div class="bal">${mains}<small> of 3 meals</small></div><div class="sub">eaten ${isToday?'so far':''}</div><div class="bar"><i style="width:${Math.max(3,mains/3*100)}%"></i></div>
-      </button>`; }).join('')}</div>
   <h2>${isToday?"Today's":dayLabel+"'s"} meals</h2>
   ${slotGrid(day)}
   ${dayNoteHTML()}
@@ -2206,6 +2218,8 @@ function eatenCtl(v, fn){
 }
 function amEat(v, live){ AM.eaten = v; if (!live) drawAddMeal(); }
 function emEat(v, live){ EM.eaten = v; if (EM.parts) EM.parts.forEach(x=>x.f=v); if (!live) drawEditMeal(); }
+/* the amount, on the box, when it is not their usual portion and the name does not already say it ("3 sausages") */
+const qtyTag = e => { const p = Math.round((e.portion||1)*100)/100; return e.food==='Skipped' || /^\d/.test(e.food) || Math.abs(p - usualPortion(e.person)) < 0.01 ? '' : ' ×' + (FRAC[p] || p); };
 const eatTag = e => e.food==='Skipped' ? '' : e.eaten <= 0.001 ? ' · none' : e.eaten < 0.995 ? ' · ' + Math.round(e.eaten*100) + '%' : '';
 
 /* per person, per food: how often it was offered and how much of it was eaten on average */
@@ -2356,7 +2370,10 @@ function hMonth(){
 
 /* one row per meal, one box per person: what they had, or an empty box to fill */
 function slotGrid(day){
-  return ALL_SLOTS.map(sl=>{
+  const head = EATERS.length < 2 ? '' : EATERS.map(n=>{ const e = day.filter(x=>x.person===n);
+    const mains = ['Breakfast','Lunch','Dinner'].filter(sl=>e.some(x=>x.meal===sl && x.food!=='Skipped' && x.eaten>0.05)).length;
+    return `<button class="mt-who" style="--c:${COLOR[n]}" onclick="HS.who='${n}';hgo('stats')"><span class="avatar">${n[0]}</span><b>${n}</b><span class="mt-n">${mains}/3&nbsp;›</span></button>`; }).join('');
+  return `<div class="meal-table" style="--cols:${EATERS.length}">${head ? '<div class="mt-corner"></div>' + head : ''}` + ALL_SLOTS.map(sl=>{
     const had = n => day.filter(e=>e.person===n && e.meal===sl), empty = EATERS.filter(n=>!had(n).length), drinks = sl==='Drinks';
     const cells = EATERS.map(n=>{ const box = slotBox(n, sl, had(n), drinks);
       if (!drinks){ const g = had(n).length ? null : quickMeal(n, sl);
@@ -2364,15 +2381,18 @@ function slotGrid(day){
         return g ? `<div class="slot-wrap">${box}<button class="quick-drink qm" onclick="quickMealAdd('${n}','${sl}')"><small>${esc(gk)}</small><span>+ ${esc(gw)}</span></button></div>` : box; }
       const q = quickDrink(n);
       return q ? `<div class="slot-wrap">${box}<button class="quick-drink" onclick="quickAdd('${n}')">+ ${COFFEE.test(q.name)?'&#x2615;':'&#x1F964;'} ${esc(q.name)}</button></div>` : box; }).join('');
-    return `<div class="slot-row"><div class="slot-h"><span>${SLOT_ICON[sl]} ${sl}</span>
-        ${!drinks && empty.length===EATERS.length && EATERS.length>1 ? `<button class="slot-both" onclick="openAddMeal(null,'${sl}')">+ Same for both</button>` : ''}</div>
-      <div class="slot-cells">${cells}</div></div>`; }).join('');
+    return `<div class="slot-row"><div class="slot-h"><span class="mt-i">${SLOT_ICON[sl]}</span><span>${sl}</span>
+        ${!drinks && empty.length===EATERS.length && EATERS.length>1 ? `<button class="slot-both" onclick="openAddMeal(null,'${sl}')" aria-label="Same for both">+ Both</button>` : ''}</div>
+      <div class="slot-cells">${cells}</div></div>`; }).join('') + '</div>';
 }
 function slotBox(n, sl, l, drinks){
-  const names = drinks ? Object.entries(l.reduce((m,e)=>(m[e.food]=(m[e.food]||0)+1, m), {})).map(([f,c])=>f+(c>1?' \u00d7'+c:'')) : l.map(e=>e.food+eatTag(e));
+  const names = drinks ? Object.entries(l.reduce((m,e)=>(m[e.food]=(m[e.food]||0)+1, m), {})).map(([f,c])=>f+(c>1?' \u00d7'+c:'')) : null;
+  const ate = e => e.food==='Skipped' ? '' : e.eaten <= 0.001 ? 'none' : e.eaten < 0.995 ? Math.round(e.eaten*100) + '%' : 'all';
+  const notes = drinks ? [] : [...new Set(l.map(e=>(e.note||'').trim()).filter(Boolean))];
   return l.length
-    ? `<button class="slot on ${!drinks && l.every(e=>e.food==='Skipped' || e.eaten<=0.05) ? 'left' : ''}" style="--c:${COLOR[n]}" onclick="${drinks?`openDrinks('${n}')`:`openSlot('${n}','${sl}')`}"><span class="who">${n}<span class="edit-i" aria-hidden="true">${drinks?'+':'&#x270E;'}</span></span>
-        ${drinks ? `<span class="f">${esc(names.join(', '))}</span>` : names.map(f=>`<span class="f">${esc(f)}</span>`).join('')}</button>`
+    ? `<button class="slot on ${!drinks && l.every(e=>e.food==='Skipped' || e.eaten<=0.05) ? 'left' : ''}" style="--c:${COLOR[n]}" onclick="${drinks?`openDrinks('${n}')`:`openSlot('${n}','${sl}')`}"><span class="who">${n}</span>
+        ${drinks ? `<span class="f">${esc(names.join(', '))}</span>` : l.map(e=>`<span class="f it"><span>${esc(e.food+qtyTag(e))}</span>${ate(e)?`<span class="ate ${ate(e)==='all'?'':'some'}">${ate(e)}</span>`:''}</span>`).join('')}
+        ${notes.map(x=>`<span class="nt">${esc(x)}</span>`).join('')}</button>`
     : `<button class="slot free" style="--c:${COLOR[n]}" onclick="${drinks?`openDrinks('${n}')`:`openSlot('${n}','${sl}')`}"><span class="who">${n}</span><span class="add">+ Add${drinks?' a drink':''}</span></button>`;
 }
 /* one tap for the drink they have most: a coffee for an adult unless something else is their usual */
@@ -2488,7 +2508,6 @@ function drawAddMeal(){
   const inSlot = AM.slot && !AM.swap ? H.meals.filter(e=>e.date===HD && e.person===AM.who[0] && e.meal===AM.meal) : [];
   const dayName = HD===today() ? 'today' : HD===addDays(today(),-1) ? 'yesterday' : dOf(HD).toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'short'});
   const added = !AM.slot && !AM.swap && AM.added && AM.added.length;
-  const drinkQ = q && !AM.swap && EATERS.includes(AM.who[0]) && drinkMenu(AM.who[0]).some(f=>f.name.toLowerCase().includes(q.toLowerCase()));
   $('#sheet').innerHTML = `<div class="grab" id="addMealSheet"></div>
     ${added ? `<div class="am-added">&#x2713; Added ${esc(AM.added.join(', '))}</div>` : ''}
     ${AM.slot && !AM.swap ? `<h3 style="margin:0 0 2px">${esc(AM.who[0])}'s ${AM.meal.toLowerCase()}, ${esc(dayName)}</h3>
@@ -2498,7 +2517,7 @@ function drawAddMeal(){
           <button class="icon-btn" aria-label="Remove ${esc(e.food)}" onclick="slotRemove('${e.id}')">&times;</button></div>`).join('')}</div>
         <label class="f">Add something else</label>` : `<div class="hint" style="margin:0 0 4px">Type it, or tap one ${esc(AM.who[0])} has had.</div>`}`
     : AM.swap ? `<button class="back-link" onclick="drawEditMeal()">&lsaquo; Back</button><h3 style="margin:0 0 2px">Swap ${esc(AM.swap.name)}</h3><div class="hint" style="margin:0 0 6px">Tap the food they had instead, for ${esc(AM.who.join(', '))}.</div>`
-    : `<label class="f" style="margin-top:0">Who ate it</label>
+    : EATERS.length < 2 ? '' : `<label class="f" style="margin-top:0">Who ate it</label>
     <div class="chips">${EATERS.map(n=>`<button class="chip ${AM.who.length===1&&AM.who[0]===n?'on':''}" style="--c:${COLOR[n]}" onclick="AM.who=['${n}'];drawAddMeal()">${n}</button>`).join('')}
       <button class="chip ${AM.who.length===EATERS.length?'on':''}" onclick="AM.who=EATERS.slice();drawAddMeal()">Both</button></div>`}
     ${AM.slot && !AM.swap ? '' : `<div class="seg four" style="margin-top:12px">${SLOTS.map(s=>`<button class="${AM.meal===s?'on':''}" onclick="AM.meal='${s}';drawAddMeal()"><span>${SLOT_ICON[s]}</span>${s}</button>`).join('')}</div>`}
@@ -2515,7 +2534,6 @@ function drawAddMeal(){
       ${eatenCtl(AM.eaten==null?1:AM.eaten, 'amEat')}
       <input class="inp" id="amNote" placeholder="Comment (optional)" value="${esc(AM.note||'')}" oninput="AM.note=this.value" autocomplete="off" style="margin:8px 0 4px">
     </details>
-    ${drinkQ ? `<button class="secondary" onclick="openDrinks('${AM.who[0]}')">&#x2615; Drinks have their own box: open ${esc(AM.who[0])}'s drinks</button>` : ''}
     ${sect('Worked out','estimate')}${sect('Found online','online')}
     ${q?'':`<button class="build-btn" onclick="amBuild()"><span>&#x1F373;</span><span><b>Build a meal</b><small>Pick the protein, carbs and veg</small></span><span class="chev">&rsaquo;</span></button>`}
     ${q?'':sect('Same as '+(HD===today()?'yesterday':'the day before'),'yesterday')}
@@ -2752,9 +2770,10 @@ function emSwap(){
 
 /* ---- stats ---- */
 function hStats(){
+  if (EATERS.length < 2) HS.who = EATERS[0];
   const to = today(), from = addDays(to, -(HS.days-1));
   const chips = `<div class="chips">${[[7,'7 days'],[30,'30 days'],[90,'3 months'],[365,'12 months']].map(([d,l])=>`<button class="chip ${HS.days===d?'on':''}" onclick="HS.days=${d};render()">${l}</button>`).join('')}</div>
-    <div class="chips" style="margin-top:6px">${['All',...EATERS].map(n=>`<button class="chip ${HS.who===n?'on':''}" ${n!=='All'?`style="--c:${COLOR[n]}"`:''} onclick="HS.who='${n}';render()">${n==='All'?'Both':n}</button>`).join('')}</div>
+    ${EATERS.length < 2 ? '' : `<div class="chips" style="margin-top:6px">${['All',...EATERS].map(n=>`<button class="chip ${HS.who===n?'on':''}" ${n!=='All'?`style="--c:${COLOR[n]}"`:''} onclick="HS.who='${n}';render()">${n==='All'?'Both':n}</button>`).join('')}</div>`}
     <div class="hint" style="margin:4px 2px 10px">${dateY(from)} to ${dateY(to)} · averages use days with at least two of breakfast, lunch and dinner logged</div>`;
   if (!H.meals.length) return chips + '<div class="card empty">No meals logged yet. Add some on the Today screen.</div>';
   return chips + (HS.who==='All' ? statsAll(from, to) : statsOne(HS.who, from, to));
@@ -3281,14 +3300,14 @@ function homeCal(){
   let last = '';
   return `<div class="sec-h"><h2>Calendar</h2><button class="link" onclick="pgo('cal')">See all</button></div>
   ${calNote()}
-  ${calMonth(due)}
   <div class="card list up-list">
     ${due.map(s=>`<button class="item tap ev" onclick="openKind(${jsA(s.what)})"><div class="ev-when"><b>${esc(dayLabel(s.next < t ? t : s.next))}</b><span>Expected</span></div>
       <div class="mid"><div class="t">${esc(s.what)}</div><div class="d">Due ${esc(inText(dayN(s.next)-dayN(t)))}, about every ${s.gap} days</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`).join('')}
     ${ev.slice(0,10).map(e=>{ const d = evDay(e), f = d!==last; last = d; return evRow(e, f); }).join('')}
     ${!ev.length && !due.length ? `<div class="empty">Nothing on in the next 60 days.</div>` : ''}
     <button class="link-btn" onclick="openAddEvent()">+ Add to the calendar</button>
-  </div>`;
+  </div>
+  ${calMonth(due)}`;
 }
 function openCalDay(d){
   const l = dayEvents(d), sp = (spendByDay()[d]||[]).slice().sort((a,b)=>a.amount-b.amount), tot = sp.reduce((a,t)=>a-t.amount, 0);
