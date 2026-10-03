@@ -390,7 +390,7 @@ details.nums summary{font-size:13px;font-weight:700;color:var(--family-2);cursor
 .wins li{display:flex;gap:10px;align-items:baseline;margin:6px 0}
 .wins .wi{flex:0 0 22px;text-align:center}
 .wins b{color:var(--pos)}
-.wotd{margin-top:12px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--pos) 25%,var(--line))}
+.wotd{margin-top:14px}
 .wotd small{display:block;font-size:var(--fs-small);color:var(--muted)}.wotd b{display:block;color:var(--text);font:600 17px/1.3 var(--font-num);margin:2px 0}
 .wotd span{display:block;line-height:1.45}
 .due{position:relative;overflow:hidden;background:var(--card);border-radius:var(--r);padding:14px 16px 14px 19px;border:1px solid var(--line);margin-bottom:12px}
@@ -880,8 +880,7 @@ const canP = () => !D || D.canSeeParents !== false;   // only Tom sees the paren
 let MODE = 'plans';   // the app always opens on Home
 const NAV = {money:`<button data-view="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg>Overview</button>
   <button data-view="spending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>In &amp; out</button>
-  <button data-view="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>History</button>
-  <button data-view="topups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>Top-ups</button>
+  <button data-view="pots"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/></svg>Pots</button>
   <button data-view="parents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 20c0-2 1-4 3-4.5 2 .5 3 2.5 3 4.5"/></svg>Parents</button>`,
   health:`<button data-view="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3v8a2 2 0 0 0 2 2v8M7 3v5M11 3v5M17 3c-2 0-3 3-3 6s1 4 3 4v8"/></svg>Today</button>
   <button data-view="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Stats</button>
@@ -935,26 +934,31 @@ function placeY(key){ const same = key===LAST_SCREEN; LAST_SCREEN = key; return 
 function render(){
   if (MODE==='health') return hRender();
   if (MODE==='plans') return pRender();
+  if (view==='history' || view==='topups'){ POTSUB=view; view='pots'; }
   if (!canP() && view==='parents') view='home';
   setNav();
   const synced = new Date(D.syncedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const head = masterHTML() + `<header><div><h1>${{home:'Money',payments:'Payments',spending:'Money in &amp; out',history:'History',topups:'Top-ups',parents:'Parent Savings',settings:'Settings'}[view]}</h1>
+  const head = masterHTML() + `<header><div><h1>${{home:'Money',payments:'Payments',spending:'Money in &amp; out',pots:'Pots',parents:'Parent Savings',settings:'Settings'}[view]}</h1>
       <div class="sync" data-at="${synced}">${syncText(synced)}</div></div>
       <div style="display:flex;gap:8px"><button class="icon-btn" onclick="go('settings')" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="icon-btn" id="refresh" onclick="refreshNow()" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button></div></header>
       ${DEMO?'<div class="demo">Preview mode – changes are not saved. Deploy from Apps Script to connect your sheet.</div>':''}`;
   const y = placeY('m:'+view);
-  if (!paint('m:'+view, head, ({home:vHome,payments:vPayments,spending:vSpending,history:vHistory,topups:vTopups,parents:vParents,settings:vSettings}[view])(), synced)) return;
+  if (!paint('m:'+view, head, ({home:vHome,payments:vPayments,spending:vSpending,pots:vPots,parents:vParents,settings:vSettings}[view])(), synced)) return;
   window.scrollTo(0,y);
   if(view==='spending') setTimeout(()=>{ drawCharts(); if (y) window.scrollTo(0,y); },0);
 }
 
 function vHome(){
+  return `${winsCard()}${statementDue()}${inOutCard()}`;
+}
+
+/* Pots: the family pot and the four pots, then their history or the monthly top-ups */
+let POTSUB = 'history';
+function vPots(){
   const o = D.overview;
   const maxBal = Math.max(...D.pots.map(p=>Math.abs(p.balance)),1);
-  return `${winsCard()}${statementDue()}${inOutCard()}
-  <h2>Our pots</h2>
-  <div class="hero slim ${heroOpen?'open':''}" onclick="heroOpen=!heroOpen;this.classList.toggle('open')">
+  return `  <div class="hero slim ${heroOpen?'open':''}" onclick="heroOpen=!heroOpen;this.classList.toggle('open')">
     <div class="label">Family pot</div>
     <div class="big">${gbp(o.familyPot)}</div>
     <div class="breakdown">
@@ -973,8 +977,8 @@ function vHome(){
           : `<div class="bar"><i style="width:${Math.max(4,Math.abs(p.balance)/maxBal*100)}%"></i></div>`; })()}
       </button>`).join('')}
   </div>
-  ${paceCard()}
-  <div style="text-align:center;margin-top:14px"><button class="chip" onclick="histFilter='All';go('history')">Pot history</button></div>`;
+  <div class="chips" style="margin-top:18px">${[['history','History'],['topups','Top-ups']].map(([k,l])=>`<button class="chip ${POTSUB===k?'on':''}" onclick="POTSUB='${k}';render()">${l}</button>`).join('')}</div>
+  ${POTSUB==='topups' ? vTopups() : vHistory()}`;
 }
 
 /* the household's money in and out, the latest month and the two before, one tap to the detail */
@@ -1041,23 +1045,23 @@ function winsCard(){
   if (!(D.transactions||[]).length) return '';
   const top = moneyWins().slice(0,3);
   if (!top.length) top.push([0, '&#x2728;', 'Every payment is tracked. Keep going.']);
-  const w = wordToday();
   return `<div class="wins"><div class="wins-h">${greeting()}<span>Here's what's going well</span></div>
     <ul>${top.map(w=>`<li><span class="wi">${w[1]}</span><span>${w[2]}</span></li>`).join('')}</ul>
-    ${w ? `<div class="wotd"><small>Word of the day</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span></div>` : ''}</div>`;
+    </div>`;
 }
 /* word of the day: the phone keeps the next fortnight, so it shows offline, and tops up when it has signal */
 const WORDS_KEY = 'ganymede-words';
 function wordsSaved(){ try { return JSON.parse(localStorage.getItem(WORDS_KEY) || '[]'); } catch(e) { return []; } }
 function wordToday(){ const t = today(), w = wordsSaved().find(x=>x.date===t); wordsTopUp(); return w; }
 let wordsAsked = 0;
+function wordCard(){ const w = wordToday(); return w ? `<div class="card wotd"><small>Word of the day</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span></div>` : ''; }
 function wordsTopUp(){
   const t = today(), l = wordsSaved();
   if (l.some(x=>x.date===addDays(t, 7)) || !navigator.onLine || Date.now() - wordsAsked < 6e5) return;
   wordsAsked = Date.now();
   api('getWords', t, 14).then(got=>{ const had = l.some(x=>x.date===t);
     try { localStorage.setItem(WORDS_KEY, JSON.stringify(got)); } catch(e) {}
-    if (!had && MODE==='money' && view==='home') render(); }).catch(()=>{});
+    if (!had && onHome()) render(); }).catch(()=>{});
 }
 
 /* Monthly nudge: from the 5th, ask for the next Santander export until the statement reaches the last few days
@@ -1410,7 +1414,7 @@ function vSpending(){
   </div>
 
   ${r.kind==='month'?`<h2>Day by day</h2><div class="card"><div class="chart" id="dayChart"></div><div class="hint">What went out each day of ${esc(monthName(r.p))}. Tap a bar for the day.</div></div>${compareCard(r.p)}`:''}
-  ${r.kind==='12m'?compareCard(currentMonth().m)+paceCard():''}
+  ${r.kind==='12m'?compareCard(currentMonth().m):''}
   <h2>${mainTitle}</h2>
   <div class="card"><div class="legend"><span><i style="background:var(--inc)"></i>Money in</span><span><i style="background:var(--spd)"></i>Spent</span></div>
     <div class="chart" id="monthChart"></div>
@@ -1656,28 +1660,6 @@ function projectionCard(){
     <div class="stat-row"><span class="k">Savings would cover</span><span class="v">${p.monthsCovered.toFixed(1)} months of spending</span></div>
     <div class="hint">The same again for another 12 months. It does not know about holidays or big one-offs to come.</div>
   </div>`;
-}
-
-/* ---- pace: categories running well above a typical month ---- */
-function paceAlerts(){
-  const cm = currentMonth(); if (!cm) return [];
-  const ms = lastFullMonths(12); if (ms.length < 3) return [];
-  const typical = {}; (D.transactions||[]).forEach(t=>{ if (famSpend(t) && ms.includes(t.date.slice(0,7))) typical[t.category]=(typical[t.category]||0)-t.amount; });
-  Object.keys(typical).forEach(k=>typical[k]/=ms.length);
-  const now = {}; (D.transactions||[]).forEach(t=>{ if (famSpend(t) && t.date.slice(0,7)===cm.m) now[t.category]=(now[t.category]||0)-t.amount; });
-  const frac = cm.complete ? 1 : cm.day/cm.days;
-  /* the same month a year ago, to the same day while this one is still going */
-  const ly = shiftMonth(cm.m, -12), lyTo = ly + '-' + String(cm.complete ? 31 : cm.day).padStart(2,'0'), last = {};
-  (D.transactions||[]).forEach(t=>{ if (famSpend(t) && t.date.slice(0,7)===ly && t.date<=lyTo) last[t.category]=(last[t.category]||0)-t.amount; });
-  return Object.entries(now).map(([c,v])=>{ const exp=(typical[c]||0)*frac; return {c, v, exp, avg:typical[c]||0, ly:last[c]||0, ch: exp? (v-exp)/exp : null}; })
-    .filter(a=> a.exp>0 ? (a.v>a.exp*1.4 && a.v-a.exp>30) : a.v>100).sort((a,b)=>(b.v-b.exp)-(a.v-a.exp)).slice(0,4);
-}
-function paceCard(){
-  const cm = currentMonth(), al = paceAlerts(); if (!al.length) return '';
-  return `<h2>Heads up</h2><div class="card">${al.map(a=>`<button class="stat-row alert" onclick="openCat('${esc(a.c)}')"><span class="k">${CAT_ICON[a.c]||''} ${esc(a.c)}</span>
-    <span class="v">${gbp(a.v)} <small class="neg">${a.exp? '▲ '+Math.round(a.ch*100)+'% on the 12-month average':'new this month'}</small>
-      <small>12-month average ${gbp(a.avg)} a month &middot; ${esc(shortMonth(shiftMonth(cm.m,-12)))} ${shiftMonth(cm.m,-12).slice(0,4)}${cm.complete?'':' to day '+cm.day}: ${gbp(a.ly)}</small></span></button>`).join('')}
-    <div class="hint">${esc(monthName(cm.m))}${cm.complete?'':' so far (day '+cm.day+')'}. The percentage compares it with the average month over the last 12${cm.complete?'':', pro rata to today'}.</div></div>`;
 }
 
 /* ---- worth checking: payments that might be a billing error ---- */
@@ -3226,7 +3208,7 @@ function pUp(){
   const all = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
   const open = all.filter(n=>!isAppNote(n)), app = all.filter(isAppNote);
   const nDone = P.items.filter(n=>n.done).length + (D && canP() ? checks().filter(isChecked).length : 0);
-  return `
+  return `${wordCard()}
   <h2>To do</h2>
   <div class="note-add"><input class="inp" id="noteIn" placeholder="${NOTE_APP?'An idea for the app':'Add a note or reminder'}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
   <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App improvement</button></div>
@@ -3238,7 +3220,6 @@ function pUp(){
   ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
   ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
   ${app.length ? `<h2>App improvements</h2><div class="card notes">${app.map(noteRow).join('')}</div>` : ''}
-  ${D ? paceCard() : ''}
   ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}`;
 }
 /* a meal counts as missing from this hour of the day */
@@ -3707,6 +3688,7 @@ function toast(msg, undo){
   $('#toast').classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>$('#toast').classList.remove('show'), undo?6000:3000);
 }
 function go(v){ if (v!==view || MODE!=='money') navPush(); if (MODE!=='money'){ MODE='money'; try{ localStorage.setItem('ganymede-mode','money'); }catch(e){} } if (!D) { view=v; return; }   // still loading: open this screen once the data arrives
+  if (v==='history' || v==='topups'){ POTSUB=v; v='pots'; }
   if (v==='parents' && !canP()) v='home'; view=v; render(); if(v==='settings') settingsPreview(); if(v==='spending') drawCharts(); }
 document.querySelector('nav').onclick = e => { const b = e.target.closest('button'); if (b && b.classList.contains('nav-back')) return goBack(); if (b) MODE==='health' ? hgo(b.dataset.view) : MODE==='plans' ? pgo(b.dataset.view) : go(b.dataset.view); };
 document.addEventListener('visibilitychange',()=>{ if (!document.hidden) syncNow(); });
