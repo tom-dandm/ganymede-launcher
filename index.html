@@ -3136,12 +3136,14 @@ function upcoming(days){
 
 /* ---- Nathan's iron supplement: a tick a day, stored as a mark so it syncs like the rest of Plans ---- */
 const IRON = "Nathan's iron";
+const IRON_FROM = '2026-10-03';   // counting starts here: no tick box or dots before it
 function ironCard(d){
   if (!P){ if (PRAW || canSend()) pLoad(); return ''; }
-  const m = P.marks.find(x=>x.what===IRON && x.date===d), week = [...Array(7)].map((_,i)=>addDays(d, i-6));
+  if (d < IRON_FROM) return '';
+  const m = P.marks.find(x=>x.what===IRON && x.date===d), week = [...Array(7)].map((_,i)=>addDays(d, i-6)).filter(x=>x>=IRON_FROM);
   const n = week.filter(x=>P.marks.some(m=>m.what===IRON && m.date===x)).length, isT = d===today();
   return `<div class="iron ${m?'on':''}"><button class="tick" aria-label="${m?'Untick':'Tick'} Nathan's iron" onclick="ironTick('${d}')">${m?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
-    <button class="iron-t" onclick="ironTick('${d}')"><b>&#x1F48A; Nathan's iron${isT?'':', '+esc(dayLabel(d).toLowerCase())}</b><small>${m ? 'Given'+(m.by?' by '+esc(m.by):'') : isT ? 'Not given yet today' : 'Not ticked'} &middot; ${n} of the last 7 days</small></button>
+    <button class="iron-t" onclick="ironTick('${d}')"><b>&#x1F48A; Nathan's iron${isT?'':', '+esc(dayLabel(d).toLowerCase())}</b><small>${m ? 'Given'+(m.by?' by '+esc(m.by):'') : isT ? 'Not given yet today' : 'Not ticked'} &middot; ${week.length<7 ? `${n} of ${week.length} day${week.length>1?'s':''} so far` : `${n} of the last 7 days`}</small></button>
     <span class="iron-week">${week.map(x=>`<i class="${P.marks.some(m=>m.what===IRON && m.date===x)?'on':''}"></i>`).join('')}</span></div>`;
 }
 function ironTick(d){
