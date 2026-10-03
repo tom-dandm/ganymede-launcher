@@ -235,7 +235,7 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .mon-g{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.mon-g .chip{justify-content:center;padding-left:0;padding-right:0}.mon-g .chip:disabled{opacity:.35}
 .ev-when{width:76px;flex:none;display:flex;flex-direction:column;font-size:var(--fs-small);color:var(--muted);padding-top:1px}
 .ev-when b{color:var(--text);font-size:14px}
-.note-add{display:flex;gap:8px;margin-bottom:8px}.note-tag{margin:0 0 10px}.note-add .chip{padding:0 18px}
+.note-add{display:flex;gap:8px;margin-bottom:8px}.sep{border:0;border-top:1px solid var(--line);margin:22px 0 4px}.ch-every{display:flex;gap:8px;align-items:center}.ch-every .inp{width:72px;flex:none}.ch-every .chips{margin:0}.chore-li{width:100%}.note-tag{margin:0 0 10px}.note-add .chip{padding:0 18px}
 .notes{padding:6px 14px}
 .note-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
 .note-row:last-child{border-bottom:0}
@@ -651,7 +651,7 @@ const Mock = (() => {
       return {name:n,age:s.ages[n],pct:pctOf(n),opening:s.opening[n],paidIn,logged,balance:s.opening[n]+paidIn+logged}});
     const held = s.heldBase + s.parentRows.reduce((a,r)=>a+r.paidIn-r.out,0);
     const bankTotal = s.current+s.savingsAcc, ourSavings = bankTotal-held, inPots = pots.reduce((a,p)=>a+p.balance,0), owner = !s.asLaura;
-    return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null, spendCal:owner?(s.spendCal||null):null,
+    return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null, bank:owner?(s.bank||(s.bank={keys:true,auto:true,validUntil:new Date(Date.now()+60*864e5).toISOString(),accounts:[{uid:'a1',name:'Everyday Current Account',type:'CACC',last4:'1234'},{uid:'a2',name:'eSaver',type:'SVGS',last4:'5678'}],current:'a1',savings:'',last:{at:new Date(Date.now()-5*3600e3).toISOString(),added:3,matched:2,err:''}})):null, spendCal:owner?(s.spendCal||null):null,
       overview:owner?{bankTotal,held,ourSavings,inPots,familyPot:ourSavings-inPots}:{bankTotal:null,held:null,ourSavings,inPots,familyPot:ourSavings-inPots},
       parent:owner?{held,bankTotal,ourSavings,current:s.current,savingsAcc:s.savingsAcc,recent:s.parentRows.map((r,i)=>({row:800+i,note:'',...r})).reverse(), ledger:mockLedger(held)}:{ourSavings,ledger:mockLedger(held),recent:[]},
       syncedAt:new Date().toISOString()};
@@ -689,6 +689,10 @@ const Mock = (() => {
     setBankBalances(b){ s.current=Number(b.current); s.savingsAcc=Number(b.savings||0); return data(false); },
     startSpendCal(){ if (s.asLaura) throw new Error('Only Tom can do this'); s.spendCal={id:'spend@example.com',name:'Ganymede spending',done:3,months:3,at:new Date().toISOString(),err:''}; return data(false); },
     spendCalTick(){ return s.spendCal||null; },
+    bankConnect(){ if (s.asLaura) throw new Error('Only Tom can change this'); return {url:'https://example.com/santander', days:90}; },
+    syncBankNow(){ s.bank.last={at:new Date().toISOString(),added:0,matched:0,err:''}; return data(false); },
+    setBankAuto(on){ s.bank.auto=!!on; return data(false); },
+    setBankAccounts(c,v){ s.bank.current=c; s.bank.savings=v||''; return data(false); },
     syncPayPalNow(){ s.paypal={at:new Date().toISOString(),added:0,matched:0,fetched:0,waiting:0}; return data(false); },
     setTxPot(row,person,amount,nid){ const t=tx(row); if(t.type==='parents') throw new Error("That one is the parents'");
       const id='tx-'+(nid||uid()); if (person && t.potId===id) return ch([t],1);
@@ -797,6 +801,48 @@ function spendCalText(){
   if (!c) return 'A calendar of its own, "Ganymede spending", with an entry for each day we spent: the total and where. Seven years takes a few goes to fill; the app carries on by itself.';
   const at = c.at ? new Date(c.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
   return `"${esc(c.name)}": ${c.done} of ${c.months} months on it${at ? ', updated ' + esc(at) : ''}.${c.err ? ' Stopped: ' + esc(c.err) + '.' : ''} ${c.done < c.months ? 'The rest goes on a bit at a time while the app is open.' : 'New statements follow by themselves.'}`;
+}
+/* ---- the bank link (Bank.js): Santander through Enable Banking ---- */
+const bankLeft = () => D && D.bank && D.bank.validUntil ? Math.floor((new Date(D.bank.validUntil) - Date.now())/864e5) : null;
+const bankAcct = a => esc(a.name) + (a.last4 ? ' ' + esc(a.last4) : '');
+function bankText(){
+  const b = D.bank;
+  if (!b || !b.keys) return 'New payments can come in from Santander by themselves every morning. It needs an Enable Banking account first (see the notes in docs/money-notes.md).';
+  if (!b.validUntil) return 'Ready to connect. You sign in to Santander once and agree to read-only access.';
+  const left = bankLeft(), l = b.last, at = l && l.at ? new Date(l.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+  return `${left < 0 ? 'The Santander link ran out. Connect again.' : `Linked until ${esc(dateY(b.validUntil.slice(0,10)))}.`}${l ? ` Checked ${esc(at)}${l.err ? ': ' + esc(l.err) : `, ${l.added} added`}.` : ' Not checked yet.'} ${b.auto ? 'It checks by itself every morning.' : 'The morning check is off.'}`;
+}
+function bankCard(){
+  const b = D.bank; if (!b) return '';
+  const left = bankLeft(), opts = (sel, none) => (none ? `<option value="">${none}</option>` : '') + b.accounts.map(a=>`<option value="${esc(a.uid)}" ${a.uid===sel?'selected':''}>${bankAcct(a)}</option>`).join('');
+  return `<h2>Bank link</h2>
+  <div class="card"><div class="hint" style="margin-top:0">${bankText()}</div>
+    ${b.validUntil && left >= 0 && b.accounts.length ? `<label class="f">Current account</label><select class="inp" id="bkCur" onchange="saveBankAccts()">${opts(b.current)}</select>
+    <label class="f">Savings account in the bank total</label><select class="inp" id="bkSav" onchange="saveBankAccts()">${opts(b.savings, 'Not linked, keep the typed figure')}</select>
+    <button class="secondary" onclick="run('syncBankNow',[],'Bank checked')">Check the bank now</button>
+    <button class="secondary" onclick="run('setBankAuto',[${!b.auto}],'${b.auto ? 'Morning check off' : 'Morning check on'}')">${b.auto ? 'Turn the morning check off' : 'Check every morning'}</button>` : ''}
+    ${b.keys ? `<button class="${b.validUntil && left >= 10 ? 'secondary' : 'primary'}" onclick="connectBank()">${b.validUntil ? 'Connect Santander again' : 'Connect Santander'}</button>` : ''}</div>`;
+}
+function saveBankAccts(){ run('setBankAccounts', [$('#bkCur').value, $('#bkSav').value], 'Saved'); }
+/* a link to open, not window.open: a pop-up after a server call is blocked */
+async function connectBank(){
+  if (!canSend()) return toast('Needs a signal');
+  pendingN++; working(true);
+  try{ const r = await api('bankConnect');
+    showSheet(`<div class="grab"></div><h3 style="margin:0 0 4px">Connect Santander</h3><div class="hint" style="margin:0 0 12px">Sign in to Santander and agree to read-only access for ${r.days} days. It comes back to Ganymede when done.</div>
+      <a class="primary" style="display:block;text-align:center;text-decoration:none" href="${esc(r.url)}" target="_blank" rel="noopener" onclick="closeSheet()">Open Santander</a>
+      <button class="secondary" onclick="closeSheet()">Cancel</button>`);
+  } catch(e){ toast('⚠ ' + (e.message || e)); }
+  finally{ if (--pendingN === 0) working(false); }
+}
+/* Money home: the link is about to run out, or the last check stopped */
+function bankDue(){
+  const b = D.bank; if (!b || !b.validUntil) return '';
+  const left = bankLeft(), err = b.auto && b.last && b.last.err;
+  if (left > 10 && !err) return '';
+  return `<div class="due"><b>${left < 0 ? 'The Santander link ran out' : left <= 10 ? `The Santander link runs out in ${left} day${left===1?'':'s'}` : 'The bank check stopped'}</b>
+    <span class="hint" style="margin:0">${err && left > 10 ? esc(b.last.err) : 'Connect again to keep new payments coming in by themselves.'}</span>
+    ${left <= 10 ? `<button class="primary" onclick="connectBank()">Connect Santander</button>` : ''}</div>`;
 }
 async function startSpendCal(){
   if (!canSend()) return toast('Needs a signal');
@@ -951,7 +997,7 @@ function render(){
 }
 
 function vHome(){
-  return `${winsCard()}${statementDue()}${inOutCard()}`;
+  return `${winsCard()}${bankDue()}${statementDue()}${inOutCard()}`;
 }
 
 /* Pots: the family pot and the four pots, then their history or the monthly top-ups */
@@ -1210,6 +1256,7 @@ function vSettings(){
     <div id="setPreview" style="margin-top:14px"></div>
     <div class="hint" style="margin-bottom:0">Saved as you change it.</div>
   </div>
+  ${canP()?bankCard():''}
   ${canP()?`<h2>PayPal</h2>
   <div class="card"><div class="hint" style="margin-top:0">${D.paypal?`Checked ${esc(new Date(D.paypal.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))} · ${D.paypal.added} added, ${D.paypal.matched} matched to the bank`:'Not checked yet'}. It checks by itself every morning.</div>
     <button class="secondary" onclick="run('syncPayPalNow',[],'PayPal checked')">Check PayPal now</button></div>
@@ -2960,7 +3007,11 @@ const PMock = (() => {
     items:[['n1','Milk #shop',false,'Laura',st(T,'08:10'),'',''],['n2','Bread #shop',false,'Tom',st(T,'08:12'),'',''],['n3','Book the dentist for Nathan',false,'Laura',st(addDays(T,-2),'19:40'),'',''],
       ['n4','Bin bags #shop',true,'Tom',st(addDays(T,-1),'12:00'),'Laura',st(addDays(T,-1),'09:30')],
       ['n5','Majorca #holiday '+addDays(T,40)+' '+addDays(T,47),false,'Tom',st(addDays(T,-20),'20:00'),'',''],['n6','Book the airport parking #hol',false,'Laura',st(addDays(T,-3),'21:00'),'',''],
-      ['n7','Passports #pack',false,'Tom',st(addDays(T,-3),'21:05'),'',''],['n8','Sun cream #pack',true,'Laura',st(addDays(T,-3),'21:06'),'Laura',st(addDays(T,-1),'10:00'),'']],
+      ['n7','Passports #pack',false,'Tom',st(addDays(T,-3),'21:05'),'',''],['n8','Sun cream #pack',true,'Laura',st(addDays(T,-3),'21:06'),'Laura',st(addDays(T,-1),'10:00'),''],
+      ['c1','Bins out: black #chore 2018-06-01 w2:5',false,'Tom',st('2026-10-03','12:00'),'',''],['c2','Bins out: blue #chore 2018-06-08 w4:5',false,'Tom',st('2026-10-03','12:00'),'',''],
+      ['c3','Bins out: brown #chore 2018-05-25 w4:5',false,'Tom',st('2026-10-03','12:00'),'',''],['c4','Nail reminder #chore 2026-10-03 w1:2,6',false,'Tom',st('2026-10-03','12:00'),'',''],
+      ['c5','Water the plants #chore 2026-10-03 w1:6',false,'Tom',st('2026-10-03','12:00'),'',''],['c6','Water Spotty #chore 2026-10-07 w1:3',false,'Tom',st('2026-10-03','12:00'),'',''],
+      ['c7','Check car oil #chore 2019-11-10 m1:10',false,'Tom',st('2026-10-03','12:00'),'','']],
     marks:[], events:[
       ['e1','Nathan swimming',st(T,'17:30'),st(T,'18:15'),false,'Leisure centre','','',true,'family@example.com','Family','#7986cb',false],
       ['e2','Bins (Black)',addDays(T,1),addDays(T,2),true,'','','',false,'bins@example.com','Bins','#616161',false],
@@ -3107,18 +3158,84 @@ function ironCard(d){
     <button class="iron-t" onclick="ironTick('${d}')"><b>&#x1F48A; Nathan's iron${isT?'':', '+esc(dayLabel(d).toLowerCase())}</b><small>${m ? 'Given'+(m.by?' by '+esc(m.by):'') : isT ? 'Not given yet today' : 'Not ticked'} &middot; ${week.length<7 ? `${n} of ${week.length} day${week.length>1?'s':''} so far` : `${n} of the last 7 days`}</small></button>
     <span class="iron-week">${week.map(x=>`<i class="${P.marks.some(m=>m.what===IRON && m.date===x)?'on':''}"></i>`).join('')}</span></div>`;
 }
-/* jobs that come round on set days: a tick on Home on the day, saved as a mark (was a repeating calendar event).
-   every = weeks between; days = weekdays (0 Sun .. 6 Sat); start = the first one */
-const CHORES = [
-  {what:'Bins out: black', icon:'&#x26AB;', start:'2018-06-01', every:2, days:[5]},
-  {what:'Bins out: blue', icon:'&#x1F535;', start:'2018-06-08', every:4, days:[5]},
-  {what:'Bins out: brown', icon:'&#x1F7E4;', start:'2018-05-25', every:4, days:[5]},
-  {what:'Nail reminder', icon:'&#x1F485;', start:'2026-10-03', every:1, days:[2,6]},
-  {what:'Water the plants', icon:'&#x1FAB4;', start:'2026-10-03', every:1, days:[6]},
-];
-const CHORE_NAMES = new Set(CHORES.map(c=>c.what));
+/* chores: notes tagged #chore, a tick in To do on their days, saved as a mark (were repeating calendar events).
+   "Water Spotty #chore 2026-10-07 w1:3" = from the start date: d<n> every n days, w<n>:<weekdays 0 Sun..6 Sat> every
+   n weeks (Monday-weeks counted from the start), m<n>:<day> every n months on that day (the last day in a short month). */
+const CHORE_RE = /#chore (\d{4}-\d{2}-\d{2}) (?:d(\d+)|w(\d+):([0-6](?:,[0-6])*)|m(\d+):(\d{1,2}))/i;
+const CHORE_ICONS = [[/black/i,'&#x26AB;'],[/blue/i,'&#x1F535;'],[/brown/i,'&#x1F7E4;'],[/\bbins?\b/i,'&#x1F5D1;'],[/nail/i,'&#x1F485;'],[/plant/i,'&#x1FAB4;'],[/water/i,'&#x1F4A7;'],[/\boil\b|\bcar\b|tyre/i,'&#x1F697;']];
+function chores(){
+  return P ? P.items.filter(n=>!n.done && noteKind(n)==='chore').map(n=>{ const m = String(n.text).match(CHORE_RE); if (!m) return null;
+    const what = noteText(n.text), ic = CHORE_ICONS.find(x=>x[0].test(what));
+    return {id:n.id, what, icon:ic ? ic[1] : '&#x1F501;', start:m[1], unit:m[2]?'d':m[3]?'w':'m', every:+(m[2]||m[3]||m[5]), days:m[4]?m[4].split(',').map(Number):[], mday:m[6]?+m[6]:0}; }).filter(Boolean) : [];
+}
+const choreNames = () => new Set(chores().map(c=>c.what));
 const monOf = d => addDays(d, -((dOf(d).getDay()+6)%7));
-function choresOn(d){ return CHORES.filter(c=>d >= c.start && c.days.includes(dOf(d).getDay()) && Math.round((dayN(monOf(d)) - dayN(monOf(c.start)))/7) % c.every === 0); }
+function choreDue(c, d){
+  if (d < c.start || !c.every) return false;
+  if (c.unit==='d') return (dayN(d) - dayN(c.start)) % c.every === 0;
+  if (c.unit==='w') return c.days.includes(dOf(d).getDay()) && Math.round((dayN(monOf(d)) - dayN(monOf(c.start)))/7) % c.every === 0;
+  const x = dOf(d), s = dOf(c.start), last = new Date(x.getFullYear(), x.getMonth()+1, 0).getDate();
+  return ((x.getFullYear()-s.getFullYear())*12 + x.getMonth()-s.getMonth()) % c.every === 0 && x.getDate()===Math.min(c.mday, last);
+}
+function choresOn(d){ return chores().filter(c=>choreDue(c, d)); }
+const WDAY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const ordinal = n => n + (n%100>10 && n%100<14 ? 'th' : ({1:'st',2:'nd',3:'rd'}[n%10] || 'th'));
+function choreRule(c){
+  const n = c.every, p = (one, many) => n===1 ? one : `Every ${n} ${many}`;
+  if (c.unit==='d') return p('Every day', 'days');
+  if (c.unit==='w') return p('Every week', 'weeks') + ' on ' + [1,2,3,4,5,6,0].filter(i=>c.days.includes(i)).map(i=>WDAY[i]).join(', ');
+  return p('Every month', 'months') + ' on the ' + ordinal(c.mday);
+}
+function choreNext(c){ for (let i = 0; i < 400; i++){ const d = addDays(today(), i); if (choreDue(c, d)) return d; } return ''; }
+/* the list, from the Chores chip on Home */
+function openChores(){
+  const l = chores().sort((a,b)=>a.what.localeCompare(b.what));
+  showSheet(`<h3 id="choresSheet">Chores</h3><div class="hint" style="margin:0 0 10px">Each one shows in To do on its days, to tick off.</div>
+    <div class="card notes">${l.map(c=>{ const nx = choreNext(c); return `<button class="note-t chore-li" onclick="openChore('${c.id}')">${c.icon} ${esc(c.what)}<small>${esc(choreRule(c))}${nx ? ' &middot; next ' + esc(dayLabel(nx).replace(/^(Today|Tomorrow)$/, x=>x.toLowerCase())) : ''}</small></button>`; }).join('') || '<div class="hint" style="text-align:center;padding:8px">No chores yet.</div>'}</div>
+    <button class="primary" onclick="openChore()">Add a chore</button>`);
+}
+let CH = null;
+function openChore(id){
+  const c = id && chores().find(x=>x.id===id);
+  CH = c ? {id, what:c.what, start:c.start, unit:c.unit, every:c.every, days:c.days.slice(), mday:c.mday || +today().slice(8)}
+         : {id:'', what:'', start:today(), unit:'w', every:1, days:[dOf(today()).getDay()], mday:+today().slice(8)};
+  choreSheet();
+}
+function choreSheet(){
+  const c = CH, u = (k, t) => `<button class="chip ${c.unit===k?'on':''}" onclick="chSet('${k}')">${t}</button>`;
+  showSheet(`<h3 id="choreSheet">${c.id ? 'Chore' : 'Add a chore'}</h3>
+    <label class="f">What</label><input class="inp" id="chWhat" placeholder="e.g. Water Spotty" value="${esc(c.what)}">
+    <label class="f">Repeats every</label><div class="ch-every"><input class="inp" id="chEvery" type="number" min="1" max="99" inputmode="numeric" value="${c.every}">
+    <div class="chips">${u('d','Days')}${u('w','Weeks')}${u('m','Months')}</div></div>
+    ${c.unit==='w' ? `<label class="f">On</label><div class="chips wrap">${[1,2,3,4,5,6,0].map(i=>`<button class="chip ${c.days.includes(i)?'on':''}" onclick="chDay(${i})">${WDAY[i]}</button>`).join('')}</div>` : ''}
+    ${c.unit==='m' ? `<label class="f">On day of the month</label><input class="inp" id="chMday" type="number" min="1" max="31" inputmode="numeric" value="${c.mday}">` : ''}
+    <label class="f">${c.unit==='m' ? 'Starting from' : 'First one'}</label><input class="inp" type="date" id="chStart" value="${c.start}">
+    <button class="primary" onclick="saveChore()">Save</button>
+    ${c.id ? `<button class="secondary neg" onclick="removeChore()">Remove</button>` : ''}
+    <button class="secondary" onclick="openChores()">All chores</button>`);
+}
+/* keep what was typed when a chip redraws the sheet */
+function chRead(){
+  const v = id => { const e = $('#'+id); return e ? e.value : null; }, w = v('chWhat'), md = v('chMday');
+  if (w !== null) CH.what = w; CH.start = v('chStart') || CH.start; CH.every = Math.max(1, parseInt(v('chEvery'))||1);
+  if (md !== null) CH.mday = parseInt(md) || CH.mday;
+}
+function chSet(k){ chRead(); CH.unit = k; choreSheet(); }
+function chDay(i){ chRead(); CH.days = CH.days.includes(i) ? CH.days.filter(x=>x!==i) : CH.days.concat(i); choreSheet(); }
+function saveChore(){
+  chRead(); const c = CH, what = c.what.replace(/#/g,'').replace(/\s+/g,' ').trim();
+  if (!what) return toast('Say what the chore is');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(c.start)) return toast('Pick a start date');
+  if (c.unit==='w' && !c.days.length) return toast('Pick at least one day');
+  if (c.unit==='m' && !(c.mday>=1 && c.mday<=31)) return toast('Pick a day of the month, 1 to 31');
+  const rule = c.unit==='d' ? 'd'+c.every : c.unit==='w' ? 'w'+c.every+':'+c.days.slice().sort().join(',') : 'm'+c.every+':'+c.mday;
+  const text = what + ' #chore ' + c.start + ' ' + rule;
+  if (c.id) pRun('editNote', [c.id, text], 'Chore saved'); else pRun('addNote', [{id:newId(), text}], 'Chore added');
+}
+function removeChore(){
+  const n = P.items.find(x=>x.id===CH.id); if (!n) return;
+  pRun('deleteNote', [n.id], 'Chore removed', ()=>pRun('addNote', [{id:newId(), text:n.text}], 'Put back', null, true));
+}
 function choreRow(c, d){
   const m = P.marks.find(x=>x.what===c.what && x.date===d);
   return `<div class="note-row ${m?'done':''}"><button class="tick" aria-label="${m?'Untick':'Tick'}" onclick="choreTick(${jsA(c.what)},'${d}')">${m?TICK_SVG:''}</button>
@@ -3138,8 +3255,8 @@ function ironTick(d){
 
 /* ---- marked days: runs of days close together are one time (a period of 5 days is one) ---- */
 function markStats(){
-  const by = {};
-  P.marks.forEach(m=>{ if (m.what!==IRON && !CHORE_NAMES.has(m.what)) (by[m.what] = by[m.what] || []).push(m); });
+  const by = {}, CN = choreNames();
+  P.marks.forEach(m=>{ if (m.what!==IRON && !CN.has(m.what)) (by[m.what] = by[m.what] || []).push(m); });
   return Object.entries(by).map(([what, list])=>{
     list.sort((a,b)=>a.date<b.date?-1:1);
     const runs = []; list.forEach(m=>{ const r = runs[runs.length-1]; if (r && dayN(m.date) - dayN(r.last) <= 2){ r.last = m.date; r.n++; } else runs.push({start:m.date, last:m.date, n:1}); });
@@ -3182,11 +3299,11 @@ function calNote(){
 /* a note tagged #app is an idea for the app: its own section on Home, the tag hidden */
 const APP_TAG = /(^|\s)#app\b/i;
 const isAppNote = n => noteKind(n)==='app';
-const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday)\b/ig, ' ').replace(/\s+/g, ' ').trim();
+const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore)\b/ig, ' ').replace(/\s+/g, ' ').trim();
 let NOTE_APP = false;
 /* other tags on notes, each its own list: #shop the shopping list (Home), #pack and #hol the holiday packing list and
    things to do, #holiday the trip itself ("Majorca #holiday 2027-07-14 2027-07-21"). The tag (and the trip dates) are hidden. */
-const TAG_RE = /(^|\s)#(app|shop|pack|hol|holiday)\b/i;
+const TAG_RE = /(^|\s)#(app|shop|pack|hol|holiday|chore)\b/i;
 const noteKind = n => { const m = String(n.text).match(TAG_RE); return m ? m[2].toLowerCase() : ''; };
 const plainNote = n => { const k = noteKind(n); return !k || k==='app'; };
 /* add to a tagged list; something already on it (ticked before) comes back instead of a second copy */
@@ -3282,13 +3399,15 @@ function pUp(){
   const all = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
   const open = all.filter(n=>!noteKind(n)), app = all.filter(isAppNote);
   const nDone = P.items.filter(n=>n.done && plainNote(n)).length + (D && canP() ? checks().filter(isChecked).length : 0);
+  const todo = choresOn(today());
   return `${wordCard()}${holHome()}
   <h2>To do</h2>
   <div class="note-add"><input class="inp" id="noteIn" placeholder="${NOTE_APP?'An idea for the app':'Add a note or reminder'}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
-  <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App improvement</button></div>
-  <div class="card notes">${choresOn(today()).map(c=>choreRow(c, today())).join('')}${open.map(noteRow).join('')}
-    ${!open.length && !choresOn(today()).length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
+  <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App improvement</button><button class="chip" onclick="openChores()">&#x1F501; Chores</button></div>
+  <div class="card notes">${todo.map(c=>choreRow(c, today())).join('')}${open.map(noteRow).join('')}
+    ${!open.length && !todo.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
   ${shopCard()}
+  <hr class="sep">
   ${mealsCard()}
   ${homeCal()}
   ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
