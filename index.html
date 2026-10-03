@@ -41,7 +41,7 @@ button,input,select{font:inherit;color:inherit}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 14px}
 header h1{font:700 22px/1.1 var(--font-num);margin:0;letter-spacing:-.5px}
 .sync{font-size:var(--fs-small);color:var(--muted);margin-top:3px}
-.sync .linkish{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
+.sync .linkish,.hint .linkish{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
 .icon-btn{border:1px solid var(--line);background:var(--card);width:38px;height:38px;border-radius:var(--r-sm);display:grid;place-items:center;cursor:pointer}
 .icon-btn svg{width:18px;height:18px}
 .spin svg{animation:spin 1s linear infinite}
@@ -196,6 +196,32 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 nav{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:center;z-index:20;pointer-events:none}
 nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-content:space-around;padding:6px;border-radius:18px;border:1px solid var(--line);
   background:color-mix(in srgb,var(--card) 82%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4)}
+/* plans */
+.up-day{font-size:var(--fs-small);font-weight:700;color:var(--muted);margin:2px 2px 10px}
+.up-list{padding-top:4px;padding-bottom:12px}
+.item.ev{align-items:flex-start}
+.ev-when{width:76px;flex:none;display:flex;flex-direction:column;font-size:var(--fs-small);color:var(--muted);padding-top:1px}
+.ev-when b{color:var(--text);font-size:14px}
+.note-add{display:flex;gap:8px;margin-bottom:10px}.note-add .chip{padding:0 18px}
+.notes{padding:6px 14px}
+.note-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
+.note-row:last-child{border-bottom:0}
+.tick{width:26px;height:26px;flex:none;border-radius:50%;border:2px solid var(--muted);background:none;display:grid;place-items:center;padding:0;cursor:pointer;color:#fff}
+.tick svg{width:15px;height:15px}
+.note-row.done .tick{background:var(--family-2);border-color:var(--family-2)}
+.note-t{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--text);text-align:left;padding:13px 0;cursor:pointer;overflow-wrap:anywhere}
+.note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
+.note-row.done .note-t{color:var(--muted);text-decoration:line-through}
+.note-row.done .note-t small{text-decoration:none}
+.notes-done{border-top:1px solid var(--line)}
+.kind{display:block;width:100%;text-align:left;font:inherit;color:var(--text);margin-top:12px;cursor:pointer}
+.kind-h{display:flex;justify-content:space-between;align-items:center;font-size:16px}
+.kind-next{margin-top:6px;font-weight:600;color:var(--family-2);font-size:var(--fs-small)}
+.dots{display:grid;grid-template-columns:repeat(28,1fr);gap:3px;margin-top:12px}
+.dots i{aspect-ratio:1;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--family-2)}
+.dots i.now{box-shadow:0 0 0 1.5px var(--text)}
+.dots i.next{box-shadow:0 0 0 1.5px var(--family-2);background:none}
 nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:var(--fs-small);font-weight:600;color:var(--muted);padding:6px 8px;cursor:pointer;border-radius:12px;flex:1}
 nav button svg{width:21px;height:21px}
 nav button.on{color:var(--text);background:var(--card-2)}
@@ -327,7 +353,7 @@ details.nums summary{font-size:13px;font-weight:700;color:var(--family-2);cursor
 .due ol{margin:8px 0 0;padding-left:20px;font-size:13px;color:var(--muted)}
 .due li{margin:3px 0}
 
-.master{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;margin-top:calc(10px + env(safe-area-inset-top));background:var(--card-2);border:1px solid var(--line);border-radius:12px}
+.master{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;padding:3px;margin-top:calc(10px + env(safe-area-inset-top));background:var(--card-2);border:1px solid var(--line);border-radius:12px}
 .master button{border:0;background:none;padding:8px;border-radius:9px;font-weight:700;color:var(--muted);display:flex;gap:7px;justify-content:center;align-items:center;cursor:pointer}
 .master button.on{background:var(--card);color:var(--text);box-shadow:0 0 0 1px var(--line)}
 .master svg{width:16px;height:16px}
@@ -387,7 +413,7 @@ const GAS = !!(window.google && google.script && google.script.run);   // opened
 const REMOTE = !GAS && (location.hostname.endsWith('tompoon.com') || new URLSearchParams(location.search).has('remote'));
 const DEMO = !GAS && !REMOTE;
 const GAPI = {client:'257581565054-jsnt1rb7sbuhslgi7o7m51kdrmtq3cgn.apps.googleusercontent.com', deploy:'AKfycbzD81kBCMZpe50KLmmNKpWIh8zu6Bqa-JjBeuLztvl-I8XPPQDa0J1aR_gjxpKrNJhnEA',
-  scope:'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/script.external_request openid email'};
+  scope:'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/script.external_request https://www.googleapis.com/auth/calendar openid email'};
 
 /* ============ helpers ============ */
 const gbp = n => (n<0?'-':'') + '£' + Math.abs(Number(n)||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -469,7 +495,7 @@ const canSend = () => DEMO ? !window.DEMO_OFFLINE : navigator.onLine && authed()
 function flush(){ return flushing || (flushing = flushRun().finally(()=>{ flushing = null; drawSync(); })); }
 let noBatch = false;
 async function flushRun(){
-  const did = {m:false, h:false};
+  const did = {m:false, h:false, p:false};
   while (OUTBOX.length && canSend()){
     /* several waiting: one call for up to 20 (runBatch in Code.js), each answered in order */
     if (OUTBOX.length > 1 && !noBatch){
@@ -489,7 +515,7 @@ async function flushRun(){
         if (o.msg) toast(o.msg);
       }
       outSave();
-      if (res.m) takeM(res.m); if (res.h) takeH(res.h);
+      if (res.m) takeM(res.m); if (res.h) takeH(res.h); if (res.p) takeP(res.p);
       if (stop) break; continue;
     }
     const o = OUTBOX[0]; let raw;
@@ -499,15 +525,15 @@ async function flushRun(){
       OUTBOX.shift(); outSave(); did[o.k] = true; toast('⚠ ' + (e.message||e) + '. That change was not saved.'); continue;
     }
     OUTBOX.shift(); outSave(); did[o.k] = true;
-    if (o.k === 'h') takeH(raw); else takeM(raw, o);
+    if (o.k === 'h') takeH(raw); else if (o.k === 'p') takeP(raw); else takeM(raw, o);
     if (o.msg) toast(o.msg);
   }
-  if (did.m) showM(); if (did.h) showH();
+  if (did.m) showM(); if (did.h) showH(); if (did.p) showP();
   if (IMPORTED.length){ const l = IMPORTED.splice(0); (loadingM || Promise.resolve()).then(()=>load()).then(()=>showImport(l)); }
   return did;
 }
 /* send what is waiting, then fetch what anyone else has changed */
-function syncNow(){ drawSync(); if (REMOTE && !authed()) signIn(true); if (!canSend()) return; flush().then(()=>{ load(); hLoad(); }); }
+function syncNow(){ drawSync(); if (REMOTE && !authed()) signIn(true); if (!canSend()) return; flush().then(()=>{ load(); hLoad(); pLoad(); }); }
 function refreshNow(){ if (!canSend()) return toast(REMOTE && !authed() && navigator.onLine ? 'Tap Sign in to sync at the top' : 'No signal. Showing what is saved on this phone.'); syncNow(); }
 function syncText(at){
   if (DEMO && !window.DEMO_OFFLINE) return 'Demo data';
@@ -770,7 +796,7 @@ function run(fn, args, msg, undo){
 const canP = () => !D || D.canSeeParents !== false;   // only Tom sees the parents' money
 
 /* ============ master switch: Money / Health ============ */
-let MODE = (()=>{ try{ return localStorage.getItem('ganymede-mode')==='health' ? 'health' : 'money'; }catch(e){ return 'money'; } })();
+let MODE = (()=>{ try{ const m = localStorage.getItem('ganymede-mode'); return m==='health' || m==='plans' ? m : 'money'; }catch(e){ return 'money'; } })();
 const NAV = {money:`<button data-view="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
   <button data-view="spending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>In &amp; out</button>
   <button data-view="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>History</button>
@@ -779,16 +805,20 @@ const NAV = {money:`<button data-view="home" class="on"><svg viewBox="0 0 24 24"
   health:`<button data-view="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3v8a2 2 0 0 0 2 2v8M7 3v5M11 3v5M17 3c-2 0-3 3-3 6s1 4 3 4v8"/></svg>Today</button>
   <button data-view="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Stats</button>
   <button data-view="body"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9a5 5 0 0 1 8 0M12 9l1.5-2"/></svg>Body</button>
-  <button data-view="foods"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Meals</button>`};
+  <button data-view="foods"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Meals</button>`,
+  plans:`<button data-view="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="18" cy="16" r="3"/></svg>Coming up</button>
+  <button data-view="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</button>
+  <button data-view="track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Track</button>`};
 function masterHTML(){
   return `<div class="master" role="tablist"><button class="${MODE==='money'?'on':''}" onclick="setMode('money')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>Money</button>
-    <button class="${MODE==='health'?'on':''}" onclick="setMode('health')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Health</button></div>`;
+    <button class="${MODE==='health'?'on':''}" onclick="setMode('health')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Health</button>
+    <button class="${MODE==='plans'?'on':''}" onclick="setMode('plans')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 15l2 2 4-4"/></svg>Plans</button></div>`;
 }
 function setNav(){
   const n = document.querySelector('nav .in');
   if (n.dataset.mode !== MODE){ n.innerHTML = `<button class="nav-back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 5l-7 7 7 7"/></svg><span class="nb-l">Back</span></button>` + NAV[MODE]; n.dataset.mode = MODE; }
   n.querySelector('.nav-back').classList.toggle('hidden', !BACK.length);
-  const cur = MODE==='health' ? (hview==='month' ? 'today' : hview) : view==='payments' ? 'spending' : view;
+  const cur = MODE==='plans' ? pview : MODE==='health' ? (hview==='month' ? 'today' : hview) : view==='payments' ? 'spending' : view;
   n.querySelectorAll('button').forEach(b=>{ b.classList.toggle('on', b.dataset.view===cur); if (b.dataset.view==='parents') b.classList.toggle('hidden', !canP()); });
 }
 function setMode(m){ if (m!==MODE) navPush(); MODE = m; try{ localStorage.setItem('ganymede-mode', m); }catch(e){}
@@ -823,6 +853,7 @@ function paint(key, head, body, synced){
 function placeY(key){ const same = key===LAST_SCREEN; LAST_SCREEN = key; return same ? window.scrollY : 0; }
 function render(){
   if (MODE==='health') return hRender();
+  if (MODE==='plans') return pRender();
   if (!canP() && view==='parents') view='home';
   setNav();
   const synced = new Date(D.syncedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
@@ -3023,12 +3054,301 @@ const HMock = (() => {
   };
 })();
 Object.assign(Mock, HMock);
-Mock.runBatch = items => { const out = []; let m = null, h = null;
+Mock.runBatch = items => { const out = []; let m = null, h = null, p = null;
   items.forEach(it=>{ try{ const r = JSON.parse(JSON.stringify(Mock[it.fn](...it.args)));
     out.push({ok:true, changed:(r&&r.changed)||null, summary:(r&&r.summary)||null});
-    if (r && Array.isArray(r.pots)){ delete r.changed; delete r.summary; m = r; } else if (r && Array.isArray(r.meals)) h = r; }
+    if (r && Array.isArray(r.pots)){ delete r.changed; delete r.summary; m = r; } else if (r && Array.isArray(r.meals)) h = r; else if (r && Array.isArray(r.items) && Array.isArray(r.marks)) p = r; }
     catch(e){ out.push({err:String(e.message||e)}); } });
-  return {out, m, h}; };
+  return {out, m, h, p}; };
+/* demo Plans: made-up notes, days and events around today */
+const PMock = (() => {
+  const st = (d, t) => d + 'T' + t, T = today();
+  const s = {
+    items:[['n1','Milk',false,'Laura',st(T,'08:10'),'',''],['n2','Bread',false,'Tom',st(T,'08:12'),'',''],['n3','Book the dentist for Nathan',false,'Laura',st(addDays(T,-2),'19:40'),'',''],
+      ['n4','Bin bags',true,'Tom',st(addDays(T,-1),'12:00'),'Laura',st(T,'09:30')]],
+    marks:[], events:[
+      ['e1','Nathan swimming',st(T,'17:30'),st(T,'18:15'),false,'Leisure centre','','',true],
+      ['e2','Bins out',addDays(T,1),addDays(T,2),true,'','','',false],
+      ['e3','Dinner at Nan\'s',st(addDays(T,2),'18:00'),st(addDays(T,2),'20:00'),false,'','Take a pudding','',false],
+      ['e4','Half term',addDays(T,9),addDays(T,14),true,'','','',false],
+      ['e5','Evy jabs',st(addDays(T,4),'10:20'),st(addDays(T,4),'10:40'),false,'GP surgery','','',false]],
+    cal:{name:'Family', id:'family@example.com'}};
+  for (let k = 5; k >= 1; k--) for (let j = 0; j < 4; j++) s.marks.push(['m'+k+j, addDays(T, -k*28 + 6 + j), "Laura's period", '', 'Laura']);
+  s.marks.push(['mh', addDays(T,-12), 'Haircut, Nathan', '', 'Tom']);
+  const me = () => Mock.getData().canSeeParents === false ? 'Laura' : 'Tom';
+  const now = () => { const d = new Date(); return iso(d) + 'T' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
+  const out = cal => { const r = {items:s.items, marks:s.marks, me:me(), syncedAt:new Date().toISOString()}; if (cal){ r.events = s.events; r.cal = s.cal; } return JSON.parse(JSON.stringify(r)); };
+  const end = e => evEnd(e);
+  return {
+    getPlans:()=>out(true),
+    addNote(n){ if (!String(n.text||'').trim()) throw new Error('Type a note'); if (!s.items.some(x=>x[0]===n.id)) s.items.push([n.id, String(n.text).trim(), false, me(), now(), '', '']); return out(false); },
+    setNoteDone(id, on){ const x = s.items.find(x=>x[0]===id); if (x){ x[2] = !!on; x[5] = on ? me() : ''; x[6] = on ? now() : ''; } return out(false); },
+    editNote(id, t){ const x = s.items.find(x=>x[0]===id); if (x) x[1] = String(t).trim(); return out(false); },
+    deleteNote(id){ s.items = s.items.filter(x=>x[0]!==id); return out(false); },
+    clearDone(ids){ s.items = s.items.filter(x=>!(x[2] && ids.includes(x[0]))); return out(false); },
+    addMark(m){ if (!s.marks.some(x=>x[0]===m.id)) s.marks.push([m.id, m.date, String(m.what).trim(), m.note||'', me()]); return out(false); },
+    deleteMark(id){ s.marks = s.marks.filter(x=>x[0]!==id); return out(false); },
+    addEvent(e){ if (!s.events.some(x=>x[7]===e.cid)) s.events.push(['g'+e.cid, e.title, e.time ? e.date+'T'+e.time : e.date, end(e), !e.time, '', e.note||'', e.cid, false]); return out(true); },
+    deleteEvent(k){ if (s.events.some(x=>((k.cid && x[7]===k.cid) || (x[0]===k.id && x[2]===k.start)) && x[8])) throw new Error('That one repeats. Remove it in Google Calendar');
+      s.events = s.events.filter(x=>!((k.cid && x[7]===k.cid) || (x[0]===k.id && x[2]===k.start))); return out(true); },
+    getPlanCalendars:()=>({cur:s.cal.id, list:[{id:s.cal.id, name:s.cal.name, mine:true},{id:'en.uk#holiday@group.v.calendar.google.com', name:'Holidays in the UK', mine:false}]}),
+    setPlanCalendar(id){ if (me()!=='Tom') throw new Error('Only Tom can change this'); return out(true); }
+  };
+})();
+Object.assign(Mock, PMock);
+
+/* ============ Plans: what is coming up, notes we tick off, the shared calendar, marked days ============ */
+const P_KEY = 'ganymede-plans-v1';
+let PRAW = null, P = null, pLoading = null, pview = (()=>{ try{ return localStorage.getItem('ganymede-pview') || 'up'; }catch(e){ return 'up'; } })();
+if (!['up','cal','track'].includes(pview)) pview = 'up';
+const nowStamp = () => { const d = new Date(); return iso(d) + 'T' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
+function pExpand(raw){
+  return {me:raw.me||'', syncedAt:raw.syncedAt, cal:raw.cal||null,
+    items:(raw.items||[]).map(r=>({id:r[0], text:r[1], done:!!r[2], by:r[3], at:r[4], doneBy:r[5], doneAt:r[6]})),
+    marks:(raw.marks||[]).map(r=>({id:r[0], date:r[1], what:r[2], note:r[3], by:r[4]})),
+    events:raw.events ? raw.events.map(r=>({id:r[0], title:r[1], start:r[2], end:r[3], allDay:!!r[4], loc:r[5], note:r[6], cid:r[7], rec:!!r[8]})) : null};
+}
+function pSave(raw){ PRAW = raw; if (DEMO) return; try{ localStorage.setItem(P_KEY, JSON.stringify(raw)); }catch(e){} }
+function takeP(raw){ if (!raw || !Array.isArray(raw.items)) return; if (raw.events === undefined && PRAW){ raw.events = PRAW.events; raw.cal = PRAW.cal; } pSave(raw); }
+function pLoad(){ return pLoading || (pLoading = pLoadRun().finally(()=>{ pLoading = null; setSync(false); drawSync(); })); }
+async function pLoadRun(){
+  if (!PRAW && !DEMO){ try{ const c = JSON.parse(localStorage.getItem(P_KEY)); if (c && Array.isArray(c.items)) PRAW = c; }catch(e){} }
+  if (!P && PRAW) showP();
+  if (!canSend()){ if (!P && MODE==='plans') $('#app').innerHTML = masterHTML() + noData('pLoad()'); return; }
+  setSync(true);
+  try{ takeP(await inOrder('getPlans')); showP(); }
+  catch(e){ if (e.auth) signIn(true);
+    if (!P && MODE==='plans') $('#app').innerHTML = masterHTML() + (e.retry ? noData('pLoad()') : `<div class="loading">Couldn't load: ${esc(e.message||e)}<br><br><button class="secondary" onclick="pLoad()">Try again</button></div>`); }
+}
+function mineP(){
+  const p = pExpand(PRAW);
+  OUTBOX.forEach(o=>{ if (o.k==='p' && PLOCAL[o.fn]) try{ PLOCAL[o.fn](p, ...o.args); }catch(e){} });
+  return p;
+}
+function showP(){
+  if (!PRAW) return;
+  const had = !!P, y = scrollY, open = sheetShown();
+  P = mineP();
+  if (MODE==='plans' && !(had && open)){ SOFT = had; try{ render(); } finally{ SOFT = false; } if (had) scrollTo(0,y); } else drawSync();
+}
+const evEnd = e => { if (e.time) { const [h,m] = e.time.split(':').map(Number), t = h*60 + m + (Number(e.mins)||60), d = addDays(e.date, Math.floor(t/1440)), r = t % 1440;
+  return d + 'T' + String(Math.floor(r/60)).padStart(2,'0') + ':' + String(r%60).padStart(2,'0'); } return addDays(e.date, Math.max(1, Number(e.days)||1)); };
+const PLOCAL = {
+  addNote(p, n){ if (!String(n.text||'').trim()) throw new Error('Type a note'); if (!p.items.some(x=>x.id===n.id)) p.items.push({id:n.id, text:String(n.text).trim(), done:false, by:p.me, at:nowStamp(), doneBy:'', doneAt:''}); },
+  setNoteDone(p, id, on){ const x = p.items.find(x=>x.id===id); if (x){ x.done = !!on; x.doneBy = on ? p.me : ''; x.doneAt = on ? nowStamp() : ''; } },
+  editNote(p, id, text){ if (!String(text||'').trim()) throw new Error('Type a note'); const x = p.items.find(x=>x.id===id); if (x) x.text = String(text).trim(); },
+  deleteNote(p, id){ p.items = p.items.filter(x=>x.id!==id); },
+  clearDone(p, ids){ p.items = p.items.filter(x=>!(x.done && ids.includes(x.id))); },
+  addMark(p, m){ if (!String(m.what||'').trim()) throw new Error('Say what happened'); if (!m.date) throw new Error('Pick a date');
+    if (!p.marks.some(x=>x.id===m.id)) p.marks.push({id:m.id, date:m.date, what:String(m.what).trim(), note:m.note||'', by:p.me}); },
+  deleteMark(p, id){ p.marks = p.marks.filter(x=>x.id!==id); },
+  addEvent(p, e){ if (!String(e.title||'').trim()) throw new Error('Give it a name'); if (!e.date) throw new Error('Pick a date');
+    if (p.events && !p.events.some(x=>x.cid===e.cid)) p.events.push({id:'', cid:e.cid, title:String(e.title).trim(), start:e.time ? e.date+'T'+e.time : e.date, end:evEnd(e), allDay:!e.time, loc:'', note:e.note||'', rec:false}); },
+  deleteEvent(p, k){ if (p.events) p.events = p.events.filter(x=>!((k.cid && x.cid===k.cid) || (x.id===k.id && x.start===k.start))); }
+};
+function pRun(fn, args, msg, undo, keep){
+  if (P && PLOCAL[fn]){ const p = structuredClone(P);
+    try{ PLOCAL[fn](p, ...args); }catch(e){ toast('\u26a0 ' + (e.message||e)); return false; }
+    P = p; }
+  if (!keep) closeSheet();
+  outPush('p', fn, args, '');
+  requestAnimationFrame(()=>{ if (MODE==='plans'){ const y = scrollY; render(); scrollTo(0,y); } });
+  if (msg) toast(msg, undo || null);
+  return true;
+}
+function pgo(v){ if (v!==pview || MODE!=='plans') navPush(); MODE = 'plans'; pview = v; try{ localStorage.setItem('ganymede-mode','plans'); localStorage.setItem('ganymede-pview', v); }catch(e){} render(); }
+
+/* ---- dates and times ---- */
+const dayLabel = d => { const n = dayN(d) - dayN(today());
+  if (n===0) return 'Today'; if (n===1) return 'Tomorrow'; if (n===-1) return 'Yesterday';
+  const x = dOf(d), wd = x.toLocaleDateString('en-GB',{weekday:'short'});
+  return n > 1 && n < 7 ? wd : wd + ' ' + x.getDate() + ' ' + shortMonth(d.slice(0,7)); };
+const hhmm = s => { const [h,m] = s.slice(11,16).split(':').map(Number); return (h%12||12) + (m ? ':' + String(m).padStart(2,'0') : '') + (h<12?'am':'pm'); };
+const evWhen = e => e.allDay ? (dayN(e.end)-dayN(e.start) > 1 ? 'All day, until ' + dayLabel(addDays(e.end,-1)) : 'All day') : hhmm(e.start) + ' to ' + (e.end.slice(0,10)===e.start.slice(0,10) ? hhmm(e.end) : dayLabel(e.end.slice(0,10)) + ' ' + hhmm(e.end));
+/* still to come or happening now */
+const evLive = e => e.allDay ? e.end > today() : e.end >= nowStamp();
+const evDay = e => { const s = e.start.slice(0,10); return s < today() ? today() : s; };
+function upcoming(days){
+  if (!P.events) return [];
+  const until = addDays(today(), days);
+  return P.events.filter(e=>evLive(e) && e.start.slice(0,10) < until).sort((a,b)=>evDay(a)<evDay(b)?-1:evDay(a)>evDay(b)?1:(a.allDay===b.allDay ? (a.start<b.start?-1:1) : a.allDay?-1:1));
+}
+
+/* ---- marked days: runs of days close together are one time (a period of 5 days is one) ---- */
+function markStats(){
+  const by = {};
+  P.marks.forEach(m=>{ (by[m.what] = by[m.what] || []).push(m); });
+  return Object.entries(by).map(([what, list])=>{
+    list.sort((a,b)=>a.date<b.date?-1:1);
+    const runs = []; list.forEach(m=>{ const r = runs[runs.length-1]; if (r && dayN(m.date) - dayN(r.last) <= 2){ r.last = m.date; r.n++; } else runs.push({start:m.date, last:m.date, n:1}); });
+    const gaps = runs.slice(-7).map((r,i,a)=>i ? dayN(r.start)-dayN(a[i-1].start) : null).filter(x=>x!=null);
+    const gap = gaps.length ? Math.round(gaps.reduce((a,x)=>a+x,0)/gaps.length) : null;
+    const len = runs.some(r=>r.n>1) ? Math.round(runs.slice(-6).reduce((a,r)=>a+dayN(r.last)-dayN(r.start)+1,0)/Math.min(6,runs.length)) : null;
+    const last = runs[runs.length-1], next = gap && runs.length >= 2 ? addDays(last.start, gap) : null;
+    return {what, list, runs, gap, len, last, next, since:dayN(today())-dayN(list[list.length-1].date)};
+  }).sort((a,b)=>a.list[a.list.length-1].date<b.list[b.list.length-1].date?1:-1);
+}
+const agoText = n => n===0 ? 'today' : n===1 ? 'yesterday' : n + ' days ago';
+const inText = n => n===0 ? 'today' : n===1 ? 'tomorrow' : n < 0 ? (-n===1 ? '1 day late' : -n + ' days late') : 'in ' + n + ' days';
+
+/* ---- screens ---- */
+function pRender(){
+  const titles = {up:'Coming up', cal:'Calendar', track:'Track'};
+  const synced = P ? new Date(P.syncedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+  setNav();
+  const head = masterHTML() + `<header><div><h1>${titles[pview]}</h1>
+      <div class="sync" data-at="${synced}">${P?syncText(synced):'Loading&hellip;'}</div></div>
+      <div style="display:flex;gap:8px"><button class="icon-btn" id="refresh" onclick="refreshNow()" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button></div></header>
+      ${DEMO?'<div class="demo">Preview mode &ndash; changes are not saved.</div>':''}`;
+  if (!P){ $('#app').innerHTML = head + '<div class="loading">Loading&hellip;</div>'; pLoad(); return; }
+  const y = placeY('p:'+pview);
+  if (!paint('p:'+pview, head, ({up:pUp, cal:pCal, track:pTrack}[pview])(), synced)) return;
+  window.scrollTo(0,y);
+}
+function evRow(e, showDay){
+  const k = jsA({id:e.id, start:e.start, cid:e.cid});
+  return `<button class="item tap ev" onclick="openEvent(${k})">
+    <div class="ev-when">${showDay ? `<b>${esc(dayLabel(evDay(e)))}</b>` : ''}<span>${e.allDay ? 'All day' : esc(hhmm(e.start))}</span></div>
+    <div class="mid"><div class="t">${esc(e.title)}</div>${e.loc || (!e.allDay && showDay) ? `<div class="d">${esc(e.loc || evWhen(e))}</div>` : ''}</div><span class="chev">&nbsp;&rsaquo;</span></button>`;
+}
+function calNote(){
+  if (P.cal && P.cal.err) return `<div class="card hint" style="margin-top:0">Calendar not connected: ${esc(P.cal.err)}${REMOTE ? ` <button class="linkish" onclick="signIn(false)">Sign in again</button>` : ''}</div>`;
+  if (!P.events) return `<div class="card hint" style="margin-top:0">The calendar shows once this phone has synced.</div>`;
+  return '';
+}
+function noteRow(n){
+  return `<div class="note-row ${n.done?'done':''}"><button class="tick" aria-label="${n.done?'Untick':'Tick'}" onclick="tickNote('${n.id}', ${!n.done})">${n.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
+    <button class="note-t" onclick="openNote('${n.id}')">${esc(n.text)}${n.done && n.doneBy ? `<small>${esc(n.doneBy)}, ${esc(dayLabel(n.doneAt.slice(0,10)).toLowerCase())}</small>` : n.by && n.by !== P.me ? `<small>${esc(n.by)}</small>` : ''}</button></div>`;
+}
+function pUp(){
+  const ev = upcoming(7), due = markStats().filter(s=>s.next && dayN(s.next)-dayN(today()) <= 7 && dayN(s.next)-dayN(today()) >= -10 && s.since > 2);
+  const open = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), done = P.items.filter(n=>n.done).sort((a,b)=>a.doneAt<b.doneAt?1:-1);
+  let last = '';
+  return `<div class="up-day">${esc(new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'}))}</div>
+  ${calNote()}
+  <div class="card list up-list">
+    ${due.map(s=>`<button class="item tap ev" onclick="openKind(${jsA(s.what)})"><div class="ev-when"><b>${esc(dayLabel(s.next < today() ? today() : s.next))}</b><span>Expected</span></div>
+      <div class="mid"><div class="t">${esc(s.what)}</div><div class="d">Due ${esc(inText(dayN(s.next)-dayN(today())))}, about every ${s.gap} days</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`).join('')}
+    ${ev.slice(0,10).map(e=>{ const d = evDay(e), first = d!==last; last = d; return evRow(e, first); }).join('')}
+    ${!ev.length && !due.length ? `<div class="empty">Nothing on in the next 7 days.</div>` : ''}
+    <button class="link-btn" onclick="openAddEvent()">+ Add to the calendar</button>
+  </div>
+  <div class="sec-h"><h2>Notes</h2>${done.length?`<button class="link" onclick="clearTicked()">Clear ticked (${done.length})</button>`:''}</div>
+  <div class="note-add"><input class="inp" id="noteIn" placeholder="Add a note or reminder" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
+  <div class="card notes">${open.map(noteRow).join('') || '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>'}
+    ${done.length ? `<div class="notes-done">${done.slice(0, 15).map(noteRow).join('')}</div>` : ''}</div>`;
+}
+function addNoteNow(){
+  const el = $('#noteIn'), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
+  if (!lines.length) return el.focus();
+  lines.forEach(t=>pRun('addNote', [{id:newId(), text:t}], null, null, true));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#noteIn'); if (i){ i.value = ''; i.focus(); } }));
+}
+function tickNote(id, on){ pRun('setNoteDone', [id, on], null, null, true); }
+function clearTicked(){ const ids = P.items.filter(n=>n.done).map(n=>n.id), keep = P.items.filter(n=>n.done);
+  pRun('clearDone', [ids], `Cleared ${ids.length} ticked`, ()=>keep.forEach(n=>{ pRun('addNote', [{id:newId(), text:n.text}], null, null, true); })); }
+function openNote(id){
+  const n = P.items.find(x=>x.id===id); if (!n) return;
+  showSheet(`<h3>Note</h3>
+    <textarea class="inp" id="noteEd" rows="3">${esc(n.text)}</textarea>
+    <div class="hint">Added by ${esc(n.by||'?')}${n.at ? ', ' + esc(dayLabel(n.at.slice(0,10))) : ''}${n.done && n.doneBy ? '. Ticked by ' + esc(n.doneBy) : ''}</div>
+    <button class="primary" onclick="const t=$('#noteEd').value; pRun('editNote', ['${id}', t], 'Saved')">Save</button>
+    <button class="secondary" onclick="pRun('setNoteDone', ['${id}', ${!n.done}])">${n.done ? 'Untick it' : 'Tick it off'}</button>
+    <button class="secondary neg" onclick="pRun('deleteNote', ['${id}'], 'Note removed', ()=>pRun('addNote', [{id:newId(), text:${jsA(n.text)}}], null, null, true))">Remove</button>`);
+}
+function pCal(){
+  const ev = upcoming(CAL_SHOWN);
+  let last = '', out = '';
+  ev.forEach(e=>{ const d = evDay(e); if (d!==last){ if (last) out += '</div>'; last = d; out += `<div class="month-h">${esc(dayLabel(d))}${dayN(d)-dayN(today()) > 1 && dayN(d)-dayN(today()) < 7 ? ' &middot; ' + esc(niceDate(d)) : ''}</div><div class="card list" style="margin-top:8px">`; } out += evRow(e, false); });
+  if (last) out += '</div>';
+  return `<button class="primary" style="margin-top:0" onclick="openAddEvent()">+ Add to the calendar</button>
+    ${calNote()}
+    ${out || (P.events ? '<div class="card empty" style="margin-top:12px">Nothing on the calendar yet.</div>' : '')}
+    <div class="hint" style="margin-top:18px;text-align:center">${P.cal && P.cal.name ? 'Google Calendar: ' + esc(P.cal.name) + ', the next ' + Math.round(CAL_SHOWN/30) + ' months. ' : ''}${P.me==='Tom' ? '<button class="linkish" onclick="pickCalendar()">Change calendar</button>' : ''}</div>`;
+}
+const CAL_SHOWN = 120;
+let AE = null;
+function openAddEvent(date){ AE = {date:date||today(), time:'', mins:60, days:1}; drawAddEvent(); }
+function drawAddEvent(){
+  const t = $('#evT') ? $('#evT').value : '', n = $('#evN') ? $('#evN').value : '';
+  showSheet(`<h3>Add to the calendar</h3>
+    <label class="f" style="margin-top:0">What</label><input class="inp" id="evT" placeholder="e.g. Nathan's swimming" value="${esc(t)}">
+    <div class="two"><div><label class="f">Date</label><input class="inp" id="evD" type="date" value="${AE.date}" onchange="AE.date=this.value"></div>
+      <div><label class="f">Time</label><input class="inp" id="evH" type="time" value="${AE.time}" onchange="AE.time=this.value;drawAddEvent()"></div></div>
+    <div class="hint">${AE.time ? '' : 'No time: an all-day event.'}</div>
+    ${AE.time ? `<label class="f">How long</label><div class="chips wrap">${[[30,'30 min'],[60,'1 hour'],[90,'1&frac12; hours'],[120,'2 hours'],[180,'3 hours']].map(([m,l])=>`<button class="chip ${AE.mins===m?'on':''}" onclick="AE.mins=${m};drawAddEvent()">${l}</button>`).join('')}
+      <button class="chip" onclick="AE.time='';drawAddEvent()">All day instead</button></div>`
+    : `<label class="f">Days</label><div class="chips wrap">${[1,2,3,4,5,7,14].map(d=>`<button class="chip ${AE.days===d?'on':''}" onclick="AE.days=${d};drawAddEvent()">${d}</button>`).join('')}</div>`}
+    <label class="f">Note <span class="opt">(optional)</span></label><input class="inp" id="evN" value="${esc(n)}">
+    <button class="primary" onclick="saveEvent()">Add it</button>`);
+}
+function saveEvent(){
+  const e = {cid:newId(), title:$('#evT').value.trim(), date:$('#evD').value, time:AE.time, mins:AE.mins, days:AE.days, note:$('#evN').value.trim()};
+  if (!e.title) return toast('Give it a name');
+  pRun('addEvent', [e], `Added for ${dayLabel(e.date)}`, ()=>pRun('deleteEvent', [{cid:e.cid, start:e.time ? e.date+'T'+e.time : e.date}], 'Taken off'));
+}
+function openEvent(k){
+  const e = (P.events||[]).find(x=>(k.cid && x.cid===k.cid) || (x.id===k.id && x.start===k.start)); if (!e) return;
+  const again = {cid:newId(), title:e.title, date:e.start.slice(0,10), time:e.allDay ? '' : e.start.slice(11,16), days:e.allDay ? dayN(e.end)-dayN(e.start) : 1,
+    mins:e.allDay ? 60 : Math.round((new Date(e.end) - new Date(e.start))/60000), note:e.note};
+  showSheet(`<h3>${esc(e.title)}</h3>
+    <div class="stat-row"><span class="k">${esc(dayLabel(e.start.slice(0,10)))} &middot; ${esc(niceDate(e.start.slice(0,10)))}</span><span class="v">${esc(evWhen(e))}</span></div>
+    ${e.loc ? `<div class="stat-row"><span class="k">Where</span><span class="v">${esc(e.loc)}</span></div>` : ''}
+    ${e.note ? `<div class="hint" style="white-space:pre-wrap">${esc(e.note)}</div>` : ''}
+    ${e.rec ? `<div class="hint">This one repeats. Change or remove it in Google Calendar.</div>`
+      : `<button class="secondary neg" onclick="pRun('deleteEvent', [${jsA({id:e.id, start:e.start, cid:e.cid})}], 'Taken off the calendar', ()=>pRun('addEvent', [${jsA(again)}], 'Put back'))">Take it off the calendar</button>`}`);
+}
+async function pickCalendar(){
+  if (!canSend()) return toast('Needs a signal');
+  showSheet(`<h3>Which calendar</h3><div class="hint">Loading&hellip;</div>`);
+  try{ const r = await queued('getPlanCalendars', [], false);
+    showSheet(`<h3>Which calendar</h3><div class="hint" style="margin-top:0">Pick the one shared with Laura. Both phones use it.</div>
+      <div class="card list" style="margin-top:10px">${r.list.map(c=>`<button class="item tap" onclick="setCal(${jsA(c.id)})"><div class="mid"><div class="t">${esc(c.name)}</div><div class="d">${esc(c.id)}${c.mine?'':' &middot; shared with you'}</div></div>${(r.cur||P.cal&&P.cal.id)===c.id?'<b>&check;</b>':''}</button>`).join('')}</div>`); }
+  catch(e){ showSheet(`<h3>Which calendar</h3><div class="hint">${esc(e.message||e)}</div>`); }
+}
+async function setCal(id){ closeSheet(); try{ takeP(await queued('setPlanCalendar', [id], true)); showP(); toast('Calendar changed'); }catch(e){ toast('\u26a0 ' + (e.message||e)); } }
+
+/* ---- tracking: mark the day something happens ---- */
+let TK = {what:'', date:''};
+function pTrack(){
+  const st = markStats(), kinds = st.map(s=>s.what), sugg = kinds.length ? kinds : ["Laura's period"];
+  if (!TK.date) TK.date = today();
+  return `<div class="card">
+    <label class="f" style="margin-top:0">What happened</label>
+    <div class="chips wrap">${sugg.slice(0,8).map(w=>`<button class="chip ${TK.what===w?'on':''}" onclick="TK.what=${jsA(w)};render()">${esc(w)}</button>`).join('')}</div>
+    <input class="inp" id="tkW" style="margin-top:8px" placeholder="Or type something new" value="${esc(TK.what)}" oninput="TK.what=this.value">
+    <div class="two"><div><label class="f">Day</label><input class="inp" id="tkD" type="date" value="${TK.date}" max="${addDays(today(), 365)}" onchange="TK.date=this.value"></div>
+      <div><label class="f">Note <span class="opt">(optional)</span></label><input class="inp" id="tkN"></div></div>
+    <button class="primary" onclick="markNow()">Mark ${TK.date===today() ? 'today' : esc(niceDate(TK.date))}</button>
+  </div>
+  ${st.map(s=>`<button class="card kind tap" onclick="openKind(${jsA(s.what)})">
+    <div class="kind-h"><b>${esc(s.what)}</b><span class="chev">&rsaquo;</span></div>
+    <div class="hint" style="margin-top:4px">Last time ${esc(agoText(s.since))} (${esc(niceDate(s.list[s.list.length-1].date))}) &middot; ${s.runs.length} time${s.runs.length>1?'s':''}${s.gap ? ` &middot; about every ${s.gap} days` : ''}${s.len ? `, lasting about ${s.len} days` : ''}</div>
+    ${s.next ? `<div class="kind-next">Next expected ${esc(niceDate(s.next))}, ${esc(inText(dayN(s.next)-dayN(today())))}</div>` : ''}
+    ${dots(s)}</button>`).join('') || '<div class="card empty" style="margin-top:12px">Nothing marked yet. Pick what happened and the day, then Mark.</div>'}`;
+}
+/* the last 8 weeks as a strip of days, marked days filled */
+function dots(s){
+  const have = new Set(s.list.map(m=>m.date)), start = addDays(today(), -55);
+  let h = ''; for (let i = 0; i < 56; i++){ const d = addDays(start, i); h += `<i class="${have.has(d)?'on':''} ${d===today()?'now':''} ${s.next===d?'next':''}"></i>`; }
+  return `<div class="dots">${h}</div>`;
+}
+function markNow(){
+  const what = ($('#tkW').value || TK.what).trim(), date = $('#tkD').value || today(), note = $('#tkN').value.trim();
+  if (!what) return toast('Pick or type what happened');
+  const m = {id:newId(), what, date, note};
+  TK.what = what;
+  pRun('addMark', [m], `Marked ${what}, ${dayLabel(date).toLowerCase()}`, ()=>pRun('deleteMark', [m.id], 'Taken off'));
+}
+function openKind(what){
+  const s = markStats().find(x=>x.what===what); if (!s) return;
+  showSheet(`<h3>${esc(what)}</h3>
+    <div class="hint" style="margin-top:0">${s.runs.length} time${s.runs.length>1?'s':''}${s.gap ? `, about every ${s.gap} days` : ''}${s.len ? `, lasting about ${s.len} days` : ''}.${s.next ? ` Next expected ${esc(niceDate(s.next))}.` : ''}</div>
+    <button class="primary" onclick="pRun('addMark', [{id:newId(), what:${jsA(what)}, date:today(), note:''}], 'Marked today')">Mark today</button>
+    <div class="card list" style="margin-top:14px">${s.list.slice().reverse().slice(0, 60).map(m=>`<div class="item"><div class="mid"><div class="t">${esc(niceDate(m.date))} ${esc(m.date.slice(0,4))}</div><div class="d">${esc(dayLabel(m.date))}${m.note ? ' &middot; ' + esc(m.note) : ''}${m.by ? ' &middot; ' + esc(m.by) : ''}</div></div>
+      <button class="del" aria-label="Remove" onclick="pRun('deleteMark', ['${m.id}'], 'Removed', ()=>pRun('addMark', [${jsA({id:newId(), what:m.what, date:m.date, note:m.note})}], 'Put back', null, true), true); openKind(${jsA(what)})">&times;</button></div>`).join('')}</div>`);
+}
+
 
 /* ============ ui plumbing ============ */
 function showSheet(html){ if (!sheetShown()){ SHEET_STACK = []; sheetKey = ''; } if(html) $('#sheet').innerHTML=html; $('#scrim').classList.add('show'); $('#sheet').classList.add('show'); guard(); }
@@ -3042,12 +3362,12 @@ const SH = document.getElementById('sheet');
 let BACK = [], SHEET_STACK = [], sheetKey = '', sheetRestoring = false, guardOn = false;
 const sheetShown = () => SH.classList.contains('show');
 const canBack = () => sheetShown() || BACK.length > 0;
-function navPush(){ BACK.push({mode:MODE, view, hview, HD, HM}); if (BACK.length > 40) BACK.shift(); guard(); }
+function navPush(){ BACK.push({mode:MODE, view, hview, pview, HD, HM}); if (BACK.length > 40) BACK.shift(); guard(); }
 function goBack(){
   if (sheetShown()){ SHEET_STACK.length ? sheetBack() : closeSheet(); return true; }
   const s = BACK.pop(); if (!s) return false;
   MODE = s.mode; try{ localStorage.setItem('ganymede-mode', MODE); }catch(e){}
-  view = s.view; hview = s.hview; HD = s.HD; HM = s.HM;
+  view = s.view; hview = s.hview; pview = s.pview || pview; HD = s.HD; HM = s.HM;
   if (MODE==='money' && !D){ setNav(); $('#app').innerHTML = masterHTML()+'<div class="loading">Loading your pots&hellip;</div>'; return true; }
   render(); if (MODE==='money'){ if (view==='spending') drawCharts(); if (view==='settings') settingsPreview(); }
   return true;
@@ -3100,16 +3420,16 @@ function toast(msg, undo){
   u.classList.toggle('hidden',!undo); u.onclick=()=>{ $('#toast').classList.remove('show'); undo&&undo(); };
   $('#toast').classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>$('#toast').classList.remove('show'), undo?6000:3000);
 }
-function go(v){ if (v!==view || MODE!=='money') navPush(); if (MODE==='health'){ MODE='money'; try{ localStorage.setItem('ganymede-mode','money'); }catch(e){} } if (!D) { view=v; return; }   // still loading: open this screen once the data arrives
+function go(v){ if (v!==view || MODE!=='money') navPush(); if (MODE!=='money'){ MODE='money'; try{ localStorage.setItem('ganymede-mode','money'); }catch(e){} } if (!D) { view=v; return; }   // still loading: open this screen once the data arrives
   if (v==='parents' && !canP()) v='home'; view=v; render(); if(v==='settings') settingsPreview(); if(v==='spending') drawCharts(); }
-document.querySelector('nav').onclick = e => { const b = e.target.closest('button'); if (b && b.classList.contains('nav-back')) return goBack(); if (b) MODE==='health' ? hgo(b.dataset.view) : go(b.dataset.view); };
+document.querySelector('nav').onclick = e => { const b = e.target.closest('button'); if (b && b.classList.contains('nav-back')) return goBack(); if (b) MODE==='health' ? hgo(b.dataset.view) : MODE==='plans' ? pgo(b.dataset.view) : go(b.dataset.view); };
 document.addEventListener('visibilitychange',()=>{ if (!document.hidden) syncNow(); });
 
 // Any error shows up on screen instead of failing silently
 window.addEventListener('error', e => toast('⚠ ' + (e.message || 'Something went wrong')));
 window.addEventListener('unhandledrejection', e => toast('⚠ ' + ((e.reason && e.reason.message) || e.reason || 'Something went wrong')));
-if (MODE==='health'){ setNav(); render(); }
-flush(); load(); hLoad();   // both sides are fetched, so both work offline
+if (MODE!=='money'){ setNav(); render(); }
+flush(); load(); hLoad(); pLoad();   // both sides are fetched, so both work offline
 /* once the first screen is up, build the other screens once in idle time, so the first tap on each is quick */
 (function warm(){ const idle = window.requestIdleCallback || (f=>setTimeout(f,200));
   const off = html => { const d = document.createElement('div'); d.setAttribute('aria-hidden','true');
