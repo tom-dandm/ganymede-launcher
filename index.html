@@ -158,6 +158,8 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .quick-drink.qm{white-space:normal}.qm small{display:block;font-weight:500;color:var(--muted);font-size:11px}.qm span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .quick-drink{border:1px dashed var(--line);background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--text);border-radius:var(--r-sm);padding:7px 8px;margin-top:6px;cursor:pointer;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot-wrap{display:flex;flex-direction:column;min-width:0}.slot-wrap .slot{flex:1}
+.part-eat{padding:10px 0;border-bottom:1px solid var(--line)}.part-eat .chips{margin:6px 0 0}.pe-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.pe-h span{font-size:var(--fs-small)}
+.chip-add{border-style:dashed}.am-more{display:flex;justify-content:space-between;gap:12px}.am-typed{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:2px}.am-typed small{font-weight:400;opacity:.85;font-size:var(--fs-small)}.b-new{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;margin:8px 0 4px}
 .am-opts{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;margin:10px 0 4px}
 .am-opts summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer;font-size:var(--fs-small);color:var(--muted);font-weight:600;list-style:none}
 .am-opts summary::-webkit-details-marker{display:none}
@@ -353,6 +355,9 @@ select.inp{appearance:auto}
 .ytab tbody tr{cursor:pointer}
 .ytab .part{font-size:var(--fs-small);color:var(--muted);font-weight:700;margin-left:6px;text-transform:uppercase}
 details.nums{margin-top:8px}
+details.fold>summary{list-style:none;cursor:pointer}details.fold>summary::-webkit-details-marker{display:none}
+.fold h2::after{order:1}.fold-v{order:2;display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--text);font-size:var(--fs-small)}
+.fold-v i{font-style:normal;color:var(--muted);transition:transform .2s}.fold[open] .fold-v i{transform:rotate(90deg)}
 details.nums summary{font-size:13px;font-weight:700;color:var(--family-2);cursor:pointer;padding:4px 0}
 .wins{background:linear-gradient(135deg,color-mix(in srgb,var(--pos) 14%,var(--card)),var(--card) 70%);border:1px solid color-mix(in srgb,var(--pos) 30%,var(--line));border-radius:var(--r);padding:14px 16px;margin-bottom:12px}
 .wins-h{font:600 17px/1.25 var(--font-num)}
@@ -1154,13 +1159,13 @@ function vSettings(){
   return `
   <div class="card">
     <label class="f" style="margin-top:0">Each adult's share of what's left over (%)</label>
-    <input class="inp" id="setPct" inputmode="decimal" value="${(D.adultPct*100).toFixed(2).replace(/\.00$/,'')}" oninput="settingsPreview()">
+    <input class="inp" id="setPct" inputmode="decimal" value="${(D.adultPct*100).toFixed(2).replace(/\.00$/,'')}" oninput="settingsPreview()" onchange="saveSettings()">
     <div class="hint">Kids get this × (age ÷ 18), so they reach the full adult share at 18.</div>
     <div class="two">
-      ${D.pots.filter(p=>p.age!=='Adult').map(p=>`<div><label class="f">${p.name}'s age</label><input class="inp kid-age" data-name="${p.name}" type="number" min="0" max="18" value="${p.age}" oninput="settingsPreview()"></div>`).join('')}
+      ${D.pots.filter(p=>p.age!=='Adult').map(p=>`<div><label class="f">${p.name}'s age</label><input class="inp kid-age" data-name="${p.name}" type="number" min="0" max="18" value="${p.age}" oninput="settingsPreview()" onchange="saveSettings()"></div>`).join('')}
     </div>
     <div id="setPreview" style="margin-top:14px"></div>
-    <button class="primary" onclick="saveSettings()">Save settings</button>
+    <div class="hint" style="margin-bottom:0">Saved as you change it.</div>
   </div>
   ${canP()?`<h2>PayPal</h2>
   <div class="card"><div class="hint" style="margin-top:0">${D.paypal?`Checked ${esc(new Date(D.paypal.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))} · ${D.paypal.added} added, ${D.paypal.matched} matched to the bank`:'Not checked yet'}. It checks by itself every morning.</div>
@@ -1198,6 +1203,10 @@ const GOV_CATS = ['Child Benefit','Maternity pay (DWP)','Tax refund (HMRC)','Tax
 const CAT_ICON = {'Savings & ISA':'🐷','Mortgage':'🏡','Groceries':'🛒','Eating out & takeaway':'🍔','Naughty snacks':'☕','Fuel':'⛽','Car & parking':'🚗','Public transport':'🚆','Household bills':'🏠','Insurance':'🛡️','Phone & internet':'📱','Subscriptions':'📺','Childcare':'🧸','Kids':'🎈','Days out & entertainment':'🎟️','Shopping':'🛍️','Home & DIY':'🔨','Health & fitness':'💪','Personal care':'💇','Pets':'🐾','Holidays & travel':'✈️','Gifts & charity':'🎁','Family payments':'👪','Cash':'💷','Bank fees':'🏦','Misc':'❔',
   'Tom salary':'💼','Laura salary':'💼','Freelance work':'💻','Unity Asset Store':'🎮','Epic Games (Fab)':'🎮','Sketchfab':'🎨','Cubebrush':'🎨','TurboSquid':'🎨','Yahaha':'🎮','Maternity pay (DWP)':'🏛️','Child Benefit':'🏛️','Tax refund (HMRC)':'🏛️','Tax-Free Childcare refund':'🏛️','Work expenses repaid':'🧾','Interest & cashback':'📈','Selling (Vinted)':'🏷️','Refunds':'↩️','Gifts & other income':'🎁'};
 let SP = { period:'12m', q:'', allCats:false };
+/* folded sections (In & out): which are open, kept on this phone */
+const FOLD = (()=>{ try { return new Set(JSON.parse(localStorage.getItem('ganymede-open') || '[]')); } catch(e) { return new Set(); } })();
+function foldT(k, on){ on ? FOLD.add(k) : FOLD.delete(k); try { localStorage.setItem('ganymede-open', JSON.stringify([...FOLD])); } catch(e) {} if (on) drawCharts(); }
+const fold = (k, title, v, body) => `<details class="fold" ${FOLD.has(k)?'open':''} ontoggle="foldT('${k}',this.open)"><summary><h2>${title}<span class="fold-v">${v}<i>&rsaquo;</i></span></h2></summary>${body}</details>`;
 const BIG_ONE_OFF = 1000;   // only "On course for" (projection().perMoRun) leaves out single spends this big, and holidays
 const subName = m => { const x=m.toLowerCase(); return x.includes('netflix')?'Netflix':x.includes('disney')?'Disney+':x.includes('google one')?'Google One':x.includes('google play')?'Google Play':x.includes('nordvpn')?'NordVPN':x.includes('bluelight')?'Blue Light Card':x.includes('steam')?'Steam':x.includes('openai')?'ChatGPT':x.includes('claude')?'Claude':x.includes('square enix')?'Square Enix':x.includes('blizzard')?'Blizzard':m; };
 
@@ -1388,19 +1397,16 @@ function vSpending(){
     ${cats.length>8?`<button class="chip" style="margin-top:8px" onclick="SP.allCats=!SP.allCats;const y=scrollY;render();scrollTo(0,y)">${SP.allCats?'Show fewer':'Show all '+cats.length+' categories'}</button>`:''}
   </div>
 
-  <h2>Biggest payments</h2>
-  <div class="card list">${biggest.map(txItem).join('')||'<div class="empty">None in this period</div>'}</div>
+  ${fold('big', 'Biggest payments', biggest.length ? gbp(-biggest[0].amount) : '', `<div class="card list">${biggest.map(txItem).join('')||'<div class="empty">None in this period</div>'}</div>`)}
 
-  <h2>Where it comes from</h2>
-  <div class="card">${srcs.map(([c,v])=>`<button class="stat-row" onclick="txListSheet(${jsA(c)}, incomeTx(txRange()).filter(t=>t.category===${jsA(c)}), ${jsA(r.label)})"><span class="k">${CAT_ICON[c]||''} ${esc(c)}</span><span class="v pos">${gbp(per(v,r,'mo'))}${unit}&nbsp;›</span></button>`).join('')||'<div class="empty">No money in</div>'}</div>
+  ${fold('src', 'Where it comes from', gbp(per(tIn,r,'mo'))+unit, `<div class="card">${srcs.map(([c,v])=>`<button class="stat-row" onclick="txListSheet(${jsA(c)}, incomeTx(txRange()).filter(t=>t.category===${jsA(c)}), ${jsA(r.label)})"><span class="k">${CAT_ICON[c]||''} ${esc(c)}</span><span class="v pos">${gbp(per(v,r,'mo'))}${unit}&nbsp;›</span></button>`).join('')||'<div class="empty">No money in</div>'}</div>
   <div class="gov" role="button" onclick="txListSheet('Government support', incomeTx(txRange()).filter(t=>GOV_CATS.includes(t.category)), ${jsA(r.label)})"><div style="font-size:var(--fs-small);opacity:.85;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Government support</div>
     <b>${gbp(per(gov,r,'mo'))}${unit}</b> <span style="opacity:.85;font-size:13px">· ${gbp(gov)} in this period</span>
-    <div style="font-size:var(--fs-small);opacity:.85;margin-top:4px">Child Benefit, maternity pay, HMRC tax refunds and Tax-Free Childcare top-ups</div></div>
+    <div style="font-size:var(--fs-small);opacity:.85;margin-top:4px">Child Benefit, maternity pay, HMRC tax refunds and Tax-Free Childcare top-ups</div></div>`)}
 
-  <h2>Top places</h2>
-  <div class="card">${merchants.map(([m,v],i)=>`<button class="stat-row" onclick="txListSheet(${jsA(m)}, spendTx(txRange()).filter(t=>t.merchant===${jsA(m)}), ${jsA(r.label)})"><span class="k">${i+1}. ${esc(m)}</span><span class="v">${gbp(v)}&nbsp;›</span></button>`).join('')}</div>
+  ${fold('top', 'Top places', merchants.length ? esc(merchants[0][0]) : '', `<div class="card">${merchants.map(([m,v],i)=>`<button class="stat-row" onclick="txListSheet(${jsA(m)}, spendTx(txRange()).filter(t=>t.merchant===${jsA(m)}), ${jsA(r.label)})"><span class="k">${i+1}. ${esc(m)}</span><span class="v">${gbp(v)}&nbsp;›</span></button>`).join('')}</div>`)}
 
-  ${billsCard()}
+  ${billsCard(true)}
   ${q?'':recentPayments()}
 `;
 }
@@ -1731,8 +1737,9 @@ function recurring(){
   });
   return out.sort((a,b)=>b.monthly-a.monthly);
 }
-function billsCard(){
+function billsCard(folded){
   const r = recurring(); if (!r.length) return '';
+  if (folded) return fold('bills', 'Bills &amp; subscriptions', gbp(r.reduce((a,b)=>a+b.monthly,0))+'/mo', billsCard().replace(/^<h2>[^<]*<\/h2>/, ''));
   const X = txIndex(), soon = r.filter(b=>b.next>X.last && b.next<=addDays(X.last,30)).sort((a,b)=>a.next<b.next?-1:1);
   const total = r.reduce((a,b)=>a+b.monthly,0), rises = r.filter(b=>b.rise);
   const row = b => `<button class="stat-row" onclick="merchantSheet(${jsA(b.m)})"><span class="k">${CAT_ICON[b.cat]||''} ${esc(subName(b.m))} <small>${b.cycle}</small></span><span class="v">${gbp(b.monthly)}/mo${b.rise?` <small class="neg">▲ ${Math.round(b.rise*100)}%</small>`:''}&nbsp;›</span></button>`;
@@ -1946,7 +1953,7 @@ function removeEntry(id){
   if(confirm(`Remove "${e.desc}" ${gbpS(e.amount)}${extra}?`)) run('deleteEntry',[id],'Entry removed');
 }
 
-/* ============ health: meals, calories, weight and height ============ */
+/* ============ health: meals, weight and height ============ */
 /* WHO BMI-for-age, one row a month from birth to 19: "L,M,S;..." boys then girls
    (WHO Child Growth Standards 0-5, WHO 2007 reference 5-19). */
 const BMI_LMS = ["-0.3053,13.407,0.0956;0.2738,14.914,0.09035;0.1113,16.323,0.08676;0.0077,16.895,0.08496;-0.0732,17.159,0.08378;-0.1366,17.291,0.08297;-0.1919,17.342,0.08233;-0.2384,17.329,0.08183;-0.2808,17.263,0.08139;-0.3177,17.166,0.08102;-0.3512,17.05,0.08068;-0.383,16.923,0.08037;-0.4113,16.799,0.08009;-0.4384,16.673,0.07982;-0.4629,16.555,0.07958;-0.4867,16.439,0.07934;-0.5082,16.334,0.07913;-0.5286,16.234,0.07893;-0.5485,16.139,0.07873;-0.5667,16.054,0.07854;-0.5847,15.974,0.07836;-0.6013,15.904,0.07818;-0.6176,15.841,0.07802;-0.6328,15.785,0.07786;-0.6473,15.736,0.07771;-0.584,15.98,0.07792;-0.5501,15.942,0.07799;-0.5164,15.903,0.07809;-0.4853,15.867,0.07818;-0.4549,15.83,0.07829;-0.4275,15.795,0.07841;-0.4013,15.76,0.07854;-0.3782,15.727,0.07867;-0.3575,15.694,0.07882;-0.3388,15.661,0.07897;-0.3233,15.63,0.07913;-0.31,15.599,0.07931;-0.3,15.569,0.07949;-0.2927,15.541,0.07969;-0.2884,15.514,0.0799;-0.2869,15.488,0.08013;-0.2881,15.464,0.08036;-0.2918,15.442,0.08061;-0.2982,15.421,0.08087;-0.3066,15.402,0.08114;-0.3175,15.383,0.08144;-0.3302,15.365,0.08174;-0.3455,15.348,0.08206;-0.3622,15.333,0.08238;-0.3808,15.318,0.08272;-0.402,15.303,0.08307;-0.4243,15.289,0.08343;-0.449,15.276,0.08381;-0.4745,15.263,0.08418;-0.5022,15.251,0.08457;-0.5302,15.24,0.08496;-0.5594,15.229,0.08535;-0.5906,15.219,0.08577;-0.6219,15.209,0.08617;-0.6554,15.2,0.08659;-0.6889,15.192,0.08699;-0.7387,15.264,0.0839;-0.7621,15.262,0.08414;-0.7856,15.26,0.08439;-0.8089,15.261,0.08464;-0.8322,15.262,0.0849;-0.8554,15.264,0.08516;-0.8785,15.268,0.08543;-0.9015,15.274,0.0857;-0.9243,15.28,0.08597;-0.9471,15.288,0.08625;-0.9697,15.296,0.08653;-0.9921,15.306,0.08682;-1.0144,15.317,0.08711;-1.0365,15.329,0.08741;-1.0584,15.341,0.08771;-1.0801,15.354,0.08802;-1.1017,15.368,0.08833;-1.123,15.383,0.08865;-1.1441,15.398,0.08898;-1.1649,15.414,0.08931;-1.1856,15.43,0.08964;-1.206,15.447,0.08998;-1.2261,15.465,0.09033;-1.246,15.483,0.09068;-1.2656,15.502,0.09103;-1.2849,15.521,0.09139;-1.304,15.541,0.09176;-1.3228,15.561,0.09213;-1.3414,15.581,0.09251;-1.3596,15.602,0.09289;-1.3776,15.624,0.09327;-1.3953,15.646,0.09366;-1.4126,15.668,0.09406;-1.4297,15.69,0.09445;-1.4464,15.713,0.09486;-1.4629,15.737,0.09526;-1.479,15.761,0.09567;-1.4947,15.785,0.09609;-1.5101,15.809,0.09651;-1.5252,15.834,0.09693;-1.5399,15.86,0.09735;-1.5542,15.886,0.09778;-1.5681,15.912,0.09821;-1.5817,15.938,0.09864;-1.5948,15.965,0.09907;-1.6076,15.992,0.09951;-1.6199,16.02,0.09994;-1.6318,16.049,0.10038;-1.6433,16.078,0.10082;-1.6544,16.108,0.10126;-1.6651,16.138,0.1017;-1.6753,16.169,0.10214;-1.6851,16.201,0.10259;-1.6944,16.233,0.10303;-1.7032,16.267,0.10347;-1.7116,16.3,0.10391;-1.7196,16.335,0.10435;-1.7271,16.37,0.10478;-1.7341,16.407,0.10522;-1.7407,16.443,0.10566;-1.7468,16.481,0.10609;-1.7525,16.519,0.10652;-1.7578,16.558,0.10695;-1.7626,16.597,0.10738;-1.767,16.638,0.1078;-1.771,16.679,0.10823;-1.7745,16.72,0.10865;-1.7777,16.763,0.10906;-1.7804,16.806,0.10948;-1.7828,16.85,0.10989;-1.7847,16.894,0.1103;-1.7862,16.939,0.1107;-1.7873,16.985,0.1111;-1.7881,17.031,0.1115;-1.7884,17.078,0.11189;-1.7884,17.126,0.11228;-1.788,17.175,0.11266;-1.7873,17.224,0.11304;-1.7861,17.273,0.11342;-1.7846,17.324,0.11379;-1.7828,17.375,0.11415;-1.7806,17.427,0.11451;-1.778,17.48,0.11487;-1.7751,17.533,0.11522;-1.7719,17.588,0.11556;-1.7684,17.643,0.1159;-1.7645,17.698,0.11623;-1.7604,17.755,0.11656;-1.7559,17.812,0.11688;-1.7511,17.87,0.1172;-1.7461,17.929,0.11751;-1.7408,17.989,0.11781;-1.7352,18.049,0.11811;-1.7293,18.11,0.11841;-1.7232,18.171,0.11869;-1.7168,18.233,0.11898;-1.7102,18.296,0.11925;-1.7033,18.359,0.11952;-1.6962,18.422,0.11979;-1.6888,18.486,0.12005;-1.6811,18.55,0.1203;-1.6732,18.615,0.12055;-1.6651,18.68,0.12079;-1.6568,18.744,0.12102;-1.6482,18.809,0.12125;-1.6394,18.875,0.12148;-1.6304,18.94,0.1217;-1.6211,19.005,0.12191;-1.6116,19.07,0.12212;-1.602,19.135,0.12233;-1.5921,19.2,0.12253;-1.5821,19.265,0.12272;-1.5719,19.329,0.12291;-1.5615,19.394,0.1231;-1.551,19.458,0.12328;-1.5403,19.522,0.12346;-1.5294,19.585,0.12363;-1.5185,19.649,0.1238;-1.5074,19.712,0.12396;-1.4961,19.774,0.12412;-1.4848,19.837,0.12428;-1.4733,19.899,0.12443;-1.4617,19.96,0.12458;-1.45,20.021,0.12473;-1.4382,20.082,0.12487;-1.4263,20.143,0.12501;-1.4143,20.203,0.12514;-1.4022,20.262,0.12528;-1.39,20.321,0.12541;-1.3777,20.38,0.12554;-1.3653,20.438,0.12567;-1.3529,20.495,0.12579;-1.3403,20.552,0.12591;-1.3277,20.608,0.12603;-1.3149,20.664,0.12615;-1.3021,20.72,0.12627;-1.2892,20.774,0.12638;-1.2762,20.829,0.1265;-1.2631,20.882,0.12661;-1.2499,20.936,0.12672;-1.2366,20.988,0.12683;-1.2233,21.04,0.12694;-1.2098,21.091,0.12704;-1.1962,21.142,0.12715;-1.1826,21.192,0.12726;-1.1688,21.242,0.12736;-1.155,21.291,0.12746;-1.141,21.34,0.12756;-1.127,21.388,0.12767;-1.1129,21.435,0.12777;-1.0986,21.482,0.12787;-1.0843,21.529,0.12797;-1.0699,21.574,0.12807;-1.0553,21.619,0.12816;-1.0407,21.664,0.12826;-1.026,21.708,0.12836;-1.0112,21.751,0.12845;-0.9962,21.794,0.12855;-0.9812,21.836,0.12864;-0.9661,21.877,0.12874;-0.9509,21.918,0.12883;-0.9356,21.959,0.12893;-0.9202,21.998,0.12902;-0.9048,22.037,0.12911;-0.8892,22.076,0.1292;-0.8735,22.114,0.1293;-0.8578,22.151,0.12939;-0.8419,22.188,0.12948",
@@ -1954,9 +1961,10 @@ const BMI_LMS = ["-0.3053,13.407,0.0956;0.2738,14.914,0.09035;0.1113,16.323,0.08
 const SLOTS = ['Breakfast','Lunch','Dinner','Snack'], ALL_SLOTS = [...SLOTS, 'Drinks'];   // Drinks: a box of its own, not a meal
 const SLOT_ICON = {Breakfast:'🥣',Lunch:'🥪',Dinner:'🍲',Snack:'🍎'};
 SLOT_ICON.Drinks = '\u{1F964}';
-const GROUPS = ['Meal','Fruit & veg','Snack','Treat','Drink','Takeaway'];
+const GROUPS = ['Meal','Fruit & veg','Snack','Drink','Takeaway'];
+const grp = g => g==='Treat' ? 'Snack' : g;   // Treat was merged into Snack (Tom)
 const EATERS = ['Laura','Nathan'];   // food is tracked for these two; weight and height for all four
-const GROUP_ICON = {'Meal':'🍽️','Fruit & veg':'🥕','Snack':'🥨','Treat':'🍫','Drink':'🥤','Takeaway':'🍟'};
+const GROUP_ICON = {'Meal':'🍽️','Fruit & veg':'🥕','Snack':'🥨','Drink':'🥤','Takeaway':'🍟'};
 const ACTIVITY = [[1.2,'Mostly sitting'],[1.375,'A bit active'],[1.55,'Active most days'],[1.725,'Very active']];
 const H_KEY = 'ganymede-health-v1';
 let H = null, hview = 'today', HD = today(), HS = {days:30, who:'All'}, BW = 'Tom';
@@ -1965,11 +1973,11 @@ function hExpand(raw){
   const slot = x => ({B:'Breakfast',L:'Lunch',D:'Dinner',S:'Snack'}[x] || (ALL_SLOTS.includes(x) ? x : ''));
   return {...raw,
     meals: raw.meals.filter(r=>EATERS.includes(r[1])).map(r=>{ const eaten = r[10]==null ? 1 : r[10];
-      return {date:r[0], person:r[1], meal:r[2], food:r[3], kcal:r[4], portion:r[5], veg:r[6], group:r[7], id:r[8], diary:r[9]==='diary', eaten, note:r[11]||'',
+      return {date:r[0], person:r[1], meal:r[2], food:r[3], kcal:r[4], portion:r[5], veg:r[6], group:grp(r[7]), id:r[8], diary:r[9]==='diary', eaten, note:r[11]||'',
         served: r[12]!=null && r[12]!=='' ? r[12] : eaten > 0 ? Math.round(r[4]/eaten) : r[4]}; }),
     notes: (raw.notes||[]).map(r=>({date:r[0], person:r[1], note:r[2]})),
-    foods: raw.foods.map(r=>({name:r[0], kcal:r[1], group:r[2], veg:r[3], slot:slot(r[4]), items:parseItems(r[5]), place:r[6]||'', person:EATERS.includes(r[7])?r[7]:''})),
-    base: (raw.base||[]).map(r=>({name:r[0], kcal:r[1], group:r[2], veg:r[3], slot:slot(r[4])})),
+    foods: raw.foods.map(r=>({name:r[0], kcal:r[1], group:grp(r[2]), veg:r[3], slot:slot(r[4]), items:parseItems(r[5]), place:r[6]||'', person:EATERS.includes(r[7])?r[7]:''})),
+    base: (raw.base||[]).map(r=>({name:r[0], kcal:r[1], group:grp(r[2]), veg:r[3], slot:slot(r[4])})),
     body: raw.body.map(r=>({date:r[0], person:r[1], kg:r[2], cm:r[3], id:r[4]})).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0)};
 }
 /* "Burger meal (700); Chips (400)" in the Foods tab, so it reads well in the sheet too */
@@ -2108,7 +2116,7 @@ function dayMap(name, from, to){
   H.meals.forEach(e=>{ if (e.person!==name || e.date<from || e.date>to) return;
     const x = d[e.date] || (d[e.date] = {kcal:0, veg:0, treats:0, takeaway:0, slots:{}});
     x.kcal += e.kcal; x.veg += e.veg||0; x.slots[e.meal] = (x.slots[e.meal]||0) + e.kcal;
-    if (e.group==='Treat') x.treats++; if (e.group==='Takeaway') x.takeaway++; });
+    if (e.group==='Snack') x.treats++; if (e.group==='Takeaway') x.takeaway++; });
   return d;
 }
 /* a day counts towards averages once two of its three main meals are in */
@@ -2142,7 +2150,7 @@ function hRender(){
   const y = placeY('h:'+hview);
   if (!paint('h:'+hview, head, ({today:hToday, month:hMonth, stats:hStats, body:hBody, foods:hFoods, hsettings:hSettings}[hview])(), synced)) return;
   window.scrollTo(0,y);
-  if (hview==='stats') setTimeout(()=>{ hDrawStats(); if (y) window.scrollTo(0,y); },0);
+  if (hview==='stats' && y) setTimeout(()=>window.scrollTo(0,y),0);
   if (hview==='body') setTimeout(()=>{ hDrawBody(); if (y) window.scrollTo(0,y); },0);
 }
 function hgo(v){ if (v!==hview || MODE!=='health') navPush(); if (MODE!=='health'){ MODE = 'health'; try{ localStorage.setItem('ganymede-mode','health'); }catch(e){} } hview = v; render(); }
@@ -2151,7 +2159,7 @@ function setupCard(){
   const miss = PEOPLE.filter(n=>!hp(n).sex || (!hp(n).dob && ageYears(n)==null));
   if (!miss.length) return '';
   return `<div class="due" style="--due:var(--family-2)"><b>Tell the app about everyone</b>
-    <span class="hint" style="margin:0">Sex and date of birth for ${esc(miss.join(', '))}. It sets each person's daily guide, their usual portion and the children's growth centiles.</span>
+    <span class="hint" style="margin:0">Sex and date of birth for ${esc(miss.join(', '))}. It sets each person's usual portion and the children's growth centiles.</span>
     <button class="primary" onclick="hgo('hsettings')">Set up</button></div>`;
 }
 function weighDue(){
@@ -2163,24 +2171,23 @@ function weighDue(){
 }
 function hToday(){
   const isToday = HD===today(), dayLabel = isToday ? 'Today' : HD===addDays(today(),-1) ? 'Yesterday' : dOf(HD).toLocaleDateString('en-GB',{weekday:'long'});
-  const day = H.meals.filter(e=>e.date===HD), fam = day.reduce((a,e)=>a+e.kcal,0), veg = day.reduce((a,e)=>a+(e.veg||0),0);
+  const day = H.meals.filter(e=>e.date===HD), veg = day.reduce((a,e)=>a+(e.veg||0),0);
   return `${setupCard()}${isToday?healthWins():''}
   <div class="daybar"><button class="icon-btn" onclick="HD=addDays(HD,-1);render()" aria-label="Day before">‹</button>
     <button class="daybar-mid" onclick="HM=HD.slice(0,7);hgo('month')" aria-label="Open the month"><b>${dayLabel}</b><span>${dateY(HD)}</span><span class="month-chip">&#x1F4C5; See the month</span></button>
     <button class="icon-btn" onclick="HD=addDays(HD,1);render()" ${isToday?'disabled':''} aria-label="Day after">›</button></div>
   ${isToday?eatingWatch():''}
   ${takeawayCard(HD)}
-  <div class="grid">${EATERS.map(n=>{ const e = day.filter(x=>x.person===n), k = e.reduce((a,x)=>a+x.kcal,0), need = kcalNeed(n).kcal, pc = k/need*100, a = ageYears(n), child = a != null && a < 18;
+  <div class="grid">${EATERS.map(n=>{ const e = day.filter(x=>x.person===n);
     const mains = ['Breakfast','Lunch','Dinner'].filter(sl=>e.some(x=>x.meal===sl && x.food!=='Skipped' && x.eaten>0.05)).length;
     return `<button class="pot" style="--c:${COLOR[n]}" onclick="HS.who='${n}';hgo('stats')">
       <div class="name"><span class="avatar">${n[0]}</span>${n}<span class="chev" style="margin-left:auto">›</span></div>
-      ${child ? `<div class="bal">${mains}<small> of 3 meals</small></div><div class="sub">eaten ${isToday?'so far':''}</div><div class="bar"><i style="width:${Math.max(3,mains/3*100)}%"></i></div>`
-        : `<div class="bal">${Math.round(k).toLocaleString('en-GB')}<small> kcal</small></div><div class="sub">${Math.round(pc)}% of ${need.toLocaleString('en-GB')}</div><div class="bar"><i style="width:${Math.max(3,Math.min(100,pc))}%"></i></div>`}
+      <div class="bal">${mains}<small> of 3 meals</small></div><div class="sub">eaten ${isToday?'so far':''}</div><div class="bar"><i style="width:${Math.max(3,mains/3*100)}%"></i></div>
       </button>`; }).join('')}</div>
   <h2>${isToday?"Today's":dayLabel+"'s"} meals</h2>
   ${slotGrid(day)}
   ${dayNoteHTML()}
-  ${day.length?`<div class="hint" style="margin-top:10px">Both together ${kcalF(fam)} · ${veg} fruit &amp; veg portion${veg===1?'':'s'}</div>`:''}
+  ${day.length?`<div class="hint" style="margin-top:10px">${veg} fruit &amp; veg portion${veg===1?'':'s'} between them</div>`:''}
   ${weighDue()}
   ${isToday?fillInCard():''}`;
 }
@@ -2193,7 +2200,7 @@ function eatenCtl(v, fn){
     <div class="chips">${[[1,'All'],[0.75,'Most'],[0.5,'Half'],[0.25,'A bit'],[0,'None']].map(([x,l])=>`<button class="chip ${Math.abs(v-x)<0.01?'on':''}" onclick="${fn}(${x})">${l}</button>`).join('')}</div></div>`;
 }
 function amEat(v, live){ AM.eaten = v; if (!live) drawAddMeal(); }
-function emEat(v, live){ EM.eaten = v; const k = document.getElementById('emAte'); if (k) k.textContent = kcalF((EM.served||0)*v); if (!live) drawEditMeal(); }
+function emEat(v, live){ EM.eaten = v; if (EM.parts) EM.parts.forEach(x=>x.f=v); if (!live) drawEditMeal(); }
 const eatTag = e => e.food==='Skipped' ? '' : e.eaten <= 0.001 ? ' · none' : e.eaten < 0.995 ? ' · ' + Math.round(e.eaten*100) + '%' : '';
 
 /* per person, per food: how often it was offered and how much of it was eaten on average */
@@ -2211,12 +2218,13 @@ function eatingStats(n, from, to){
   const missBy = {}; ['Breakfast','Lunch','Dinner'].forEach(sl=>{ missBy[sl] = days.filter(d=>{ const l = rows.filter(e=>e.date===d && e.meal===sl); return l.length > 0 && l.every(e=>e.food==='Skipped' || e.eaten <= 0.05); }).length; });
   const sc = {}; offered.forEach(e=>{ const k = e.food.toLowerCase(), x = sc[k] || (sc[k] = {name:e.food, n:0, sum:0}); x.n++; x.sum += e.eaten; });
   const fl = Object.values(sc).map(x=>({...x, avg:x.sum/x.n}));
-  const need = kcalNeed(n).kcal, dm = dayMap(n, from, to), full = days.filter(d=>dm[d] && fullDay(dm[d])), dayK = full.map(d=>dm[d].kcal);   // only days with two main meals written down
-  return {rows, days, full, skipped, offered, band, missBy, need,
+  const dm = dayMap(n, from, to), full = days.filter(d=>dm[d] && fullDay(dm[d]));   // only days with two main meals written down
+  const dayAte = d => { const l = rows.filter(e=>e.date===d && e.meal!=='Snack'); return l.reduce((a,e)=>a+(e.food==='Skipped'?0:e.eaten),0)/Math.max(1,l.length); };
+  return {rows, days, full, skipped, offered, band, missBy,
     likes: fl.filter(x=>x.n>=2 && x.avg>=0.8).sort((a,b)=>b.n-a.n || b.avg-a.avg),
     leaves: fl.filter(x=>x.n>=2 && x.avg<0.5).sort((a,b)=>a.avg-b.avg || b.n-a.n),
     avg: offered.length ? offered.reduce((a,e)=>a+e.eaten,0)/offered.length : null,
-    lowDays: dayK.filter(k=>k < need*0.7).length,
+    lowDays: full.filter(d=>dayAte(d) < 0.5).length,
     comments: H.meals.filter(e=>e.person===n && e.date>=from && e.date<=to && e.note).map(e=>({date:e.date, what:e.meal+': '+e.food, note:e.note}))
       .concat((H.notes||[]).filter(x=>x.person===n && x.date>=from && x.date<=to).map(x=>({date:x.date, what:'The day', note:x.note}))).sort((a,b)=>a.date<b.date?1:-1)};
 }
@@ -2232,13 +2240,13 @@ function eatingCard(n, from, to){
     <div class="eat-legend"><span><i style="background:var(--nathan)"></i>All ${s.band.all}</span><span><i style="background:#8BC34A"></i>Most ${s.band.most}</span><span><i style="background:#F0B429"></i>A little ${s.band.some}</span><span><i style="background:var(--laura)"></i>None ${s.band.none}</span></div>
     <button class="stat-row" onclick="foodsSheet('Skipped meals', e=>e.person==='${n}' && e.food==='Skipped' && e.date>='${from}' && e.date<='${to}')"><span class="k">Meals skipped</span><span class="v">${s.skipped.length}&nbsp;›</span></button>
     ${['Breakfast','Lunch','Dinner'].map(sl=>`<button class="stat-row" onclick="missedSheet('${n}','${sl}','${from}','${to}')"><span class="k">${SLOT_ICON[sl]} ${sl} missed or refused</span><span class="v">${s.missBy[sl]} of ${s.days.length} days&nbsp;›</span></button>`).join('')}
-    <div class="stat-row"><span class="k">Full days under 70% of the daily guide</span><span class="v">${s.lowDays} of ${s.full.length}</span></div>
+    <div class="stat-row"><span class="k">Full days with under half of the meals eaten</span><span class="v">${s.lowDays} of ${s.full.length}</span></div>
     ${s.likes.length?`<label class="f">Eats well</label><div class="chips wrap">${s.likes.slice(0,12).map(x=>`<button class="chip on" style="--c:var(--nathan)" onclick="foodDetail(${jsA(x.name)},'${n}')">${esc(x.name)}</button>`).join('')}</div>
       <div class="hint">Build meals around these, and put one on the plate next to anything new.</div>`:''}
     ${s.leaves.length?`<label class="f">Often leaves</label><div class="chips wrap">${s.leaves.slice(0,12).map(x=>`<button class="chip" onclick="foodDetail(${jsA(x.name)},'${n}')">${esc(x.name)} <span class="muted">${Math.round(x.avg*100)}%</span></button>`).join('')}</div>`:''}
     ${s.comments.length?`<label class="f">Comments</label>${s.comments.slice(0,8).map(c=>`<button class="stat-row" onclick="openDay('${c.date}')"><span class="k">${esc(dOf(c.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}))} &middot; ${esc(c.what)}</span><span class="v" style="font-weight:500;text-align:right">${esc(c.note)}&nbsp;›</span></button>`).join('')}`:''}
     <button class="secondary" onclick="copyEatingSummary('${n}','${from}','${to}')">Copy a summary for the GP</button>
-    <div class="hint">A record for you and the GP. Keep mealtimes calm and low pressure, and keep talk of calories and weight away from ${esc(n)}.</div>
+    <div class="hint">A record for you and the GP. Keep mealtimes calm and low pressure, and keep talk of food amounts and weight away from ${esc(n)}.</div>
   </div>`;
 }
 function eatingSummaryText(n, from, to){
@@ -2246,7 +2254,7 @@ function eatingSummaryText(n, from, to){
   const L = [`${n}: eating from ${d(from)} to ${d(to)}`, `Days with meals written down: ${s.days.length}`,
     `Of ${s.offered.length} foods offered: ate all ${s.band.all}, most ${s.band.most}, a little ${s.band.some}, none ${s.band.none}.` + (s.avg!=null ? ` On average ${Math.round(s.avg*100)}% eaten.` : ''),
     `Meals skipped: ${s.skipped.length}. Missed or refused: breakfast ${s.missBy.Breakfast}, lunch ${s.missBy.Lunch}, dinner ${s.missBy.Dinner} (of ${s.days.length} days).`,
-    `Full days (two main meals written down) under 70% of the daily guide (${s.need} kcal): ${s.lowDays} of ${s.full.length}.`];
+    `Full days (two main meals written down) with under half of the meals eaten: ${s.lowDays} of ${s.full.length}.`];
   if (s.likes.length) L.push('Eats well: ' + s.likes.slice(0,12).map(x=>x.name).join(', ') + '.');
   if (s.leaves.length) L.push('Often leaves: ' + s.leaves.slice(0,12).map(x=>x.name+' ('+Math.round(x.avg*100)+'%)').join(', ') + '.');
   const w = H.body.filter(b=>b.person===n && b.kg!=null), h = H.body.filter(b=>b.person===n && b.cm!=null);
@@ -2267,7 +2275,7 @@ function eatingWatch(){
   return EATERS.map(n=>{ const s = eatingStats(n, from, t), missed = s.skipped.length + s.band.none, a = ageYears(n), low = a != null && a < 18 && s.lowDays >= 2;
     if (!(missed >= 3 || low)) return '';
     const likes = eatingStats(n, addDays(t, -60), t).likes.slice(0,4).map(x=>x.name);
-    return `<div class="due" style="--due:${COLOR[n]}"><b>${missed >= 3 ? `${esc(n)} has left or skipped ${missed} meals in the last 3 days` : `${esc(n)} ate under 70% of the daily guide on ${s.lowDays} of the last 3 days`}</b>
+    return `<div class="due" style="--due:${COLOR[n]}"><b>${missed >= 3 ? `${esc(n)} has left or skipped ${missed} meals in the last 3 days` : `${esc(n)} ate under half of the meals on ${s.lowDays} of the last 3 days`}</b>
       <span class="hint" style="margin:0">${likes.length?'Foods '+esc(n)+' usually eats: '+esc(likes.join(', '))+'. ':''}If it keeps happening, or ${esc(n)} is losing weight, speak to your GP.</span>
       <button class="secondary" onclick="HS.who='${n}';hgo('stats')">See how ${esc(n)} is eating</button></div>`; }).join('');
 }
@@ -2357,11 +2365,11 @@ function slotGrid(day){
         ${!drinks && empty.length===EATERS.length && EATERS.length>1 ? `<button class="slot-both" onclick="openAddMeal(null,'${sl}')">+ Same for both</button>` : ''}</div>
       <div class="slot-cells">${cells}</div></div>`; }).join('');
 }
-function slotBox(n, sl, l, drinks){ const k = l.reduce((a,e)=>a+e.kcal,0);
+function slotBox(n, sl, l, drinks){
   const names = drinks ? Object.entries(l.reduce((m,e)=>(m[e.food]=(m[e.food]||0)+1, m), {})).map(([f,c])=>f+(c>1?' \u00d7'+c:'')) : l.map(e=>e.food+eatTag(e));
   return l.length
     ? `<button class="slot on ${!drinks && l.every(e=>e.food==='Skipped' || e.eaten<=0.05) ? 'left' : ''}" style="--c:${COLOR[n]}" onclick="${drinks?`openDrinks('${n}')`:`openSlot('${n}','${sl}')`}"><span class="who">${n}<span class="edit-i" aria-hidden="true">${drinks?'+':'&#x270E;'}</span></span>
-        ${drinks ? `<span class="f">${esc(names.join(', '))}</span>` : names.map(f=>`<span class="f">${esc(f)}</span>`).join('')}<span class="k">${kcalF(k)}</span></button>`
+        ${drinks ? `<span class="f">${esc(names.join(', '))}</span>` : names.map(f=>`<span class="f">${esc(f)}</span>`).join('')}</button>`
     : `<button class="slot free" style="--c:${COLOR[n]}" onclick="${drinks?`openDrinks('${n}')`:`openSlot('${n}','${sl}')`}"><span class="who">${n}</span><span class="add">+ Add${drinks?' a drink':''}</span></button>`;
 }
 /* one tap for the drink they have most: a coffee for an adult unless something else is their usual */
@@ -2385,7 +2393,7 @@ function quickMealAdd(n, sl){ const g = quickMeal(n, sl); if (!g) return;
   hRun('addMeals', [list, null], `${g.rows.map(r=>r.food).join(', ')} for ${n}`, raw=>hRun('deleteMeal',[raw.batch],'Undone')); }
 function quickAdd(n){ const q = quickDrink(n); if (!q) return;
   hRun('addMeals', [[{date:HD, person:n, meal:'Drinks', food:q.name, kcal:q.kcal, portion:1, veg:q.veg, group:'Drink'}], null], `${q.name} for ${n}`, raw=>hRun('deleteMeal',[raw.batch],'Undone')); }
-function openSlot(n, sl){ openAddMeal(n, sl); AM.slot = true; drawAddMeal(); }
+function openSlot(n, sl){ openAddMeal(n, sl); AM.slot = true; drawAddMeal(); if (!H.meals.some(e=>e.date===HD && e.person===n && e.meal===sl)) amFocus(); }
 function slotRemove(id){
   const e = H.meals.find(x=>x.id===id); if (!e) return;
   const back = e.diary ? null : [{date:e.date, person:e.person, meal:e.meal, food:e.food, kcal:e.kcal, portion:e.portion, veg:e.veg, group:e.group, eaten:e.eaten, note:e.note, served:e.served}];
@@ -2422,19 +2430,42 @@ function mealItem(e){
   return `<div class="item" style="--c:${COLOR[e.person]};cursor:pointer" onclick="editMeal('${e.id}')">
     <div class="dot">${esc(e.person[0])}</div>
     <div class="mid"><div class="t">${esc(e.food)}</div><div class="d">${e.diary?'<span class="pp">Food diary</span>':''}${esc(e.person)} · ${GROUP_ICON[e.group]||''} ${esc(fmtPortion(e.portion))}${e.veg?' · '+e.veg+' fruit &amp; veg':''}</div></div>
-    <div class="amt">${Math.round(e.kcal)}<small class="muted"> kcal</small></div><span class="edit-i" aria-hidden="true">&#x270E;</span></div>`;
+    <span class="edit-i" aria-hidden="true">&#x270E;</span></div>`;
 }
 
 /* ---- adding a meal: who, which meal, then one tap on the food ---- */
 let AM = null, AMLIST = [];
 function openAddMeal(person, meal){
-  AM = {who: person ? [person] : EATERS.slice(), meal: meal || (HD===today() ? defaultSlot() : 'Dinner'), size:1, q:'', online:null, est:null, eaten:1, note:''};
-  drawAddMeal(); showSheet();
+  AM = {who: person ? [person] : EATERS.slice(), meal: meal || (HD===today() ? defaultSlot() : 'Dinner'), size:1, q:'', online:null, est:null, eaten:1, note:''}; AMS.full = false;
+  drawAddMeal(); showSheet(); amFocus();
 }
+/* the keyboard comes up ready to type (only from a tap, so a phone allows it) */
+function amFocus(){ const i = $('#amQ'); if (i) try { i.focus({preventScroll:true}); } catch(e) {} }
 function amMult(n){ return Math.round(usualPortion(n)*AM.size*100)/100; }
+const stemW = w => w.replace(/ies$/, 'y').replace(/(es|s)$/, '');
+function editsWithin(a, b, n){
+  if (Math.abs(a.length - b.length) > n) return false;
+  let prev = Array.from({length:b.length+1}, (_, j)=>j);
+  for (let i = 1; i <= a.length; i++){ const cur = [i]; let low = i;
+    for (let j = 1; j <= b.length; j++){ cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a[i-1]===b[j-1]?0:1)); low = Math.min(low, cur[j]); }
+    if (low > n) return false; prev = cur; }
+  return prev[b.length] <= n;
+}
+/* how well a typed word fits a word of a food: 0 it starts it, 1 the same word, 2 a typo away, -1 no */
+function wordFit(t, w){
+  if (w.startsWith(t)) return 0;
+  if (t.length >= 3 && stemW(w) === stemW(t)) return 1;
+  const n = t[0] !== w[0] ? 0 : t.length >= 7 ? 2 : t.length >= 5 ? 1 : 0;
+  return n && (editsWithin(t, w, n) || w.length > t.length && editsWithin(t, w.slice(0, t.length), n)) ? 2 : -1;
+}
+function nameFit(words, name){
+  const ws = name.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean); let worst = 0;
+  for (const t of words){ let best = -1; for (const w of ws){ const f = wordFit(t, w); if (f > -1 && (best < 0 || f < best)) best = f; } if (best < 0) return -1; worst = Math.max(worst, best); }
+  return worst;
+}
 function amCandidates(){
-  const q = AM.q.trim().toLowerCase(), words = q.split(/\s+/).filter(Boolean), seen = new Set(), out = [];
-  const push = (f, src) => { const k = f.name.toLowerCase(); if (seen.has(k)) return; if (words.length && !words.every(w=>k.includes(w))) return; seen.add(k); out.push({...f, src}); };
+  const q = AM.q.trim().toLowerCase(), words = q.split(/[^a-z0-9]+/).filter(Boolean), seen = new Set(), out = [];
+  const push = (f, src) => { const k = f.name.toLowerCase(); if (seen.has(k)) return; if (words.length && nameFit(words, k) < 0) return; seen.add(k); out.push({...f, src}); };
   const since = addDays(today(), -120), yday = addDays(HD, -1);
   if (!q) topFoods(e=>AM.who.includes(e.person) && e.date===yday && e.meal===AM.meal, 6).forEach(f=>{ const sv = H.foods.find(x=>x.name.toLowerCase()===f.name.toLowerCase()); push(sv ? {...sv} : {name:f.name, kcal:Math.round(f.one), group:f.group, veg:f.veg, times:f.n}, 'yesterday'); });
   const times = f => H.meals.filter(e=>e.food.toLowerCase()===f.name.toLowerCase()).length;
@@ -2448,22 +2479,29 @@ function amCandidates(){
     return out;
   }
   mine.forEach(([f,n])=>push({...f, times:n}, 'saved'));
-  topFoods(e=>AM.who.includes(e.person) && e.date>=since && (q || e.meal===AM.meal), q?15:8).forEach(f=>push({name:f.name, kcal:Math.round(f.one), group:f.group, veg:f.veg, times:f.n}, 'usual'));
+  topFoods(e=>AM.who.includes(e.person) && e.meal!=='Drinks' && (q ? !e.skip && e.food!=='Skipped' : e.date>=since && e.meal===AM.meal), q?60:8).forEach(f=>push({name:f.name, kcal:Math.round(f.one), group:f.group, veg:f.veg, times:f.n}, 'usual'));
   H.base.slice(0, 40).forEach(f=>push(f, 'base'));
-  return out.slice(0, 30);
+  const fit = f => f.name.toLowerCase().startsWith(q) ? 0 : 1 + nameFit(words, f.name);
+  return out.map((f,i)=>[f,i]).sort((a,b)=>fit(a[0])-fit(b[0]) || a[1]-b[1]).map(x=>x[0]).slice(0, 30);
 }
-let AMS = {sort:'recent', all:false};
+let AMS = {sort:'recent', all:false, full:false, veg:false};
+try{ AMS.veg = localStorage.getItem('ganymede-plus-veg')==='1'; }catch(e){}
+function amVegT(){ AMS.veg = !AMS.veg; try{ localStorage.setItem('ganymede-plus-veg', AMS.veg?'1':'0'); }catch(e){} drawAddMeal(); }
+const amVegOn = () => AMS.veg && !AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner');
+const withVeg = f => !amVegOn() || f.person || f.group==='Drink' || /\bveg|salad/i.test(f.name) ? f : {...f, name:f.name+' + veg', kcal:f.kcal+50, veg:Math.min(5,(f.veg||0)+1)};
 try{ AMS.sort = localStorage.getItem('ganymede-menu-sort') || 'recent'; }catch(e){}
 function amSort(v){ AMS.sort = v; try{ localStorage.setItem('ganymede-menu-sort', v); }catch(e){} drawAddMeal(); }
 const agoF = d => { if (!d) return ''; const n = daysBetween(d, today())-1; return n<=0 ? 'today' : n===1 ? 'yesterday' : n<7 ? n+' days ago' : n<60 ? Math.round(n/7)+' weeks ago' : Math.round(n/30.44)+' months ago'; };
 function drawAddMeal(){
   if (AM.build) return drawBuilder();
-  const list = amCandidates(), q = AM.q.trim();
-  AMLIST = list.concat(AM.est ? [AM.est] : [], AM.online || []);
+  const q = AM.q.trim(); let list = amCandidates();
+  if (q) list = list.slice(0, 8);
+  else if (!AMS.full && !AM.swap) list = [];   // suggestions come as you type (Tom)
+  AMLIST = list;
   const sc = AM.who.length===1 ? eatScores(AM.who[0]) : {};
   const row = (f, i) => `<button class="item food" onclick="amPick(${i})"><div class="dot" style="background:var(--card-2);font-size:17px">${GROUP_ICON[f.group]||'🍽️'}</div>
-    <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">${f.src==='yesterday'?'Yesterday':f.src==='usual'?`Had ${f.times} time${f.times>1?'s':''}`:f.src==='saved'?(f.person?esc(f.person)+"'s order":f.last?'Had '+agoF(f.last):'Our meal')+(f.items&&f.items.length?' · '+esc(f.items.map(x=>x.name).join(', ')):''):f.src==='online'?esc(f.per)+' · Open Food Facts':f.src==='estimate'?'Worked out from the words':'Typical portion'}${f.veg?' · '+f.veg+' fruit &amp; veg':''}${esc(likeTag(sc[f.name.toLowerCase()]))}</div></div>
-    <div class="amt">${Math.round((f.person ? f.kcal*AM.size : AM.who.length===1 ? f.kcal*amMult(AM.who[0]) : f.kcal) * (AM.eaten==null?1:AM.eaten))}<small class="muted"> kcal${f.person||AM.who.length===1?'':' (adult)'}</small></div></button>`;
+    <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">${f.src==='yesterday'?'Yesterday':f.src==='usual'?`Had ${f.times} time${f.times>1?'s':''}`:f.src==='saved'?(f.person?esc(f.person)+"'s order":f.last?'Had '+agoF(f.last):'Our meal')+(f.items&&f.items.length?' · '+esc(f.items.map(x=>x.name).join(', ')):''):'Typical meal'}${f.veg?' · '+f.veg+' fruit &amp; veg':''}${esc(likeTag(sc[f.name.toLowerCase()]))}</div></div>
+    </button>`;
   const sect = (title, src) => { const l = AMLIST.map((f,i)=>[f,i]).filter(([f])=>f.src===src); return l.length ? `${title?`<label class="f">${title}</label>`:''}<div class="list">${l.map(([f,i])=>row(f,i)).join('')}</div>` : ''; };
   const scaled = AM.who.map(n=>`${n} ${FRAC[amMult(n)]||amMult(n)}`).join(' · ');
   const inSlot = AM.slot && !AM.swap ? H.meals.filter(e=>e.date===HD && e.person===AM.who[0] && e.meal===AM.meal) : [];
@@ -2474,7 +2512,7 @@ function drawAddMeal(){
     ${added ? `<div class="am-added">&#x2713; Added ${esc(AM.added.join(', '))}</div>` : ''}
     ${AM.slot && !AM.swap ? `<h3 style="margin:0 0 2px">${esc(AM.who[0])}'s ${AM.meal.toLowerCase()}, ${esc(dayName)}</h3>
       ${inSlot.length ? `<label class="f">What ${esc(AM.who[0])} had</label><div class="list slot-list">${inSlot.map(e=>`<div class="item">
-          <button class="mid plain" onclick="editMeal('${e.id}')"><div class="t">${esc(e.food)}${esc(eatTag(e))}</div><div class="d">${Math.round(e.kcal)} kcal · ${esc(fmtPortion(e.portion))}${e.diary?' · Food diary':''} · tap to adjust</div>${e.note?`<div class="d note">&ldquo;${esc(e.note)}&rdquo;</div>`:''}</button>
+          <button class="mid plain" onclick="editMeal('${e.id}')"><div class="t">${esc(e.food)}${esc(eatTag(e))}</div><div class="d">${esc(fmtPortion(e.portion))}${e.diary?' · Food diary':''} · tap to adjust</div>${e.note?`<div class="d note">&ldquo;${esc(e.note)}&rdquo;</div>`:''}</button>
           <button class="chip" onclick="slotChange('${e.id}')">Change</button>
           <button class="icon-btn" aria-label="Remove ${esc(e.food)}" onclick="slotRemove('${e.id}')">&times;</button></div>`).join('')}</div>
         <label class="f">Add something else from our menu</label>` : `<div class="hint" style="margin:0 0 4px">Pick what ${esc(AM.who[0])} had from our menu.</div>`}`
@@ -2483,6 +2521,12 @@ function drawAddMeal(){
     <div class="chips">${EATERS.map(n=>`<button class="chip ${AM.who.length===1&&AM.who[0]===n?'on':''}" style="--c:${COLOR[n]}" onclick="AM.who=['${n}'];drawAddMeal()">${n}</button>`).join('')}
       <button class="chip ${AM.who.length===EATERS.length?'on':''}" onclick="AM.who=EATERS.slice();drawAddMeal()">Both</button></div>`}
     ${AM.slot && !AM.swap ? '' : `<div class="seg four" style="margin-top:12px">${SLOTS.map(s=>`<button class="${AM.meal===s?'on':''}" onclick="AM.meal='${s}';drawAddMeal()"><span>${SLOT_ICON[s]}</span>${s}</button>`).join('')}</div>`}
+    <input class="inp" id="amQ" placeholder="Type what they had" value="${esc(AM.q)}" autocomplete="off" oninput="AM.q=this.value;AM.est=null;AM.online=null;clearTimeout(window._aq);window._aq=setTimeout(()=>{drawAddMeal();const i=$('#amQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)},150)" onkeydown="if(event.key==='Enter'){AM.q=this.value;amTyped()}">
+    ${!AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner') ? `<div class="chips" style="margin-top:8px"><button class="chip ${AMS.veg?'on':''}" onclick="amVegT()">&#x1F966; + veg</button><span class="hint" style="margin:0;align-self:center">${AMS.veg?'A portion of veg goes with it':'Tap if it came with veg'}</span></div>` : ''}
+    ${q && !AMLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<button class="primary am-typed" onclick="amTyped()">${AM.swap?'Use':'Add'} &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}${amVegOn()&&!/veg|salad/i.test(q)?' + veg':''}&rdquo;</button>` : ''}
+    ${q?`<label class="f">${AMLIST.length?'Or one we have had':''}</label>`:''}
+    ${q?sect('','saved')+sect('','usual')+sect('','base'):''}
+    ${q?`<button class="link-btn" onclick="amNewFood()">+ Save &ldquo;${esc(q)}&rdquo; as one of our meals</button>`:''}
     <details class="am-opts" ${AM.optsOpen || AM.eaten<1 || AM.note ? 'open' : ''} ontoggle="AM.optsOpen=this.open">
       <summary><span>Portion, how much eaten, comment</span><b>${esc([{0.5:'Small',1:'Usual',1.5:'Big',2:'Double'}[AM.size], eatLabel(AM.eaten==null?1:AM.eaten)].join(' · '))}</b></summary>
       <div class="chips">${[[0.5,'Small'],[1,'Usual'],[1.5,'Big'],[2,'Double']].map(([v,l])=>`<button class="chip ${AM.size===v?'on':''}" onclick="AM.size=${v};drawAddMeal()">${l}</button>`).join('')}</div>
@@ -2490,39 +2534,25 @@ function drawAddMeal(){
       ${eatenCtl(AM.eaten==null?1:AM.eaten, 'amEat')}
       <input class="inp" id="amNote" placeholder="Comment (optional)" value="${esc(AM.note||'')}" oninput="AM.note=this.value" autocomplete="off" style="margin:8px 0 4px">
     </details>
-    <input class="inp" id="amQ" placeholder="Search our menu, or type what they had" value="${esc(AM.q)}" autocomplete="off" oninput="AM.q=this.value;AM.est=null;AM.online=null;clearTimeout(window._aq);window._aq=setTimeout(()=>{drawAddMeal();const i=$('#amQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)},250)">
-    ${q?`<div class="two" style="margin-top:8px"><button class="secondary" style="margin:0" onclick="amEstimate()">Work out calories</button><button class="secondary" style="margin:0" onclick="amOnline()">Search online</button></div>
-      <div class="two" style="margin-top:8px;align-items:center"><input class="inp" id="amKcal" inputmode="numeric" placeholder="Or type kcal"><button class="secondary" style="margin:0" onclick="amCustom()">${AM.swap?'Use':'Add with'} these kcal</button></div>`:''}
-    ${q?`<button class="secondary" onclick="amNewFood()">Save &ldquo;${esc(q)}&rdquo; as one of our meals</button>`:''}
     ${drinkQ ? `<button class="secondary" onclick="openDrinks('${AM.who[0]}')">&#x2615; Drinks have their own box: open ${esc(AM.who[0])}'s drinks</button>` : ''}
     ${sect('Worked out','estimate')}${sect('Found online','online')}
     ${q?'':`<button class="build-btn" onclick="amBuild()"><span>&#x1F373;</span><span><b>Build a meal</b><small>Pick the protein, carbs and veg</small></span><span class="chev">&rsaquo;</span></button>`}
     ${q?'':sect('Same as '+(HD===today()?'yesterday':'the day before'),'yesterday')}
-    ${q?'':`<div class="menu-h"><label class="f">Our menu</label>
+    ${q?'':!AMS.full?'':`<div class="menu-h"><label class="f">Our menu</label>
       <div class="mini-seg">${[[false,AM.meal],[true,'All']].map(([v,l])=>`<button class="${AMS.all===v?'on':''}" onclick="AMS.all=${v};drawAddMeal()">${esc(l)}</button>`).join('')}</div>
       <div class="mini-seg">${[['recent','Recent'],['az','A&ndash;Z']].map(([v,l])=>`<button class="${AMS.sort===v?'on':''}" onclick="amSort('${v}')">${l}</button>`).join('')}</div></div>`}
-    ${sect(q?'Our meals':'','saved')}
-    ${q?'':`<button class="link-btn" onclick="amNewFood()">+ Save a new meal, with its parts</button>`}
-    ${q?sect('Had before','usual')+sect('Typical portions','base'):''}
-    ${!AMLIST.length&&q?'<div class="empty">Nothing saved matches. Save it as one of our meals, work it out from the words, search online, or type the kcal.</div>':''}
+    ${q?'':sect('','saved')}
+    ${q?'':`<div class="am-more"><button class="link-btn" onclick="AMS.full=!AMS.full;drawAddMeal()">${AMS.full?'Show fewer':'Or pick from our whole menu'}</button><button class="link-btn" onclick="amNewFood()">+ Save a new meal</button></div>`}
     ${AM.slot && !AM.swap && !inSlot.length ? `<button class="link-btn" style="margin-top:14px" onclick="slotSkip()">${esc(AM.who[0])} didn't have this meal (skipped)</button>` : ''}
     <button class="${added||(AM.slot&&inSlot.length)?'primary':'secondary'}" onclick="closeSheet()">${AM.swap?'Cancel':added||(AM.slot&&inSlot.length)?'Done':'Close'}</button>`;
 }
 function amWho(n){ AM.who = AM.who.includes(n) ? AM.who.filter(x=>x!==n) : EATERS.filter(x=>x===n||AM.who.includes(x)); drawAddMeal(); }
-async function amEstimate(){
+/* what was typed, added as it is (kcal behind the scenes is a typical one for that meal) */
+function amTyped(){
   const q = AM.q.trim(); if (!q) return;
-  try{ const e = await api('estimateFood', q, AM.meal, ''); if (e.skip) return toast('That reads as not eaten');
-    AM.est = {name:q.charAt(0).toUpperCase()+q.slice(1), kcal:e.kcal, group:e.group, veg:e.veg, src:'estimate', guessed:e.guessed}; drawAddMeal();
-    if (e.guessed) toast('No foods recognised, so that is a typical ' + AM.meal.toLowerCase()); }
-  catch(e){ toast('\u26a0 '+(e.message||e)); }
+  const hit = amCandidates().find(f=>f.name.toLowerCase()===q.toLowerCase()); if (hit) return amAdd(hit);
+  amAdd({name:q.charAt(0).toUpperCase()+q.slice(1), kcal:{Breakfast:350, Lunch:500, Dinner:650, Snack:200}[AM.meal] || 400, group:'Meal', veg:/salad|veg|fruit|apple|banana|orange|grapes/i.test(q)?1:0, src:'estimate'});
 }
-async function amOnline(){
-  const q = AM.q.trim(); if (!q) return; toast('Searching Open Food Facts…');
-  try{ const r = await api('searchFoodOnline', q); AM.online = r.map(x=>({...x, group:'Snack', veg:0, src:'online'})); drawAddMeal(); if (!r.length) toast('Nothing found online for that'); }
-  catch(e){ toast('\u26a0 '+(e.message||e)); }
-}
-function amCustom(){ const k = parseFloat($('#amKcal').value); if (!(k>=0)) return toast('Type the kcal for one adult portion');
-  amAdd({name:AM.q.trim().charAt(0).toUpperCase()+AM.q.trim().slice(1), kcal:k, group:'Meal', veg:0, src:'custom'}); }
 function amPick(i){ amAdd(AMLIST[i]); }
 function amAdd(f){
   if (!AM.who.length) return toast('Pick who ate it');
@@ -2533,10 +2563,11 @@ function amAdd(f){
     HD = AM.swap.date;
     return hRun('editMeals', [list], `Swapped for ${f.name}`, ()=>hRun('editMeals',[old],'Put back')).then(r=>{ if (r && keep) hRun('saveFood', [{name:f.name, kcal:Math.round(f.kcal), group:f.group||'Meal', veg:f.veg||0, meal:AM.meal}, null], null); });
   }
+  const plain = f; f = withVeg(f);
   const eaters = f.person ? [f.person] : AM.who, mult = n => f.person ? AM.size : amMult(n);
   const list = eaters.map(n=>({date:HD, person:n, meal:AM.meal, food:f.name, kcal:Math.round(f.kcal*mult(n)*ate), served:Math.round(f.kcal*mult(n)), eaten:ate, note, portion:mult(n), veg:f.veg||0, group:f.group||'Meal'}));
-  const keep = ['online','estimate','custom'].includes(f.src) && !H.foods.some(x=>x.name.toLowerCase()===f.name.toLowerCase())
-    ? {name:f.name, kcal:Math.round(f.kcal), group:f.group||'Meal', veg:f.veg||0, meal:AM.meal} : null;
+  const keep = ['online','estimate','custom'].includes(plain.src) && !H.foods.some(x=>x.name.toLowerCase()===plain.name.toLowerCase())
+    ? {name:plain.name, kcal:Math.round(plain.kcal), group:plain.group||'Meal', veg:plain.veg||0, meal:AM.meal} : null;
   const who = eaters.length===EATERS.length && EATERS.length>1 ? 'both' : eaters.join(' & ');
   const stay = {keep:true, redraw:drawAddMeal, mark:'addMealSheet'};
   AM.added = (AM.added||[]).concat(f.name); AM.q = ''; AM.est = null; AM.online = null; AM.build = null;
@@ -2554,13 +2585,24 @@ const BUILD = {
   Extras:[['Gravy',40],['Tomato sauce',70],['Cheese sauce',150],['Grated cheese',120],['Curry sauce',150],['Pesto',120],['Butter',70],['Ketchup',20],['Mayo',100],['Stuffing',100]]
 };
 const BUILD_ICON = {Protein:'&#x1F357;', Carbs:'&#x1F35A;', Veg:'&#x1F966;', Extras:'&#x1F96B;'};
-const buildPart = name => { for (const g in BUILD){ const x = BUILD[g].find(p=>p[0].toLowerCase()===name.toLowerCase()); if (x) return {name:x[0], kcal:x[1], veg:x[2]||0, g}; } return null; };
-function amBuild(){ AM.build = {parts:[], save:false}; drawAddMeal(); }
+let MYPARTS = []; try { MYPARTS = JSON.parse(localStorage.getItem('ganymede-parts') || '[]'); } catch(e) {}
+const buildPart = name => { const k = name.toLowerCase(); for (const g in BUILD){ const x = BUILD[g].find(p=>p[0].toLowerCase()===k); if (x) return {name:x[0], kcal:x[1], veg:x[2]||0, g}; }
+  const m = MYPARTS.find(p=>p.name.toLowerCase()===k); return m ? Object.assign({}, m) : null; };
+const BUILD_GUESS = {Protein:250, Carbs:250, Veg:30, Extras:100};
+/* a kcal guess for a typed part: a food on our menu or the base list with that name in it, else a typical one for the group */
+function bGuess(n, g){ const k = n.trim().toLowerCase(); if (!k) return null;
+  const f = (H.foods||[]).concat(H.base||[]).find(f=>f.name.toLowerCase()===k) || (H.foods||[]).concat(H.base||[]).find(f=>f.name.toLowerCase().includes(k));
+  return f ? {kcal:Math.round(f.kcal), from:f.name} : {kcal:BUILD_GUESS[g], from:''}; }
+function amBuild(){ AM.build = {parts:[], save:false, adding:null}; drawAddMeal(); }
 function bToggle(name){ const B = AM.build, i = B.parts.findIndex(p=>p.name===name);
   if (i > -1) B.parts.splice(i,1); else { const x = buildPart(name); if (x) B.parts.push(x); } drawBuilder(); }
-function bOther(){ const n = ($('#bName').value||'').trim(), k = parseFloat($('#bKcal').value);
-  if (!n) return toast('Type what it is'); if (!(k >= 0)) return toast('Type the kcal for one adult portion');
-  AM.build.parts.push({name:n.charAt(0).toUpperCase()+n.slice(1), kcal:k, veg:0, g:'Extras'}); drawBuilder(); }
+function bNew(g){ AM.build.adding = AM.build.adding===g ? null : g; drawBuilder(); const i = $('#bName'); if (i) i.focus({preventScroll:true}); }
+function bOther(){ const g = AM.build.adding || 'Extras', n = ($('#bName').value||'').trim();
+  if (!n) return toast('Type what it is');
+  const old = buildPart(n), part = {name:n.charAt(0).toUpperCase()+n.slice(1), kcal:old ? old.kcal : bGuess(n, g).kcal, veg:g==='Veg'?1:0, g};
+  MYPARTS = [part].concat(MYPARTS.filter(p=>p.name.toLowerCase()!==part.name.toLowerCase())).slice(0, 40);
+  try { localStorage.setItem('ganymede-parts', JSON.stringify(MYPARTS)); } catch(e) {}
+  AM.build.parts = AM.build.parts.filter(p=>p.name.toLowerCase()!==part.name.toLowerCase()).concat([part]); AM.build.adding = null; drawBuilder(); }
 /* a plate built before: its parts back on, an unknown part (typed in) at the kcal it had */
 function bUse(name){ AM.build.parts = name.split(' + ').map(n=>buildPart(n)).filter(Boolean); drawBuilder(); }
 function builtBefore(){
@@ -2571,18 +2613,15 @@ function bFood(){ const order = Object.keys(BUILD), l = AM.build.parts.slice().s
   return {name:l.map(p=>p.name).join(' + '), kcal:l.reduce((a,p)=>a+p.kcal,0), veg:Math.min(5,l.reduce((a,p)=>a+p.veg,0)), group:'Meal', src:AM.build.save?'custom':'built'}; }
 function drawBuilder(){
   const B = AM.build, f = bFood(), on = n => B.parts.some(p=>p.name===n), before = builtBefore();
-  const scale = AM.who.length===1 ? amMult(AM.who[0]) : 1;
   $('#sheet').innerHTML = `<div class="grab" id="addMealSheet"></div>
     <button class="back-link" onclick="AM.build=null;drawAddMeal()">&lsaquo; Back to our menu</button>
     <h3 style="margin:0 0 2px">Build ${esc(AM.who.length===1?AM.who[0]+"'s":'a')} ${esc(AM.meal.toLowerCase())}</h3>
     <div class="hint" style="margin:0 0 6px">Tap what was on the plate. Each person's portion is set when it is added.</div>
     ${before.length ? `<label class="f">Built before</label><div class="chips wrap">${before.map(n=>`<button class="chip" onclick="bUse(${jsA(n)})">${esc(n)}</button>`).join('')}</div>` : ''}
-    ${Object.keys(BUILD).map(g=>`<label class="f">${BUILD_ICON[g]} ${g}</label><div class="chips wrap">${BUILD[g].map(([n])=>`<button class="chip ${on(n)?'on':''}" onclick="bToggle(${jsA(n)})">${esc(n)}</button>`).join('')}${g==='Extras' ? B.parts.filter(p=>!buildPart(p.name)).map(p=>`<button class="chip on" onclick="bToggle(${jsA(p.name)})">${esc(p.name)} &times;</button>`).join('') : ''}</div>`).join('')}
-    <details class="am-opts"><summary><span>Something else on the plate</span><b>+</b></summary>
-      <div class="two" style="align-items:center"><input class="inp" id="bName" placeholder="e.g. Halloumi" autocomplete="off"><input class="inp" id="bKcal" inputmode="numeric" placeholder="kcal"></div>
-      <button class="secondary" onclick="bOther()">Add to the plate</button></details>
+    ${Object.keys(BUILD).map(g=>`<label class="f">${BUILD_ICON[g]} ${g}</label><div class="chips wrap">${MYPARTS.filter(p=>p.g===g && !BUILD[g].some(x=>x[0].toLowerCase()===p.name.toLowerCase())).map(p=>`<button class="chip ${on(p.name)?'on':''}" onclick="bToggle(${jsA(p.name)})">${esc(p.name)}</button>`).join('')}${BUILD[g].map(([n])=>`<button class="chip ${on(n)?'on':''}" onclick="bToggle(${jsA(n)})">${esc(n)}</button>`).join('')}<button class="chip chip-add ${B.adding===g?'on':''}" onclick="bNew('${g}')">+ Other</button></div>
+      ${B.adding===g ? `<div class="b-new"><div class="two" style="align-items:center"><input class="inp" id="bName" placeholder="${g==='Protein'?'e.g. Pie':g==='Carbs'?'e.g. Gnocchi':g==='Veg'?'e.g. Kale':'e.g. Mint sauce'}" autocomplete="off" onkeydown="if(event.key==='Enter')bOther()"><button class="secondary" style="margin:0" onclick="bOther()">Add</button></div></div>` : ''}`).join('')}
     <div class="save-bar">
-      ${B.parts.length ? `<div class="build-sum"><b>${esc(f.name)}</b><span>${Math.round(f.kcal*scale)} kcal${AM.who.length===1?'':' (adult)'}${f.veg?' &middot; '+f.veg+' fruit &amp; veg':''}</span></div>
+      ${B.parts.length ? `<div class="build-sum"><b>${esc(f.name)}</b><span>${f.veg?f.veg+' fruit &amp; veg':''}</span></div>
         <label class="build-save"><input type="checkbox" ${B.save?'checked':''} onchange="AM.build.save=this.checked"> Save it on our menu too</label>` : '<div class="hint" style="margin:10px 2px 0">Nothing picked yet.</div>'}
       <button class="primary" ${B.parts.length?'':'disabled'} onclick="amAdd(bFood())">Add ${AM.who.length===EATERS.length&&EATERS.length>1?'for both':'it'}</button></div>`;
 }
@@ -2609,15 +2648,15 @@ function drawDrinks(){
   $('#sheet').innerHTML = `<div class="grab" id="drinksSheet"></div>
     <h3 style="margin:0 0 2px">${esc(n)}'s drinks, ${esc(dayName)}</h3>
     <div class="hint" style="margin:0 0 6px">Tap a drink each time ${esc(n)} has one.</div>
-    ${DRHAD.length ? `<label class="f">Had so far · ${kcalF(DRHAD.reduce((a,c)=>a+c.kcal,0))}</label><div class="list slot-list">${DRHAD.map((c,i)=>`<div class="item">
-        <div class="mid"><div class="t">${esc(c.name)} <span class="muted">&times;${c.n}</span></div><div class="d">${kcalF(c.kcal)}</div></div>
+    ${DRHAD.length ? `<label class="f">Had so far</label><div class="list slot-list">${DRHAD.map((c,i)=>`<div class="item">
+        <div class="mid"><div class="t">${esc(c.name)} <span class="muted">&times;${c.n}</span></div></div>
         <button class="icon-btn" aria-label="One less ${esc(c.name)}" onclick="drLess(${i})">&minus;</button>
         <button class="icon-btn" aria-label="One more ${esc(c.name)}" onclick="drMore(${i})">+</button></div>`).join('')}</div>` : ''}
     <input class="inp" id="drQ" placeholder="Find a drink, or type a new one" value="${esc(DR.q)}" autocomplete="off" style="margin-top:10px"
       oninput="DR.q=this.value;clearTimeout(window._dq);window._dq=setTimeout(()=>{drawDrinks();const i=$('#drQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)},200)">
-    ${q && !DRLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<div class="two" style="margin-top:8px;align-items:center"><input class="inp" id="drK" inputmode="numeric" placeholder="kcal for ${esc(q)}"><button class="secondary" style="margin:0" onclick="drCustom()">Add it</button></div>
+    ${q && !DRLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<button class="primary" onclick="drCustom()">Add &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}&rdquo;</button>
       <button class="link-btn" onclick="openFoodForm({name:${jsA(q.charAt(0).toUpperCase()+q.slice(1))}, group:'Drink', slot:'Drinks'})">+ Save it as one of our drinks</button>` : ''}
-    <div class="drink-grid">${DRLIST.map((f,i)=>`<button class="drink ${had(f.name)?'on':''}" onclick="drAdd(${i})"><span class="t">${esc(f.name)}</span><span class="d">${Math.round(f.kcal)} kcal${had(f.name)?' · &times;'+had(f.name):''}</span></button>`).join('')}</div>
+    <div class="drink-grid">${DRLIST.map((f,i)=>`<button class="drink ${had(f.name)?'on':''}" onclick="drAdd(${i})"><span class="t">${esc(f.name)}</span>${had(f.name)?'<span class="d">&times;'+had(f.name)+'</span>':''}</button>`).join('')}</div>
     ${!DRLIST.length && !q ? '<div class="empty">No drinks yet.</div>' : ''}
     <button class="primary" onclick="closeSheet()">Done</button>`;
 }
@@ -2628,8 +2667,7 @@ function addDrink(name, kcal, veg){
 function drAdd(i){ const f = DRLIST[i]; if (f) addDrink(f.name, f.kcal, f.veg); }
 function drMore(i){ const c = DRHAD[i]; if (c) addDrink(c.name, c.one, c.veg); }
 function drLess(i){ const c = DRHAD[i]; if (c) hRun('deleteMeal', [c.ids[c.ids.length-1]], 'One less ' + c.name, null, {keep:true, redraw:drawDrinks}); }
-function drCustom(){ const q = DR.q.trim(), k = parseFloat($('#drK').value); if (!(k >= 0)) return toast('Type the kcal for one ' + q);
-  DR.q = ''; addDrink(q.charAt(0).toUpperCase()+q.slice(1), k, 0); }
+function drCustom(){ const q = DR.q.trim(); if (!q) return; DR.q = ''; addDrink(q.charAt(0).toUpperCase()+q.slice(1), 50, 0); }
 
 /* ---- changing an entry: a draft in EM, one Save, and Undo puts the old values back ---- */
 let EM = null;
@@ -2640,10 +2678,26 @@ function mealMates(e){   // everyone else who had the same thing, added together
 function editMeal(id){
   const e = H.meals.find(x=>x.id===id); if (!e) return;
   const mates = mealMates(e);
-  EM = {id, person:e.person, food:e.food, date:e.date, meal:e.meal, portion:e.portion||1, served:Math.round(e.served), eaten:e.eaten==null?1:e.eaten, note:e.note||'', veg:e.veg||0, group:e.group||'Meal',
+  EM = {id, person:e.person, food:e.food, date:e.date, meal:e.meal, portion:e.portion||1, served:Math.round(e.served), eaten:e.eaten==null?1:e.eaten, note:(e.note||'').replace(ATE_RE, '$1').trim(), veg:e.veg||0, group:e.group||'Meal',
     mates:mates.map(x=>x.id), all:mates.length>0, diary:e.diary};
+  EM.parts = partsFromNote(mealParts(e.food, EM.served), e.note, EM.eaten);
   drawEditMeal(); showSheet();
 }
+const PART_LV = [[1,'All','all the'],[0.75,'Most','most of the'],[0.5,'Half','half the'],[0.25,'A bit','a bit of the'],[0,'None','none of the']];
+const ATE_RE = /(^|\.\s*)Ate (all|most|half|a bit|none)[^.]*\.?\s*$/;
+function mealParts(food, served){
+  const f = H.foods.find(x=>x.name.toLowerCase()===food.trim().toLowerCase());
+  const l = f && f.items && f.items.length > 1 ? f.items.map(x=>x.name)
+    : food.split(/\s*(?:\+|,|&|\band\b|\bwith\b)\s*/i).map(n=>n.trim()).filter(Boolean);
+  return l.length < 2 ? [] : l.map(name=>({name, s:1/l.length, f:1}));
+}
+function partsFromNote(parts, note, eaten){
+  parts.forEach(x=>{ const m = (note||'').toLowerCase().match(new RegExp('(all the|most of the|half the|a bit of the|none of the) ' + x.name.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![a-z])'));
+    x.f = m ? PART_LV.find(l=>l[2]===m[1])[0] : eaten; });
+  return parts;
+}
+const partsNote = parts => parts.every(x=>x.f===1) ? '' : 'Ate ' + parts.map(x=>PART_LV.find(l=>l[0]===x.f)[2] + ' ' + x.name.toLowerCase()).join(', ') + '.';
+function emPart(i, v){ EM.parts[i].f = v; EM.eaten = Math.round(EM.parts.reduce((a,x)=>a+x.s*x.f,0)*100)/100; drawEditMeal(); }
 function emPortion(p){ EM.served = Math.round((EM.served||0)/(EM.portion||1)*p); EM.portion = p; drawEditMeal(); }
 function drawEditMeal(){
   const c = COLOR[EM.person], names = [EM.person].concat(EM.mates.map(id=>(H.meals.find(x=>x.id===id)||{}).person).filter(Boolean));
@@ -2657,7 +2711,7 @@ function drawEditMeal(){
       <div class="hint" style="margin:4px 2px 0">${EM.all?esc(names.join(', '))+'. Each keeps their own portion.':'Only '+esc(EM.person)+"'s entry changes."}</div>`:''}
     <label class="f">What they had</label>
     <input class="inp" id="emFood" value="${esc(EM.food)}" autocomplete="off" oninput="EM.food=this.value">
-    <div class="two" style="margin-top:8px"><button class="secondary" style="margin:0" onclick="emSwap()">Pick a different food</button><button class="secondary" style="margin:0" onclick="emEstimate()">Work out kcal</button></div>
+    <button class="secondary" onclick="emSwap()">Pick a different food</button>
     <label class="f">Meal</label>
     <div class="seg four">${SLOTS.map(s=>`<button class="${EM.meal===s?'on':''}" onclick="EM.meal='${s}';drawEditMeal()"><span>${SLOT_ICON[s]}</span>${s}</button>`).join('')}</div>
     <label class="f">Day</label>
@@ -2665,10 +2719,9 @@ function drawEditMeal(){
       <div class="chips" style="margin:0">${[[today(),'Today'],[addDays(today(),-1),'Yesterday']].map(([d,l])=>`<button class="chip ${EM.date===d?'on':''}" onclick="EM.date='${d}';drawEditMeal()">${l}</button>`).join('')}</div></div>
     <label class="f">${esc(EM.person)}'s portion (of an adult's)</label>
     <div class="chips">${[0.25,0.5,0.75,1,1.25,1.5,2].map(p=>`<button class="chip ${Math.abs(EM.portion-p)<0.01?'on':''}" style="--c:${c}" onclick="emPortion(${p})">${FRAC[p]}</button>`).join('')}</div>
-    <label class="f">Calories in ${esc(EM.person)}'s portion</label>
-    <input class="inp" id="emK" inputmode="numeric" value="${isNaN(EM.served)?'':EM.served}" oninput="EM.served=parseFloat(this.value);const a=document.getElementById('emAte');if(a)a.textContent=kcalF((EM.served||0)*EM.eaten)">
-    ${eatenCtl(EM.eaten, 'emEat')}
-    <div class="hint" style="margin:2px">Counted as eaten: <b id="emAte">${kcalF((EM.served||0)*EM.eaten)}</b></div>
+    ${EM.parts.length ? `<label class="f">What ${esc(EM.person)} ate of it</label><div class="list">${EM.parts.map((x,i)=>`<div class="part-eat"><div class="pe-h"><b>${esc(x.name.charAt(0).toUpperCase()+x.name.slice(1))}</b></div>
+        <div class="chips">${PART_LV.map(([v,l])=>`<button class="chip ${x.f===v?'on':''}" onclick="emPart(${i},${v})">${l}</button>`).join('')}</div></div>`).join('')}</div>`
+      : eatenCtl(EM.eaten, 'emEat')}
     <label class="f">Comment</label>
     <input class="inp" id="emNote" value="${esc(EM.note)}" placeholder="e.g. only ate the chips" oninput="EM.note=this.value" autocomplete="off">
     <label class="f">Fruit &amp; veg portions</label>
@@ -2684,16 +2737,16 @@ function drawEditMeal(){
 }
 function emRows(){ return [EM.id].concat(EM.all ? EM.mates : []).map(id=>H.meals.find(x=>x.id===id)).filter(Boolean); }
 const mealVals = x => ({id:x.id, date:x.date, meal:x.meal, food:x.food, kcal:Math.round(x.kcal), portion:x.portion||1, veg:x.veg||0, group:x.group||'Meal', eaten:x.eaten==null?1:x.eaten, note:x.note||'', served:Math.round(x.served==null?x.kcal:x.served)});
+function emNote(){ const b = EM.note.trim(), pn = partsNote(EM.parts||[]); return b && pn ? b.replace(/\.?$/, '.') + ' ' + pn : b || pn; }
 function emSave(){
-  const food = EM.food.trim(), sv = Math.round(EM.served), k = Math.round(sv*EM.eaten);
+  const food = EM.food.trim(), sv = Math.round(EM.served) || 0, k = Math.round(sv*EM.eaten);
   if (!food) return toast('Give the food a name');
-  if (!(sv >= 0 && sv < 10000)) return toast('Enter the calories');
   if (!EM.date || EM.date > today()) return toast('Pick a day, not in the future');
   const me = H.meals.find(x=>x.id===EM.id); if (!me) return toast('That entry has gone, tap refresh');
   const one = sv / (EM.portion||1), kcalChanged = sv !== Math.round(me.served) || Math.abs((EM.portion||1)-(me.portion||1)) > 0.001;
   const rows = emRows(), old = rows.map(mealVals);
   const list = rows.map(x=>x.id===EM.id
-    ? {id:x.id, date:EM.date, meal:EM.meal, food, kcal:k, portion:EM.portion, veg:EM.veg, group:EM.group, eaten:EM.eaten, note:EM.note.trim(), served:sv}
+    ? {id:x.id, date:EM.date, meal:EM.meal, food, kcal:k, portion:EM.portion, veg:EM.veg, group:EM.group, eaten:EM.eaten, note:emNote(), served:sv}
     : (()=>{ const xs = kcalChanged ? Math.round(one*(x.portion||1)) : Math.round(x.served), xe = x.eaten==null?1:x.eaten;
         return {id:x.id, date:EM.date, meal:EM.meal, food, kcal:Math.round(xs*xe), portion:x.portion||1, veg:EM.veg, group:EM.group, eaten:xe, note:x.note||'', served:xs}; })());
   if (list.every((n,i)=>JSON.stringify(n)===JSON.stringify(old[i]))) return closeSheet();
@@ -2706,13 +2759,6 @@ function emRemove(){
 }
 function emKeep(){ const food = EM.food.trim(); if (!food) return toast('Give the food a name');
   hRun('saveFood',[{name:food, kcal:Math.round(EM.served/(EM.portion||1)), group:EM.group, veg:EM.veg, meal:EM.meal}],'Saved to our meals'); }
-async function emEstimate(){
-  const q = EM.food.trim(); if (!q) return toast('Type what they had first');
-  try{ const e = await api('estimateFood', q, EM.meal, ''); if (e.skip) return toast('That reads as not eaten');
-    EM.kcal = Math.round(e.kcal*(EM.portion||1)); EM.veg = e.veg||0; EM.group = e.group||EM.group; drawEditMeal();
-    toast(e.guessed ? 'No foods recognised, so that is a typical '+EM.meal.toLowerCase() : 'Worked out: '+EM.kcal+' kcal'); }
-  catch(e){ toast('\u26a0 '+(e.message||e)); }
-}
 /* swap the food: the add-a-meal picker, but a tap replaces this entry (and its mates) instead of adding */
 function emSwap(){
   const rows = emRows();
@@ -2730,73 +2776,42 @@ function hStats(){
   return chips + (HS.who==='All' ? statsAll(from, to) : statsOne(HS.who, from, to));
 }
 function statsAll(from, to){
-  const S = EATERS.map(n=>({n, s:personStats(n, from, to), need:kcalNeed(n).kcal}));
+  const S = EATERS.map(n=>({n, s:personStats(n, from, to), e:eatingStats(n, from, to)}));
   const dinners = topFoods(e=>e.meal==='Dinner' && e.date>=from && e.date<=to, 8);
   const takeDays = new Set(H.meals.filter(e=>e.group==='Takeaway' && e.date>=from && e.date<=to).map(e=>e.date)).size;
   const tx = D && D.transactions || [], eat = tx.filter(t=>t.category==='Eating out & takeaway' && t.type==='spend' && t.date>=from && t.date<=to);
   const bankTo = D && D.transactions ? txIndex().last : '';
   return `<h2>Both</h2>
-  <div class="card" style="padding:8px 12px"><table class="ytab"><thead><tr><th></th><th>kcal/day</th><th>Guide</th><th>F&amp;V</th><th>Days</th></tr></thead><tbody>
-    ${S.map(x=>`<tr onclick="HS.who='${x.n}';render()" style="cursor:pointer"><td><span class="mini" style="--c:${COLOR[x.n]}"></span> <b>${x.n}</b> <span class="chev">›</span></td><td>${x.s.full.length?Math.round(x.s.kcal).toLocaleString('en-GB'):'–'}</td>
-      <td class="${!x.s.full.length?'muted':Math.abs(x.s.kcal/x.need-1)<=0.1?'pos':'neg'}">${x.s.full.length?Math.round(x.s.kcal/x.need*100)+'%':'–'}</td><td>${x.s.full.length?x.s.veg.toFixed(1):'–'}</td><td>${x.s.logged}/${x.s.n}</td></tr>`).join('')}
-  </tbody></table><div class="hint" style="margin:6px 2px 4px">Guide = what each person needs a day on average (Settings). F&amp;V = fruit and veg portions a day, 5 is the aim. Tap a name for more.</div></div>
-  <h2>Calories a day</h2>
-  <div class="card"><div class="legend">${EATERS.map(n=>`<span><i style="background:${COLOR[n]}"></i>${n}</span>`).join('')}</div><div class="chart" id="famChart"></div>
-    <div class="hint">Each person's average day${HS.days>30?' by week':''}, full days only.</div></div>
+  <div class="card" style="padding:8px 12px"><table class="ytab"><thead><tr><th></th><th>Eaten</th><th>F&amp;V</th><th>Days</th></tr></thead><tbody>
+    ${S.map(x=>`<tr onclick="HS.who='${x.n}';render()" style="cursor:pointer"><td><span class="mini" style="--c:${COLOR[x.n]}"></span> <b>${x.n}</b> <span class="chev">›</span></td><td>${x.e.avg==null?'–':Math.round(x.e.avg*100)+'%'}</td><td>${x.s.full.length?x.s.veg.toFixed(1):'–'}</td><td>${x.s.logged}/${x.s.n}</td></tr>`).join('')}
+  </tbody></table><div class="hint" style="margin:6px 2px 4px">Eaten = how much of what was on the plate, on average. F&amp;V = fruit and veg portions a day, 5 is the aim. Tap a name for more.</div></div>
   <h2>Food at home and out</h2>
   <div class="card">
     <button class="stat-row" onclick="HM=today().slice(0,7);hgo('month')"><span class="k">🍟 Takeaway or eating-out days</span><span class="v">${takeDays} <small class="muted">${(takeDays/daysBetween(from,to)*7).toFixed(1)} a week</small>&nbsp;›</span></button>
     ${eat.length?`<button class="stat-row" onclick="txListSheet('Eating out & takeaways', D.transactions.filter(t=>t.category==='Eating out & takeaway' && t.type==='spend' && t.date>='${from}' && t.date<='${to}'), 'From the bank statement')"><span class="k">💷 Spent on eating out &amp; takeaways</span><span class="v">${gbp(-eat.reduce((a,t)=>a+t.amount,0))}&nbsp;›</span></button>`:''}
-    ${S.map(x=>`<button class="stat-row" onclick="foodsSheet('${x.n}: treats', e=>e.person==='${x.n}' && e.group==='Treat' && e.date>='${from}' && e.date<='${to}')"><span class="k"><span class="mini" style="--c:${COLOR[x.n]}"></span> ${x.n}: treats</span><span class="v">${x.s.treatsWk.toFixed(1)} a week&nbsp;›</span></button>`).join('')}
+    ${S.map(x=>`<button class="stat-row" onclick="foodsSheet('${x.n}: snacks', e=>e.person==='${x.n}' && e.group==='Snack' && e.date>='${from}' && e.date<='${to}')"><span class="k"><span class="mini" style="--c:${COLOR[x.n]}"></span> ${x.n}: snacks</span><span class="v">${x.s.treatsWk.toFixed(1)} a week&nbsp;›</span></button>`).join('')}
     ${eat.length&&bankTo<to?`<div class="hint">Spending comes from the bank statement, which runs to ${dateY(bankTo)}.</div>`:''}
   </div>
   <h2>Favourite dinners</h2>
   <div class="card">${dinners.map((f,i)=>`<button class="stat-row" onclick="foodDetail(${jsA(f.name)})"><span class="k">${i+1}. ${esc(f.name)}</span><span class="v">${f.n}×&nbsp;›</span></button>`).join('')||'<div class="empty">No dinners logged in this period</div>'}</div>`;
 }
 function statsOne(n, from, to){
-  const s = personStats(n, from, to), need = kcalNeed(n), top = topFoods(e=>e.person===n && e.date>=from && e.date<=to, 10);
-  const pc = s.kcal/need.kcal*100, tot = ALL_SLOTS.reduce((a,x)=>a+s.bySlot[x],0)||1, bi = bmiInfo(n);
+  const s = personStats(n, from, to), top = topFoods(e=>e.person===n && e.date>=from && e.date<=to, 10), bi = bmiInfo(n);
+  const mains = s.days.length ? s.days.reduce((a,k)=>a+['Breakfast','Lunch','Dinner'].filter(sl=>H.meals.some(e=>e.person===n && e.date===k && e.meal===sl && e.food!=='Skipped' && e.eaten>0.05)).length,0)/s.days.length : null;
   return `${eatingCard(n, from, to)}
   <h2>A typical day</h2>
   <div class="tiles">
-    <button class="tile" onclick="document.getElementById('oneChart').scrollIntoView({behavior:'smooth'})"><div class="k">Calories</div><div class="v">${s.full.length?Math.round(s.kcal).toLocaleString('en-GB'):'–'}</div><div class="s">${s.full.length?Math.round(pc)+'% of the guide':'no full days yet'}</div></button>
+    <button class="tile" onclick="HM=today().slice(0,7);hgo('month')"><div class="k">Meals</div><div class="v">${mains==null?'–':mains.toFixed(1)}</div><div class="s">of 3 a day</div></button>
     <button class="tile" onclick="foodsSheet('Fruit and veg', e=>e.person==='${n}' && e.veg>0 && e.date>='${from}' && e.date<='${to}')"><div class="k">Fruit &amp; veg</div><div class="v ${s.veg>=5?'pos':''}">${s.full.length?s.veg.toFixed(1):'–'}</div><div class="s">a day, aim 5</div></button>
-    <button class="tile" onclick="foodsSheet('Treats', e=>e.person==='${n}' && e.group==='Treat' && e.date>='${from}' && e.date<='${to}')"><div class="k">Treats</div><div class="v">${s.treatsWk.toFixed(1)}</div><div class="s">a week</div></button></div>
-  <h2>Day by day</h2>
-  <div class="card"><div class="chart" id="oneChart"></div><div class="hint">The dashed line is ${esc(n)}'s daily guide, ${kcalF(need.kcal)}: ${esc(need.how)}.${HS.days>30?' Bars are weekly averages; tap one to open that week.':' Tap a bar to open that day.'}</div></div>
-  <h2>Where the calories come from</h2>
-  <div class="card">${ALL_SLOTS.map(x=>`<div class="stat-row"><span class="k">${SLOT_ICON[x]} ${x}</span><span class="v">${kcalF(s.bySlot[x])} <small class="muted">${Math.round(s.bySlot[x]/tot*100)}%</small></span></div>`).join('')}
-    ${s.noBreakfast?`<div class="hint">No breakfast on ${s.noBreakfast} of ${s.full.length} full days.</div>`:''}</div>
+    <button class="tile" onclick="foodsSheet('Snacks', e=>e.person==='${n}' && e.group==='Snack' && e.date>='${from}' && e.date<='${to}')"><div class="k">Snacks</div><div class="v">${s.treatsWk.toFixed(1)}</div><div class="s">a week</div></button></div>
   <h2>Eaten most</h2>
-  <div class="card">${top.map(f=>`<button class="stat-row" onclick="foodDetail(${jsA(f.name)},'${n}')"><span class="k">${GROUP_ICON[f.group]||''} ${esc(f.name)}</span><span class="v">${f.n}× <small class="muted">${kcalF(f.kcal/f.n)}</small>&nbsp;›</span></button>`).join('')||'<div class="empty">Nothing logged in this period</div>'}</div>
+  <div class="card">${top.map(f=>`<button class="stat-row" onclick="foodDetail(${jsA(f.name)},'${n}')"><span class="k">${GROUP_ICON[f.group]||''} ${esc(f.name)}</span><span class="v">${f.n}×&nbsp;›</span></button>`).join('')||'<div class="empty">Nothing logged in this period</div>'}</div>
   <h2>Logging</h2>
   <div class="card"><button class="stat-row" onclick="HM=today().slice(0,7);hgo('month')"><span class="k">Days with anything logged</span><span class="v">${s.logged} of ${s.n}&nbsp;›</span></button>
     <div class="stat-row"><span class="k">Full days (used for the averages)</span><span class="v">${s.full.length}</span></div>
+    ${s.noBreakfast?`<div class="stat-row"><span class="k">No breakfast</span><span class="v">${s.noBreakfast} of ${s.full.length} full days</span></div>`:''}
     <button class="stat-row" onclick="foodsSheet('Takeaway meals', e=>e.person==='${n}' && e.group==='Takeaway' && e.date>='${from}' && e.date<='${to}')"><span class="k">Takeaway meals</span><span class="v">${s.takeaways}&nbsp;›</span></button>
     ${bi?`<button class="stat-row" onclick="BW='${n}';hgo('body')"><span class="k">BMI (Weight &amp; height) ›</span><span class="v">${bi.bmi.toFixed(1)} <small class="${bi.cls||''}">${esc(bi.child?bi.label:bi.cat)}</small></span></button>`:''}</div>`;
-}
-/* daily bars for up to a month, weekly averages beyond */
-function kcalSeries(n, from, to){
-  const d = dayMap(n, from, to), out = [];
-  if (HS.days <= 30){ for (let x = from; x <= to; x = addDays(x,1)){ const v = d[x]; out.push({key:x, label:String(dayOf(x)), title:dOf(x).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}), a: v && fullDay(v) ? v.kcal : 0}); } }
-  else for (let x = from; x <= to; x = addDays(x,7)){ const e = addDays(x,6) > to ? to : addDays(x,6), full = Object.keys(d).filter(k=>k>=x && k<=e && fullDay(d[k]));
-    out.push({key:x, label:shortMonth(x.slice(0,7)), title:'Week of '+niceDate(x), a: full.length ? full.reduce((a,k)=>a+d[k].kcal,0)/full.length : 0, foot: full.length+' full day'+(full.length===1?'':'s')}); }
-  return out;
-}
-function hDrawStats(){
-  const to = today(), from = addDays(to, -(HS.days-1)), axis = v => v>=1000 ? (v/1000).toLocaleString('en-GB',{maximumFractionDigits:1})+'k' : String(v);
-  const one = document.getElementById('oneChart');
-  if (one) barChart(one, kcalSeries(HS.who, from, to), {color:COLOR[HS.who], line:kcalNeed(HS.who).kcal, fmt:kcalF, axis, pick:k=>openDay(k), every: HS.days<=7?1:HS.days<=30?7:Math.ceil(HS.days/7/6)});
-  const fam = document.getElementById('famChart');
-  if (fam){ const W=340, Hh=150, L=38, B=22, T=8;
-    const series = EATERS.map(n=>({n, pts:kcalSeries(n, from, to)})), len = series[0].pts.length, max = Math.max(1, ...series.flatMap(x=>x.pts.map(p=>p.a)));
-    const step = niceStep(max), top = Math.ceil(max/step)*step, y = v => T+(Hh-T-B)*(1-v/top), x = i => L+(W-L)*(len<2?0.5:i/(len-1));
-    let g = ''; for (let v=0; v<=top; v+=step) g += `<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+3}" text-anchor="end" font-size="12.5" fill="var(--muted)">${axis(v)}</text>`;
-    series.forEach(sr=>{ let path = '', pen = false; sr.pts.forEach((p,i)=>{ if (!p.a){ pen = false; return; } path += (pen?'L':'M')+x(i).toFixed(1)+','+y(p.a).toFixed(1); pen = true; });
-      g += `<path d="${path}" fill="none" stroke="${COLOR[sr.n]}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-      sr.pts.forEach((p,i)=>{ if (p.a && (i===0 || !sr.pts[i-1].a) && (i===len-1 || !sr.pts[i+1].a)) g += `<circle cx="${x(i)}" cy="${y(p.a)}" r="2.5" fill="${COLOR[sr.n]}"/>`; }); });
-    const every = Math.ceil(len/6); series[0].pts.forEach((p,i)=>{ if (i%every===0) g += `<text x="${x(i)}" y="${Hh-6}" text-anchor="middle" font-size="12.5" fill="var(--muted)">${esc(p.label)}</text>`; });
-    fam.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Calories a day for each person">${g}</svg>`; }
 }
 
 /* ---- weight and height ---- */
@@ -2893,10 +2908,10 @@ function hFoods(){
   <h2>Our meals</h2>
   <div class="card list">${order.map(([f,i,n])=>`<button class="item food" onclick="openFoodForm({i:${i}})"><div class="dot" style="background:var(--card-2);font-size:17px">${GROUP_ICON[f.group]||'&#x1F37D;&#xFE0F;'}</div>
       <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">${f.person?esc(f.person)+"'s · ":''}${f.place?esc(niceName(f.place))+' · ':''}${[f.items&&f.items.length ? esc(f.items.map(x=>x.name).join(', ')) : [f.group!=='Meal'?esc(f.group):'', esc(f.slot||'')].filter(Boolean).join(' · '), f.veg ? f.veg+' fruit &amp; veg' : '', n ? 'had '+n+'&times;' : ''].filter(Boolean).join(' · ')}</div></div>
-      <div class="amt">${Math.round(f.kcal)}<small class="muted"> kcal</small></div></button>`).join('') || '<div class="empty">No saved meals yet.</div>'}</div>
+      </button>`).join('') || '<div class="empty">No saved meals yet.</div>'}</div>
   ${most.length?`<h2>Eaten often, not saved</h2><div class="hint" style="margin-top:-6px">Tap one to check it and save it.</div><div class="card list">${most.map(f=>`<button class="item food" onclick='openFoodForm(${JSON.stringify({name:f.name,kcal:Math.round(f.one),group:f.group||'Meal',slot:f.slot||''}).replace(/'/g,'&#39;')})'><div class="dot" style="background:var(--card-2);font-size:17px">${GROUP_ICON[f.group]||'🍽️'}</div>
-      <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">Had ${f.n}× · about ${kcalF(f.one)} a portion</div></div><span class="chip">Save&nbsp;›</span></button>`).join('')}</div>`:''}
-  <div class="hint">Calories come from typical UK portions, your own figures, or Open Food Facts for packaged food. Nathan's Food diary tab is read in automatically and estimated from the words.</div>`;
+      <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">Had ${f.n}×</div></div><span class="chip">Save&nbsp;›</span></button>`).join('')}</div>`:''}
+  <div class="hint">Nathan's Food diary tab is read in automatically.</div>`;
 }
 /* ---- takeaway days from the bank. A card payment posts the day after, so the meal was the day before
    (147 of 152 takeaway payments checked); PayPal rows carry their own day. ---- */
@@ -2924,7 +2939,7 @@ function takeawayCard(d){
     const picks = todo.map(n=>{ const o = orders.find(f=>f.person===n) || orders.find(f=>!f.person); return o ? [n, H.foods.indexOf(o)] : null; }).filter(Boolean);
     return `<div class="due take" style="--due:var(--laura)"><b>&#x1F35F; Takeaway day: ${esc(place)} <span class="muted" style="font-weight:500">${gbp(p.amount)}</span></b>
       <span class="hint" style="margin:0">From the bank statement${had.length?'. Logged: '+esc(had.map(e=>e.person+', '+e.food).join(' · ')):''}.</span>
-      ${picks.map(([n,i])=>`<button class="secondary take-add" onclick="addOrders('${d}',[['${n}',${i}]])"><span>Add ${esc(n)}'s usual: <b>${esc(H.foods[i].name)}</b></span><span class="muted">${kcalF(orderKcal(H.foods[i],n))}</span></button>`).join('')}
+      ${picks.map(([n,i])=>`<button class="secondary take-add" onclick="addOrders('${d}',[['${n}',${i}]])"><span>Add ${esc(n)}'s usual: <b>${esc(H.foods[i].name)}</b></span></button>`).join('')}
       ${picks.length>1?`<button class="primary" onclick="addOrders('${d}',${jsA(picks)})">Add both</button>`:''}
       ${todo.filter(n=>!picks.some(x=>x[0]===n)).map(n=>`<button class="secondary" onclick="openFoodForm({place:${jsA(place)},group:'Takeaway',slot:'Dinner',person:'${n}',date:'${d}'})">Save ${esc(n)}'s usual from ${esc(place)}</button>`).join('')}
       ${todo.length?`<button class="secondary" onclick="HD='${d}';openAddMeal(null,'Dinner')">Pick what we had</button>`:''}
@@ -2960,9 +2975,9 @@ function openFoodForm(o){
     : {i:-1, old:'', name:o.name||'', kcal:o.kcal||'', items:[], group:o.group||'Meal', veg:0, slot:o.slot||'', place:o.place||'', person:o.person||'', then:o.then||null, date:o.date||null};
   if (!FF.items.length && FF.group==='Takeaway') FF.items = [{name:'',kcal:''}];
   drawFoodForm(); showSheet();
+  $('#sheet').scrollTop = 0;   // it opens from the foot of the add list: start at the name
+  if (FF.i<0) { const n = $('#ffN'); if (n) n.focus({preventScroll:true}); }
 }
-const ffSum = () => FF.items.reduce((a,x)=>a+(parseFloat(x.kcal)||0),0);
-function ffShowTotal(){ const t = $('#ffT'); if (t) t.textContent = kcalF(ffSum()); }
 function drawFoodForm(){
   RPL = recentPlaces();
   const take = FF.group==='Takeaway', go = FF.then ? (FF.then.am.swap ? 'Save and use it' : 'Save and add for '+FF.then.who.join(' & ')) : FF.date && FF.person ? 'Save and add for '+FF.person : 'Save';
@@ -2979,15 +2994,10 @@ function drawFoodForm(){
       <div class="hint" style="margin:4px 2px 0">${RPL.length?'From your bank. ':''}Linked to the bank name, the app spots your takeaway days on the statement and offers this order.</div>`:''}
     <label class="f">Whose ${take?'order':'meal'}</label>
     <div class="seg">${['',...EATERS].map(n=>`<button class="${FF.person===n?'on':''}" onclick="FF.person='${n}';drawFoodForm()">${n||'Anyone'}</button>`).join('')}</div>
-    <div class="hint" style="margin:4px 2px 0">${FF.person?`The kcal are what ${esc(FF.person)} has, as they are.`:"The kcal are for one adult portion. A child's is scaled by age."}</div>
     <label class="f">What's in it${FF.items.length?'':' <span class="opt">(optional)</span>'}</label>
     ${FF.items.map((x,k)=>`<div class="part"><input class="inp" placeholder="${['e.g. Burger meal','e.g. Chips','e.g. Can of Pepsi','e.g. Chicken fillets x3'][k]||'Another part'}" value="${esc(x.name)}" oninput="FF.items[${k}].name=this.value" autocomplete="off">
-      <input class="inp kc" inputmode="numeric" placeholder="kcal" value="${x.kcal===''||x.kcal==null?'':esc(x.kcal)}" oninput="FF.items[${k}].kcal=this.value;ffShowTotal()">
       <button class="icon-btn" aria-label="Remove this part" onclick="FF.items.splice(${k},1);drawFoodForm()">&times;</button></div>`).join('')}
-    <div class="two" style="margin-top:8px"><button class="secondary" style="margin:0" onclick="ffAddPart()">+ Add a part</button><button class="secondary" style="margin:0" onclick="ffEstimate()">Estimate kcal</button></div>
-    <label class="f">kcal ${FF.person?'for '+esc(FF.person):'for one adult portion'}</label>
-    ${FF.items.length ? `<div class="ff-total"><b id="ffT">${kcalF(ffSum())}</b> <span class="muted">the parts added up</span></div>`
-      : `<input class="inp" id="ffK" inputmode="numeric" value="${esc(FF.kcal)}" placeholder="e.g. 650" oninput="FF.kcal=this.value">`}
+    <button class="secondary" onclick="ffAddPart()">+ Add a part</button>
     <label class="f">Fruit &amp; veg portions</label>
     <div class="stepper"><button class="icon-btn" aria-label="One less" onclick="FF.veg=Math.max(0,FF.veg-1);drawFoodForm()">&minus;</button><b>${FF.veg}</b>
       <button class="icon-btn" aria-label="One more" onclick="FF.veg=Math.min(9,FF.veg+1);drawFoodForm()">+</button></div>
@@ -2997,25 +3007,12 @@ function drawFoodForm(){
     ${FF.i>=0?`<button class="secondary" style="color:var(--neg)" onclick="hRun('deleteFood',[FF.old],'Removed')">Remove</button>`:''}
     <button class="secondary" onclick="closeSheet()">Close</button>`;
 }
-function ffAddPart(){ FF.items.push({name:'',kcal:''}); drawFoodForm(); const l = [...document.querySelectorAll('#sheet .part input:not(.kc)')]; if (l.length) l[l.length-1].focus(); }
-async function ffEstimate(){
-  try{
-    if (FF.items.some(x=>x.name.trim())){
-      const todo = FF.items.filter(x=>x.name.trim() && !(parseFloat(x.kcal)>0)); if (!todo.length) return toast('Every part has its kcal already');
-      for (const x of todo){ const e = await api('estimateFood', x.name, FF.slot||'Dinner', ''); x.kcal = e.skip ? 0 : e.kcal; if (e.veg) FF.veg = Math.max(FF.veg, e.veg); }
-      drawFoodForm(); return toast('Worked out ' + todo.length + ' part' + (todo.length>1?'s':'') + '. Change any that look wrong.');
-    }
-    const t = FF.name.trim(); if (!t) return toast('Type the name or the parts first');
-    const e = await api('estimateFood', t, FF.slot||'Dinner', ''); if (e.skip) return;
-    FF.kcal = e.kcal; FF.veg = e.veg || FF.veg; drawFoodForm();
-    toast(e.guessed ? 'Nothing recognised, so that is a typical meal. Adding the parts gets closer.' : 'About ' + kcalF(e.kcal) + ' for an adult');
-  }catch(err){ toast('\u26a0 ' + (err.message||err)); }
-}
+function ffAddPart(){ FF.items.push({name:'',kcal:''}); drawFoodForm(); const l = [...document.querySelectorAll('#sheet .part input')]; if (l.length) l[l.length-1].focus(); }
 async function ffSave(){
   const name = FF.name.trim(); if (!name) return toast('Give it a name');
-  const items = FF.items.filter(x=>x.name.trim()).map(x=>({name:x.name.trim(), kcal:Math.round(parseFloat(x.kcal)||0)}));
-  const kcal = items.length ? items.reduce((a,x)=>a+x.kcal,0) : Math.round(parseFloat(FF.kcal));
-  if (!(kcal>0)) return toast(items.length ? 'Add the kcal for each part, or tap Work out kcal' : 'Enter the kcal, or tap Work out kcal');
+  const typical = {Drink:100, Snack:200}[FF.group] || {Breakfast:350, Lunch:500, Snack:200, Drinks:100}[FF.slot] || 650;
+  const old = Math.round(parseFloat(FF.kcal)) || typical, items = FF.items.filter(x=>x.name.trim()).map((x,k,l)=>({name:x.name.trim(), kcal:Math.round(parseFloat(x.kcal)||old/l.length)}));
+  const kcal = items.length ? items.reduce((a,x)=>a+x.kcal,0) : old;
   if (H.foods.some((f,k)=>k!==FF.i && f.name.toLowerCase()===name.toLowerCase())) return toast('There is already a meal called ' + name);
   const f = {name, kcal, group:FF.group, veg:FF.veg, meal:FF.slot, items, place:FF.group==='Takeaway' ? FF.place.trim() : '', person:FF.person};
   const then = FF.then, date = FF.date;
@@ -3031,22 +3028,20 @@ function amNewFood(){
 
 /* ---- health settings ---- */
 function hSettings(){
-  return `<div class="hint" style="margin:0 2px 10px">Used for each person's daily guide, their usual portion and the growth centiles. Stored in the Health People tab.</div>
-  ${PEOPLE.map(n=>{ const p = hp(n), need = kcalNeed(n), age = ageYears(n);
+  return `<div class="hint" style="margin:0 2px 10px">Used for each person's usual portion and the growth centiles. Stored in the Health People tab.</div>
+  ${PEOPLE.map(n=>{ const p = hp(n), age = ageYears(n);
     return `<div class="card hset" data-name="${n}" style="margin-bottom:10px;border-left:3px solid ${COLOR[n]}">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><b>${n}</b><span class="hint" style="margin:0">${age!=null?Math.floor(age)+(Math.floor(age)===1?' year':' years'):''}</span></div>
       <div class="two"><div><label class="f">Sex</label><select class="inp hs-sex"><option value="">–</option><option value="F" ${p.sex==='F'?'selected':''}>Female</option><option value="M" ${p.sex==='M'?'selected':''}>Male</option></select></div>
         <div><label class="f">Date of birth</label><input class="inp hs-dob" type="date" value="${esc(p.dob||'')}"></div></div>
-      ${EATERS.includes(n)&&(age==null||age>=16)?`<label class="f">Activity</label><select class="inp hs-act">${ACTIVITY.map(([v,l])=>`<option value="${v}" ${(p.activity||1.375)===v?'selected':''}>${l}</option>`).join('')}</select>`:''}
       ${age==null||age>=18?`<label class="f">Goal weight in kg (optional)</label><input class="inp hs-goal" inputmode="decimal" value="${p.goal||''}" placeholder="${(()=>{ const b = bmiInfo(n); return b&&b.hi ? 'Healthy range '+Math.round(b.lo)+' to '+Math.round(b.hi) : 'e.g. 75'; })()}">`:''}
-      ${EATERS.includes(n)?`<label class="f">Daily kcal (leave blank to work it out)</label><input class="inp hs-target" inputmode="numeric" value="${p.target||''}" placeholder="${need.kcal}">
-      <div class="hint">${kcalF(need.kcal)} a day: ${esc(need.how)}. Usual portion ${esc(fmtPortion(usualPortion(n)))}.</div>`:'<div class="hint">Weight and height only. Food is tracked for '+EATERS.join(' and ')+'.</div>'}</div>`; }).join('')}
+      ${EATERS.includes(n)?`<div class="hint">Usual portion: ${esc(fmtPortion(usualPortion(n)).replace(/ portions?$/,''))} of an adult's.</div>`:'<div class="hint">Weight and height only. Food is tracked for '+EATERS.join(' and ')+'.</div>'}</div>`; }).join('')}
   <div class="page-save"><button class="primary" onclick="saveHSettings()">Save</button></div>
-  <div class="hint">The daily guide is an average, not a limit. Children's figures are the UK averages for their age; for anything medical, the GP or health visitor knows best.</div>`;
+  <div class="hint">Children's portions follow the UK averages for their age; for anything medical, the GP or health visitor knows best.</div>`;
 }
 function saveHSettings(){
   const list = [...document.querySelectorAll('.hset')].map(c=>({name:c.dataset.name, sex:c.querySelector('.hs-sex').value, dob:c.querySelector('.hs-dob').value,
-    activity:c.querySelector('.hs-act') ? parseFloat(c.querySelector('.hs-act').value) : null, target:c.querySelector('.hs-target') ? parseFloat(c.querySelector('.hs-target').value)||null : hp(c.dataset.name).target||null, goal:c.querySelector('.hs-goal') ? parseFloat(c.querySelector('.hs-goal').value)||null : null}));
+    activity:hp(c.dataset.name).activity||null, target:c.querySelector('.hs-target') ? parseFloat(c.querySelector('.hs-target').value)||null : hp(c.dataset.name).target||null, goal:c.querySelector('.hs-goal') ? parseFloat(c.querySelector('.hs-goal').value)||null : null}));
   hRun('saveHealthPeople', [list], 'Saved').then(r=>{ if (r) hgo('today'); });
 }
 
@@ -3055,7 +3050,7 @@ const HMock = (() => {
   const base = [['Cereal with milk',200,'Meal',0,'B'],['Toast and butter (2 slices)',250,'Meal',0,'B'],['Porridge with milk',250,'Meal',0,'B'],['Ham sandwich',330,'Meal',0,'L'],
     ['Jacket potato, cheese and beans',500,'Meal',1,'L'],['Soup with bread',300,'Meal',1,'L'],['Spaghetti bolognese',650,'Meal',1,'D'],['Chicken curry with rice',700,'Meal',1,'D'],
     ['Fish fingers (3)',170,'Meal',0,'D'],['Roast dinner',750,'Meal',2,'D'],['Pizza takeaway (3 slices)',800,'Takeaway',0,'D'],['Apple',55,'Fruit & veg',1,'S'],
-    ['Banana',100,'Fruit & veg',1,'S'],['Crisps (bag)',130,'Snack',0,'S'],['Chocolate bar',230,'Treat',0,'S'],['Glass of milk',120,'Drink',0,'']];
+    ['Banana',100,'Fruit & veg',1,'S'],['Crisps (bag)',130,'Snack',0,'S'],['Chocolate bar',230,'Snack',0,'S'],['Glass of milk',120,'Drink',0,'']];
   const ear = {M:[0,765,1004,1171,1386,1482,1577,1649,1745,1840,2032,2127,2247,2414,2629,2820,2964,3083,3155],F:[0,717,932,1076,1291,1362,1482,1530,1625,1721,1936,2032,2103,2223,2342,2390,2414,2462,2462]};
   const port = {Tom:1, Laura:1, Nathan:0.75, Evy:0.25};
   const s = {people:[['Tom','M','1987-03-14',1.375,null,78],['Laura','F','1989-07-02',1.375,null],['Nathan','M','2020-03-01',null,null],['Evy','F','2025-06-01',null,null]],
@@ -3371,10 +3366,32 @@ function spendByDay(){
   SPD_SRC = D.transactions; return SPD = m;
 }
 /* what kind of spending (Tom): out and about first, then online, then bills. Same rule as spendKind_ in SpendCal.js */
-const PAY_KINDS = [['out','Out and about'],['online','Online'],['bill','Bills']];
+const PAY_KINDS = [['out','Out and about'],['online','Online'],['bill','Bills and regular payments']];
 const BILL_CATS = ['Mortgage','Household bills','Insurance','Phone & internet','Subscriptions','Childcare','Bank fees','Family payments'];
 const ONLINE_RE = /AMAZON|AMZN|AMZ\b|EBAY|ETSY|HUEL|\.COM\b|\.CO\.UK|WWW\.|ONLINE|ITUNES|APPLE\b|GOOGLE|STEAM|PLAYSTATION|NINTENDO|XBOX|MICROSOFT|DELIVEROO|JUST ?EAT|UBER ?\*? ?EATS|SHEIN|TEMU|ASOS|BOOHOO|VINTED|ZOOPLUS|WAYFAIR|PAYPAL|KLARNA|CLEARPAY|NETFLIX|SPOTIFY|DISNEY PLUS|PATREON|OCADO|MOONPIG|FUNKY PIGEON|NOTONTHEHIGH|^SP /i;
-const payKind = t => BILL_CATS.includes(t.category) ? 'bill' : ONLINE_RE.test(t.merchant) || isPayPal(t) ? 'online' : 'out';
+/* a regular payment (Tom: counts as a bill): at the same shop, two others of the same amount (within 3%, or 0.5)
+   a month or a quarter away, or one a year away at a shop we hardly use; and no more than 2 others there within
+   40 days, so a weekly coffee is not one. rows: [shop key, 'yyyy-mm-dd', amount > 0] */
+function regularFlags(rows) {
+  const g = {}, out = rows.map(() => false), day = s => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 864e5;
+  const cyc = gap => gap >= 26 && gap <= 35 ? 1 : gap >= 85 && gap <= 95 ? 3 : gap >= 355 && gap <= 375 ? 12 : 0;
+  rows.forEach((r, i) => (g[r[0]] = g[r[0]] || []).push(i));
+  Object.keys(g).forEach(k => { const ix = g[k]; if (ix.length < 2) return;
+    const d = ix.map(i => day(rows[i][1]));
+    ix.forEach((i, a) => { let near = 0, half = 0; const link = {};
+      ix.forEach((j, b) => { if (a === b) return; const gap = Math.abs(d[a] - d[b]), c = cyc(gap);
+        if (gap <= 40) near++; if (gap <= 180) half++;
+        if (c && Math.abs(rows[i][2] - rows[j][2]) <= Math.max(0.5, rows[i][2] * 0.03)) link[c] = (link[c] || 0) + 1; });
+      out[i] = near <= 2 && (link[12] && half <= 2 || link[1] >= 2 || link[3] >= 2); }); });
+  return out;
+}
+let REG = null, REG_SRC = null;
+function regularSet(){
+  if (REG_SRC === D.transactions) return REG;
+  const l = (D.transactions||[]).filter(t=>t.type==='spend' && t.amount<0), f = regularFlags(l.map(t=>[normM(t.merchant), t.date, -t.amount]));
+  REG_SRC = D.transactions; return REG = new Set(l.filter((t,i)=>f[i]));
+}
+const payKind = t => BILL_CATS.includes(t.category) || regularSet().has(t) ? 'bill' : ONLINE_RE.test(t.merchant) || isPayPal(t) ? 'online' : 'out';
 function dayKind(d){ const l = spendByDay()[d] || []; return PAY_KINDS.map(k=>k[0]).find(k=>l.some(t=>payKind(t)===k)) || 'bill'; }
 function calMin(){ const k = Object.keys(spendByDay()); return k.length ? k.reduce((a,b)=>a<b?a:b).slice(0,7) : today().slice(0,7); }
 function openMonthPick(){
@@ -3417,8 +3434,8 @@ function calsShown(){
   const l = P.cal.shown && P.cal.shown.length ? P.cal.shown : [{name:P.cal.name}];
   return `<div class="card cal-from"><div class="t">From Google Calendar, the next ${Math.round(CAL_SHOWN/30)} months</div>
     <div class="cal-from-l">${l.map(c=>`<span><i class="ev-dot" style="background:${evCol(c)}"></i>${esc(c.name)}</span>`).join('')}</div>
-    <div class="d">${P.me==='Tom' ? 'The calendars ticked in your Google Calendar. Tick or untick one there and it follows here.' : 'The calendars Tom has ticked, where they are shared with you.'}
-    New events go in <b>${esc(P.cal.name)}</b>.${P.me==='Tom' ? ' <button class="linkish" onclick="pickCalendar()">Change</button>' : ''}</div></div>`;
+    <div class="d">${P.cal.copyAt ? `Tom's calendars as of ${esc(new Date(P.cal.copyAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))}. They refresh when Tom's own account opens the app, and each morning.` : P.me==='Tom' ? 'The calendars ticked in your Google Calendar. Tick or untick one there and it follows here.' : 'The calendars Tom has ticked.'}
+    ${P.cal.as ? `Signed in as ${esc(P.cal.as)}. ` : ''}New events go in <b>${esc(P.cal.name)}</b>.${P.me==='Tom' ? ' <button class="linkish" onclick="pickCalendar()">Change</button>' : ''}</div></div>`;
 }
 const CAL_SHOWN = 120;
 let AE = null;
