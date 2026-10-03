@@ -230,11 +230,9 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .cal-from{margin-top:18px;font-size:var(--fs-small)}.cal-from .t{font-weight:600}.cal-from .d{color:var(--muted);margin-top:6px}
 .cal-from-l{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
 .cal-d{position:relative}.cal-s.k-out{color:#e34948}.cal-s.k-online{color:#e8a33d}.cal-s.k-bill{color:var(--muted);opacity:.7}
-.cal-key .cal-s{position:static;margin-right:3px;font-size:12px}
 .pk-h{display:flex;align-items:center;gap:4px;font-size:var(--fs-small);font-weight:700;margin:14px 2px 6px}.pk-h .cal-s{position:static;font-size:13px}.pk-h span{margin-left:auto;color:var(--muted);font-weight:600}.cal-s{position:absolute;top:3px;right:5px;font:700 11px/1 var(--font-num);font-style:normal;color:var(--muted)}
 .cal-mon{background:none;border:0;font:600 15px var(--font);color:var(--text);cursor:pointer;padding:6px 8px}
 .mon-g{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.mon-g .chip{justify-content:center;padding-left:0;padding-right:0}.mon-g .chip:disabled{opacity:.35}
-.cal-key{width:100%;justify-content:center;background:none;border:0;padding:4px 0 0;font:inherit;font-size:12px;color:var(--muted);cursor:pointer}
 .ev-when{width:76px;flex:none;display:flex;flex-direction:column;font-size:var(--fs-small);color:var(--muted);padding-top:1px}
 .ev-when b{color:var(--text);font-size:14px}
 .note-add{display:flex;gap:8px;margin-bottom:8px}.note-tag{margin:0 0 10px}.note-add .chip{padding:0 18px}
@@ -330,8 +328,6 @@ button.stat-row{width:100%;background:none;border-left:0;border-right:0;border-t
 .trend .k{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .trend .v{white-space:nowrap;font-weight:600;font-variant-numeric:tabular-nums;grid-row:1;grid-column:2}
 .mini-bars{grid-column:1/-1;width:100%;height:24px;display:block}
-.goal-edit{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
-.goal-edit summary{font-weight:600;color:var(--family-2);cursor:pointer}
 .ytab.cmp td:nth-child(n+3),.ytab.cmp th:nth-child(n+3){font-weight:600}
 .muted{color:var(--muted)}
 
@@ -972,9 +968,7 @@ function vPots(){
       <button class="pot" style="--c:${COLOR[p.name]}" onclick="openPot('${p.name}')">
         <div class="name"><span class="avatar">${p.name[0]}</span>${p.name}</div>
         <div class="bal">${gbp(p.balance)}</div>
-        ${(()=>{ const gl = goalLine(p); return gl
-          ? `<div class="sub">${esc(gl.g.goal)} · ${gl.eta}</div><div class="bar"><i style="width:${Math.max(4,gl.pc)}%"></i></div>`
-          : `<div class="bar"><i style="width:${Math.max(4,Math.abs(p.balance)/maxBal*100)}%"></i></div>`; })()}
+        <div class="bar"><i style="width:${Math.max(4,Math.abs(p.balance)/maxBal*100)}%"></i></div>
       </button>`).join('')}
   </div>
   <div class="chips" style="margin-top:18px">${[['history','History'],['topups','Top-ups']].map(([k,l])=>`<button class="chip ${POTSUB===k?'on':''}" onclick="POTSUB='${k}';render()">${l}</button>`).join('')}</div>
@@ -1025,9 +1019,6 @@ function moneyWins(){
     const h = heldAt(), b1 = X.bal[X.bal.length-1], b0 = X.bal.filter(b=>b.x<=addDays(b1.x,-365)).pop();
     if (b0){ const d = (b1.v+b1.s-h(b1.x))-(b0.v+b0.s-h(b0.x)); if (d>500) W.push([70+Math.min(20,d/1000), '&#x1F4C8;', `Our money is up <b>${gbp(d)}</b> on a year ago`]); }
   }
-  D.pots.forEach(p=>{ const gl = goalLine(p); if (!gl) return;
-    if (gl.pc>=100) W.push([85, '&#x1F389;', `${esc(p.name)} reached the goal: <b>${esc(gl.g.goal)}</b>`]);
-    else if (gl.pc>=50) W.push([35+gl.pc/5, '&#x1F3AF;', `${esc(p.name)} is <b>${Math.round(gl.pc)}%</b> of the way to ${esc(gl.g.goal)}`]); });
   const p = projection();
   const lead = [];   // always first: last year's profit, then where the last 3 months are heading
   if (p && p.year>0) lead.push([0, '&#x1F4B0;', `<b>${gbpS(p.year)}</b> profit in the last 12 months`]);
@@ -1812,28 +1803,6 @@ function drawDayChart(m){
   barChart(el, per.map((v,i)=>({label: String(i+1), title: dOf(m+'-'+String(i+1).padStart(2,'0')).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}), a:v})), {every:7});   // days 1, 8, 15, 22, 29
 }
 
-/* ---- pot goals ---- */
-function potRate(name){   // average monthly change over the last 3 months: top-ups, adds and spends
-  const i = PEOPLE.indexOf(name), cutoff = shiftMonth(thisMonth(), -3);
-  const top = D.contrib.filter(c=>c.month>=cutoff).reduce((a,c)=>a+(c.pots[i]||0),0);
-  const log = D.log.filter(e=>e.person===name && e.date.slice(0,7)>=cutoff).reduce((a,e)=>a+e.amount,0);
-  return (top+log)/3;
-}
-function goalLine(p){
-  const g = (D.goals||{})[p.name]; if (!g) return null;
-  const left = g.target - p.balance, rate = potRate(p.name);
-  const eta = left<=0 ? 'reached 🎉' : rate>0 ? '~'+Math.ceil(left/rate)+' month'+(Math.ceil(left/rate)>1?'s':'')+' to go' : 'no progress lately';
-  return {g, pc: Math.max(0,Math.min(100,p.balance/g.target*100)), eta};
-}
-function goalEditor(){
-  const g = (D.goals||{})[S.person] || {goal:'', target:''};
-  return `<details class="goal-edit"${g.goal?'':''}><summary>${g.goal?`Goal: ${esc(g.goal)} · ${gbp(g.target)}`:'Set a goal for '+esc(S.person)}</summary>
-    <div class="two"><div><label class="f">Saving for</label><input class="inp" id="goalName" placeholder="e.g. New bike" value="${esc(g.goal)}"></div>
-    <div><label class="f">Target</label><input class="inp" id="goalTarget" inputmode="decimal" placeholder="150" value="${g.target||''}"></div></div>
-    <div class="two"><button class="secondary" onclick="run('setGoal',[S.person,$('#goalName').value.trim(),parseFloat($('#goalTarget').value)||0],'Goal saved')">Save goal</button>
-    ${g.goal?`<button class="secondary" onclick="run('setGoal',[S.person,'',0],'Goal removed')">Remove</button>`:'<span></span>'}</div></details>`;
-}
-
 /* ---- statement upload (Tom only) ---- */
 function readStatementFile(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsText(f,'windows-1252'); }); }
 function pickStatements(){
@@ -1954,7 +1923,7 @@ function drawSheet(){
     ${S.mode==='add'?`<div class="hint" style="margin-top:10px">Comes out of the Family pot: ${gbp(D.overview.familyPot)} → <b>${gbp(D.overview.familyPot-(parseFloat(amtVal)||0))}</b></div>`:''}
     ${S.mode==='spend'?`<label class="toggle"><input type="checkbox" id="fromBank" checked> Paid from our account (takes it off the bank balance too)</label>`:''}
     <button class="primary" style="--c:${c}" onclick="savePot()">${S.mode==='spend'?'Spend from '+S.person:S.mode==='add'?'Add to '+S.person:'Move to '+S.to}</button>
-    ${S.mode!=='move'?goalEditor():''}`;
+`;
   afterHint();
 }
 function afterHint(){
@@ -2209,7 +2178,7 @@ function hToday(){
   ${dayNoteHTML()}
   ${day.length?`<div class="hint" style="margin-top:10px">${veg} fruit &amp; veg portion${veg===1?'':'s'} between them</div>`:''}
   ${weighDue()}
-  ${isToday?fillInCard():''}`;
+`;
 }
 /* ---- how much was eaten: a slider (5% steps) plus quick picks ---- */
 const eatLabel = v => v >= 0.995 ? 'All of it' : v <= 0.001 ? 'None of it' : Math.round(v*100) + '%';
@@ -2896,21 +2865,6 @@ function takeawayCard(d){
       ${todo.length?`<button class="secondary" onclick="HD='${d}';openAddMeal(null,'Dinner')">Pick what we had</button>`:''}
     </div>`; }).join('');
 }
-/* bank takeaway days in the last 45 days with no takeaway and no dinner logged: a nudge to fill them in */
-function takeawayToFill(){
-  const seen = new Set();
-  return bankTakeaways(addDays(today(),-45), addDays(today(),-1)).sort((a,b)=>a.date<b.date?1:-1).filter(p=>{
-    if (seen.has(p.date)) return false; seen.add(p.date);
-    return !H.meals.some(e=>e.date===p.date && (e.group==='Takeaway' || e.meal==='Dinner')); });
-}
-function fillInCard(){
-  const l = takeawayToFill(); if (!l.length) return '';
-  return `<h2>Takeaway days to fill in</h2><div class="card list">${l.slice(0,5).map(p=>`<button class="item food" onclick="HD='${p.date}';render()">
-      <div class="dot" style="background:var(--card-2);font-size:17px">&#x1F35F;</div>
-      <div class="mid"><div class="t">${esc(niceName(p.merchant))}</div><div class="d">${dOf(p.date).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})}</div></div>
-      <div class="amt">${gbp(p.amount)}</div></button>`).join('')}</div>
-    <div class="hint">From the bank statement, so they show once it is uploaded. Tap a day to add what you had.</div>`;
-}
 /* what n had the last time we paid that place, else an order saved for it before */
 function lastOrder(n, merchant, d){
   const k = normPlace(merchant), days = new Set(bankTakeaways(addDays(d,-730), addDays(d,-1)).filter(p=>normPlace(p.merchant).slice(0,10)===k.slice(0,10)).map(p=>p.date));
@@ -3146,6 +3100,28 @@ function ironCard(d){
     <button class="iron-t" onclick="ironTick('${d}')"><b>&#x1F48A; Nathan's iron${isT?'':', '+esc(dayLabel(d).toLowerCase())}</b><small>${m ? 'Given'+(m.by?' by '+esc(m.by):'') : isT ? 'Not given yet today' : 'Not ticked'} &middot; ${week.length<7 ? `${n} of ${week.length} day${week.length>1?'s':''} so far` : `${n} of the last 7 days`}</small></button>
     <span class="iron-week">${week.map(x=>`<i class="${P.marks.some(m=>m.what===IRON && m.date===x)?'on':''}"></i>`).join('')}</span></div>`;
 }
+/* jobs that come round on set days: a tick on Home on the day, saved as a mark (was a repeating calendar event).
+   every = weeks between; days = weekdays (0 Sun .. 6 Sat); start = the first one */
+const CHORES = [
+  {what:'Bins out: black', icon:'&#x26AB;', start:'2018-06-01', every:2, days:[5]},
+  {what:'Bins out: blue', icon:'&#x1F535;', start:'2018-06-08', every:4, days:[5]},
+  {what:'Bins out: brown', icon:'&#x1F7E4;', start:'2018-05-25', every:4, days:[5]},
+  {what:'Nail reminder', icon:'&#x1F485;', start:'2026-10-03', every:1, days:[2,6]},
+  {what:'Water the plants', icon:'&#x1FAB4;', start:'2026-10-03', every:1, days:[6]},
+];
+const CHORE_NAMES = new Set(CHORES.map(c=>c.what));
+const monOf = d => addDays(d, -((dOf(d).getDay()+6)%7));
+function choresOn(d){ return CHORES.filter(c=>d >= c.start && c.days.includes(dOf(d).getDay()) && Math.round((dayN(monOf(d)) - dayN(monOf(c.start)))/7) % c.every === 0); }
+function choreRow(c, d){
+  const m = P.marks.find(x=>x.what===c.what && x.date===d);
+  return `<div class="note-row ${m?'done':''}"><button class="tick" aria-label="${m?'Untick':'Tick'}" onclick="choreTick(${jsA(c.what)},'${d}')">${m?TICK_SVG:''}</button>
+    <button class="note-t" onclick="choreTick(${jsA(c.what)},'${d}')">${c.icon} ${esc(c.what)}<small>${m ? 'Done'+(m.by?' by '+esc(m.by):'') : d===today() ? 'Today' : esc(dayLabel(d))}</small></button></div>`;
+}
+function choreTick(what, d){
+  const m = P.marks.find(x=>x.what===what && x.date===d);
+  if (m) pRun('deleteMark', [m.id], 'Unticked', ()=>pRun('addMark', [{id:newId(), what, date:d, note:''}], 'Put back', null, true), true);
+  else { const n = {id:newId(), what, date:d, note:''}; pRun('addMark', [n], 'Done', ()=>pRun('deleteMark', [n.id], 'Taken off', null, true), true); }
+}
 function ironTick(d){
   const m = P && P.marks.find(x=>x.what===IRON && x.date===d), redraw = () => { if (MODE!=='plans'){ const y = scrollY; render(); scrollTo(0,y); } };
   if (m){ pRun('deleteMark', [m.id], 'Iron unticked', ()=>{ pRun('addMark', [{id:newId(), what:IRON, date:d, note:''}], 'Put back', null, true); redraw(); }, true); }
@@ -3156,7 +3132,7 @@ function ironTick(d){
 /* ---- marked days: runs of days close together are one time (a period of 5 days is one) ---- */
 function markStats(){
   const by = {};
-  P.marks.forEach(m=>{ if (m.what!==IRON) (by[m.what] = by[m.what] || []).push(m); });
+  P.marks.forEach(m=>{ if (m.what!==IRON && !CHORE_NAMES.has(m.what)) (by[m.what] = by[m.what] || []).push(m); });
   return Object.entries(by).map(([what, list])=>{
     list.sort((a,b)=>a.date<b.date?-1:1);
     const runs = []; list.forEach(m=>{ const r = runs[runs.length-1]; if (r && dayN(m.date) - dayN(r.last) <= 2){ r.last = m.date; r.n++; } else runs.push({start:m.date, last:m.date, n:1}); });
@@ -3214,8 +3190,8 @@ function pUp(){
   <h2>To do</h2>
   <div class="note-add"><input class="inp" id="noteIn" placeholder="${NOTE_APP?'An idea for the app':'Add a note or reminder'}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
   <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App improvement</button></div>
-  <div class="card notes">${open.map(noteRow).join('')}
-    ${!open.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
+  <div class="card notes">${choresOn(today()).map(c=>choreRow(c, today())).join('')}${open.map(noteRow).join('')}
+    ${!open.length && !choresOn(today()).length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
   ${mealsCard()}
   ${homeCal()}
   ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
@@ -3264,17 +3240,15 @@ function openDone(){
 let HCM = today().slice(0, 7);
 const evOn = (e, d) => e.allDay ? e.start.slice(0,10) <= d && e.end.slice(0,10) > d : e.start.slice(0,10) <= d && e.end.slice(0,10) >= d && !(e.end.slice(0,10) === d && e.end.slice(11) === '00:00' && e.start.slice(0,10) < d);
 const dayEvents = d => (P.events||[]).filter(e=>evOn(e, d)).sort((a,b)=>a.allDay===b.allDay ? (a.start<b.start?-1:1) : a.allDay?-1:1);
-/* the month grid with its key: on Home and at the top of the Calendar tab */
+/* the month grid (one dot = something on, pound sign = money spent): on Home and at the top of the Calendar tab */
 function calMonth(due){
   const t = today(), first = dOf(HCM + '-01'), lead = (first.getDay() + 6) % 7, n = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   const days = Array.from({length:n}, (_, i)=>HCM + '-' + String(i + 1).padStart(2, '0'));
   const cells = Array(lead).fill('<span></span>').concat(days.map(d=>{ const k = dayEvents(d);
-    return `<button class="cal-d ${d===t?'now':''} ${k.length?'has':''} ${d<t?'past':''} ${due.some(x=>x.next===d)?'exp':''}" onclick="openCalDay('${d}')"><b>${+d.slice(8)}</b>${spendByDay()[d] ? `<em class="cal-s k-${dayKind(d)}">&pound;</em>` : ''}<span>${k.slice(0,3).map(e=>`<i style="color:${evCol(e)}">&bull;</i>`).join('')}</span></button>`; })).join('');
+    return `<button class="cal-d ${d===t?'now':''} ${k.length?'has':''} ${d<t?'past':''} ${due.some(x=>x.next===d)?'exp':''}" onclick="openCalDay('${d}')"><b>${+d.slice(8)}</b>${spendByDay()[d] ? `<em class="cal-s">&pound;</em>` : ''}<span>${k.length ? '<i>&bull;</i>' : ''}</span></button>`; })).join('');
   return `<div class="card cal"><div class="cal-top"><button class="icon-btn" onclick="HCM=shiftMonth(HCM,-1);render()" ${HCM<=calMin()?'disabled':''} aria-label="Month before">&lsaquo;</button>
       <button class="cal-mon" onclick="openMonthPick()">${esc(monthName(HCM))} &#9662;</button><button class="icon-btn" onclick="HCM=shiftMonth(HCM,1);render()" ${HCM>=shiftMonth(t.slice(0,7),3)?'disabled':''} aria-label="Month after">&rsaquo;</button></div>
-    <div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div>
-    ${D && D.transactions ? `<div class="cal-from-l cal-key">${PAY_KINDS.map(k=>`<span><em class="cal-s k-${k[0]}">&pound;</em>${k[1]}</span>`).join('')}</div>` : ''}
-    ${P.cal && P.cal.shown && P.cal.shown.length ? `<button class="cal-from-l cal-key" onclick="pgo('cal')">${P.cal.shown.map(c=>`<span><i class="ev-dot" style="background:${evCol(c)}"></i>${esc(c.name)}</span>`).join('')}</button>` : ''}</div>`;
+    <div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div></div>`;
 }
 function homeCal(){
   const t = today();
