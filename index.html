@@ -164,20 +164,15 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .slot.free .add{margin:auto 0;color:var(--muted);font-weight:600}
 .slot-list .item{gap:8px}
 .eaten{margin:4px 0 2px}
-.build-btn{display:flex;align-items:center;gap:12px;width:100%;margin:12px 0 2px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card-2);font:inherit;color:var(--text);text-align:left;cursor:pointer}
-.build-btn>span:first-child{font-size:22px}.build-btn>span:nth-child(2){flex:1}.build-btn small{display:block;color:var(--muted);font-size:var(--fs-small)}
 .menu-h{display:flex;align-items:flex-end;gap:8px;margin-top:4px}.menu-h label.f{flex:1}
 .mini-seg{display:flex;background:var(--card-2);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px;margin-bottom:6px}
 .mini-seg button{border:0;background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--muted);padding:5px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
 .mini-seg button.on{background:var(--text);color:var(--bg)}
 .am-added{background:var(--card-2);border-radius:var(--r-sm);padding:8px 12px;margin:0 0 10px;font-size:var(--fs-small);font-weight:600}
-.build-sum{display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding-top:10px}.build-sum b{line-height:1.3}.build-sum span{white-space:nowrap;color:var(--muted);font-size:var(--fs-small)}
-.build-save{display:flex;gap:8px;align-items:center;font-size:var(--fs-small);color:var(--muted);margin-top:6px}
 .quick-drink.qm{white-space:normal}.qm small{display:block;font-weight:500;color:var(--muted);font-size:11px}.qm span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .quick-drink{border:1px dashed var(--line);background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--text);border-radius:var(--r-sm);padding:7px 8px;margin-top:6px;cursor:pointer;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot-wrap{display:flex;flex-direction:column;min-width:0}.slot-wrap .slot{flex:1}
 .part-eat{padding:10px 0;border-bottom:1px solid var(--line)}.part-eat .chips{margin:6px 0 0}.pe-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.pe-h span{font-size:var(--fs-small)}
-.chip-add{border-style:dashed}
 .veg-switch{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);color:inherit;font:inherit;text-align:left;cursor:pointer}
 .veg-switch small{display:block;color:var(--muted);font-size:var(--fs-small)}
 .veg-switch .vs-box{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-weight:700}
@@ -187,7 +182,7 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .iron .tick{flex:none}.iron.on .tick{background:var(--nathan);border-color:var(--nathan);color:#fff}
 .iron-t{flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0;cursor:pointer}
 .iron-t small{display:block;color:var(--muted);font-size:var(--fs-small)}
-.iron-week{display:flex;gap:3px;flex:none}.iron-week i{width:7px;height:7px;border-radius:50%;background:var(--line)}.iron-week i.on{background:var(--nathan)}.am-more{display:flex;justify-content:space-between;gap:12px}.am-typed{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:2px}.am-typed small{font-weight:400;opacity:.85;font-size:var(--fs-small)}.b-new{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;margin:8px 0 4px}
+.iron-week{display:flex;gap:3px;flex:none}.iron-week i{width:7px;height:7px;border-radius:50%;background:var(--line)}.iron-week i.on{background:var(--nathan)}.am-more{display:flex;justify-content:space-between;gap:12px}.am-typed{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:2px}.am-typed small{font-weight:400;opacity:.85;font-size:var(--fs-small)}
 .am-opts{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;margin:10px 0 4px}
 .am-opts summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer;font-size:var(--fs-small);color:var(--muted);font-weight:600;list-style:none}
 .am-opts summary::-webkit-details-marker{display:none}
@@ -2483,18 +2478,17 @@ let AMS = {all:false, full:false, veg:{Lunch:false, Dinner:true}};
 try{ const v = JSON.parse(localStorage.getItem('ganymede-plus-veg2')); if (v) AMS.veg = v; }catch(e){}
 function amVegT(){ AMS.veg[AM.meal] = !AMS.veg[AM.meal]; try{ localStorage.setItem('ganymede-plus-veg2', JSON.stringify(AMS.veg)); }catch(e){} drawAddMeal(); }
 const amVegOn = () => !!AMS.veg[AM.meal] && !AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner');
-const vegFits = f => !f.person && f.src!=='built' && f.group!=='Drink' && f.group!=='Takeaway' && !/\bveg|salad/i.test(f.name);
+const vegFits = f => !f.person && f.group!=='Drink' && f.group!=='Takeaway' && !/\bveg|salad/i.test(f.name);
 /* a portion of mixed veg, its own row: 50 kcal and one of the five a day for an adult */
 const vegRow = (n, date, meal, portion, ate) => ({date, person:n, meal, food:VEG_FOOD, kcal:Math.round(50*portion*(ate==null?1:ate)), served:Math.round(50*portion), eaten:ate==null?1:ate, note:'', portion, veg:1, group:'Fruit & veg'});
 /* the meat for a meat-and-veg dinner, the ones we have most first */
 function meatChips(){
-  const n = {}; H.meals.forEach(e=>{ if (!AM.who.includes(e.person) || e.meal!=='Dinner') return; const k = e.food.toLowerCase(); BUILD.Protein.forEach(([m])=>{ if (k.includes(m.toLowerCase())) n[m] = (n[m]||0)+1; }); });
-  return BUILD.Protein.map((p,i)=>[p,i]).sort((a,b)=>(n[b[0][0]]||0)-(n[a[0][0]]||0) || a[1]-b[1]).slice(0, 10).map(x=>x[0]);
+  const n = {}; H.meals.forEach(e=>{ if (!AM.who.includes(e.person) || e.meal!=='Dinner') return; const k = e.food.toLowerCase(); MEATS.forEach(([m])=>{ if (k.includes(m.toLowerCase())) n[m] = (n[m]||0)+1; }); });
+  return MEATS.map((p,i)=>[p,i]).sort((a,b)=>(n[b[0][0]]||0)-(n[a[0][0]]||0) || a[1]-b[1]).slice(0, 10).map(x=>x[0]);
 }
-function amMeat(name){ const x = BUILD.Protein.find(p=>p[0]===name); if (x) amAdd({name:x[0], kcal:x[1], group:'Meal', veg:0, src:'meat'}); }
+function amMeat(name){ const x = MEATS.find(p=>p[0]===name); if (x) amAdd({name:x[0], kcal:x[1], group:'Meal', veg:0, src:'meat'}); }
 const agoF = d => { if (!d) return ''; const n = daysBetween(d, today())-1; return n<=0 ? 'today' : n===1 ? 'yesterday' : n<7 ? n+' days ago' : n<60 ? Math.round(n/7)+' weeks ago' : Math.round(n/30.44)+' months ago'; };
 function drawAddMeal(){
-  if (AM.build) return drawBuilder();
   const q = AM.q.trim(); let list = amCandidates(), more = 0;
   if (q) list = list.slice(0, 8);
   else { const y = list.filter(f=>f.src==='yesterday'), rc = list.filter(f=>f.src==='recent'), n = AMS.full ? 40 : 6; more = rc.length - n; list = y.concat(rc.slice(0, n)); }
@@ -2535,7 +2529,6 @@ function drawAddMeal(){
       <input class="inp" id="amNote" placeholder="Comment (optional)" value="${esc(AM.note||'')}" oninput="AM.note=this.value" autocomplete="off" style="margin:8px 0 4px">
     </details>
     ${sect('Worked out','estimate')}${sect('Found online','online')}
-    ${q?'':`<button class="build-btn" onclick="amBuild()"><span>&#x1F373;</span><span><b>Build a meal</b><small>Pick the protein, carbs and veg</small></span><span class="chev">&rsaquo;</span></button>`}
     ${q?'':sect('Same as '+(HD===today()?'yesterday':'the day before'),'yesterday')}
     ${q?'':`<div class="menu-h"><label class="f">Had before</label>
       <div class="mini-seg">${[[false,AM.meal],[true,'Any meal']].map(([v,l])=>`<button class="${AMS.all===v?'on':''}" onclick="AMS.all=${v};drawAddMeal()">${esc(l)}</button>`).join('')}</div></div>`}
@@ -2566,60 +2559,13 @@ function amAdd(f){
     .concat(veg ? eaters.map(n=>vegRow(n, HD, AM.meal, mult(n), ate)) : []);
   const who = eaters.length===EATERS.length && EATERS.length>1 ? 'both' : eaters.join(' & '), label = f.name + (veg ? ' + veg' : '');
   const stay = {keep:true, redraw:drawAddMeal, mark:'addMealSheet'};
-  AM.added = (AM.added||[]).concat(label); AM.q = ''; AM.est = null; AM.online = null; AM.build = null;
+  AM.added = (AM.added||[]).concat(label); AM.q = ''; AM.est = null; AM.online = null;
   hRun('addMeals', [list, null], `${label} for ${who}${ate<1?' ('+eatLabel(ate).toLowerCase()+')':''}`, raw=>{ const i = AM.added.lastIndexOf(label); if (i > -1) AM.added.splice(i,1); return hRun('deleteMeal',[raw.batch],'Undone',null,stay); }, stay);
 }
 
-/* ---- the meal builder: protein, carbs, veg, and it adds up; kcal are one adult portion of each ---- */
-const BUILD = {
-  Protein:[['Chicken',200],['Chicken thighs',230],['Beef mince',250],['Steak',300],['Pork',250],['Sausages',280],['Bacon',130],['Ham',60],['Meatballs',300],['Chicken nuggets',280],
-    ['Salmon',250],['White fish',150],['Fish fingers',200],['Tuna',110],['Prawns',90],['Eggs',150],['Turkey',150],['Lamb',300],['Quorn',110],['Tofu',150],['Lentils',150],['Cheese',120]],
-  Carbs:[['Rice',260],['Pasta',300],['Noodles',280],['Potatoes',170],['Mash',220],['Roast potatoes',300],['Jacket potato',250],['Chips',300],['Sweet potato',180],
-    ['Bread',190],['Wrap',180],['Pitta',160],['Naan',300],['Couscous',200],['Yorkshire pudding',100],['Bagel',250]],
-  Veg:[['Broccoli',30,1],['Peas',70,1],['Carrots',30,1],['Sweetcorn',80,1],['Green beans',25,1],['Mixed veg',50,1],['Salad',20,1],['Cauliflower',25,1],['Spinach',20,1],
-    ['Peppers',25,1],['Mushrooms',15,1],['Tomatoes',20,1],['Cucumber',10,1],['Baked beans',150,1],['Cabbage',25,1],['Parsnips',90,1],['Sprouts',35,1],['Courgette',20,1]],
-  Extras:[['Gravy',40],['Tomato sauce',70],['Cheese sauce',150],['Grated cheese',120],['Curry sauce',150],['Pesto',120],['Butter',70],['Ketchup',20],['Mayo',100],['Stuffing',100]]
-};
-const BUILD_ICON = {Protein:'&#x1F357;', Carbs:'&#x1F35A;', Veg:'&#x1F966;', Extras:'&#x1F96B;'};
-let MYPARTS = []; try { MYPARTS = JSON.parse(localStorage.getItem('ganymede-parts') || '[]'); } catch(e) {}
-const buildPart = name => { const k = name.toLowerCase(); for (const g in BUILD){ const x = BUILD[g].find(p=>p[0].toLowerCase()===k); if (x) return {name:x[0], kcal:x[1], veg:x[2]||0, g}; }
-  const m = MYPARTS.find(p=>p.name.toLowerCase()===k); return m ? Object.assign({}, m) : null; };
-const BUILD_GUESS = {Protein:250, Carbs:250, Veg:30, Extras:100};
-/* a kcal guess for a typed part: a food on our menu or the base list with that name in it, else a typical one for the group */
-function bGuess(n, g){ const k = n.trim().toLowerCase(); if (!k) return null;
-  const f = (H.foods||[]).concat(H.base||[]).find(f=>f.name.toLowerCase()===k) || (H.foods||[]).concat(H.base||[]).find(f=>f.name.toLowerCase().includes(k));
-  return f ? {kcal:Math.round(f.kcal), from:f.name} : {kcal:BUILD_GUESS[g], from:''}; }
-function amBuild(){ AM.build = {parts:[], adding:null}; drawAddMeal(); }
-function bToggle(name){ const B = AM.build, i = B.parts.findIndex(p=>p.name===name);
-  if (i > -1) B.parts.splice(i,1); else { const x = buildPart(name); if (x) B.parts.push(x); } drawBuilder(); }
-function bNew(g){ AM.build.adding = AM.build.adding===g ? null : g; drawBuilder(); const i = $('#bName'); if (i) i.focus({preventScroll:true}); }
-function bOther(){ const g = AM.build.adding || 'Extras', n = ($('#bName').value||'').trim();
-  if (!n) return toast('Type what it is');
-  const old = buildPart(n), part = {name:n.charAt(0).toUpperCase()+n.slice(1), kcal:old ? old.kcal : bGuess(n, g).kcal, veg:g==='Veg'?1:0, g};
-  MYPARTS = [part].concat(MYPARTS.filter(p=>p.name.toLowerCase()!==part.name.toLowerCase())).slice(0, 40);
-  try { localStorage.setItem('ganymede-parts', JSON.stringify(MYPARTS)); } catch(e) {}
-  AM.build.parts = AM.build.parts.filter(p=>p.name.toLowerCase()!==part.name.toLowerCase()).concat([part]); AM.build.adding = null; drawBuilder(); }
-/* a plate built before: its parts back on, an unknown part (typed in) at the kcal it had */
-function bUse(name){ AM.build.parts = name.split(' + ').map(n=>buildPart(n)).filter(Boolean); drawBuilder(); }
-function builtBefore(){
-  const last = {}; H.meals.forEach(e=>{ if (AM.who.includes(e.person) && e.food.indexOf(' + ')>-1 && (!last[e.food] || e.date>last[e.food])) last[e.food] = e.date; });
-  return Object.keys(last).filter(n=>n.split(' + ').every(buildPart)).sort((a,b)=>last[b].localeCompare(last[a])).slice(0,6);
-}
-function bFood(){ const order = Object.keys(BUILD), l = AM.build.parts.slice().sort((a,b)=>order.indexOf(a.g)-order.indexOf(b.g));
-  return {name:l.map(p=>p.name).join(' + '), kcal:l.reduce((a,p)=>a+p.kcal,0), veg:Math.min(5,l.reduce((a,p)=>a+p.veg,0)), group:'Meal', src:'built'}; }
-function drawBuilder(){
-  const B = AM.build, f = bFood(), on = n => B.parts.some(p=>p.name===n), before = builtBefore();
-  $('#sheet').innerHTML = `<div class="grab" id="addMealSheet"></div>
-    <button class="back-link" onclick="AM.build=null;drawAddMeal()">&lsaquo; Back</button>
-    <h3 style="margin:0 0 2px">Build ${esc(AM.who.length===1?AM.who[0]+"'s":'a')} ${esc(AM.meal.toLowerCase())}</h3>
-    <div class="hint" style="margin:0 0 6px">Tap what was on the plate. Each person's portion is set when it is added.</div>
-    ${before.length ? `<label class="f">Built before</label><div class="chips wrap">${before.map(n=>`<button class="chip" onclick="bUse(${jsA(n)})">${esc(n)}</button>`).join('')}</div>` : ''}
-    ${Object.keys(BUILD).map(g=>`<label class="f">${BUILD_ICON[g]} ${g}</label><div class="chips wrap">${MYPARTS.filter(p=>p.g===g && !BUILD[g].some(x=>x[0].toLowerCase()===p.name.toLowerCase())).map(p=>`<button class="chip ${on(p.name)?'on':''}" onclick="bToggle(${jsA(p.name)})">${esc(p.name)}</button>`).join('')}${BUILD[g].map(([n])=>`<button class="chip ${on(n)?'on':''}" onclick="bToggle(${jsA(n)})">${esc(n)}</button>`).join('')}<button class="chip chip-add ${B.adding===g?'on':''}" onclick="bNew('${g}')">+ Other</button></div>
-      ${B.adding===g ? `<div class="b-new"><div class="two" style="align-items:center"><input class="inp" id="bName" placeholder="${g==='Protein'?'e.g. Pie':g==='Carbs'?'e.g. Gnocchi':g==='Veg'?'e.g. Kale':'e.g. Mint sauce'}" autocomplete="off" onkeydown="if(event.key==='Enter')bOther()"><button class="secondary" style="margin:0" onclick="bOther()">Add</button></div></div>` : ''}`).join('')}
-    <div class="save-bar">
-      ${B.parts.length ? `<div class="build-sum"><b>${esc(f.name)}</b><span>${f.veg?f.veg+' fruit &amp; veg':''}</span></div>` : '<div class="hint" style="margin:10px 2px 0">Nothing picked yet.</div>'}
-      <button class="primary" ${B.parts.length?'':'disabled'} onclick="amAdd(bFood())">Add ${AM.who.length===EATERS.length&&EATERS.length>1?'for both':'it'}</button></div>`;
-}
+/* the meats for the dinner chips; kcal are one adult portion */
+const MEATS = [['Chicken',200],['Chicken thighs',230],['Beef mince',250],['Steak',300],['Pork',250],['Sausages',280],['Bacon',130],['Ham',60],['Meatballs',300],['Chicken nuggets',280],
+    ['Salmon',250],['White fish',150],['Fish fingers',200],['Tuna',110],['Prawns',90],['Eggs',150],['Turkey',150],['Lamb',300],['Quorn',110],['Tofu',150],['Lentils',150],['Cheese',120]];
 
 /* ---- drinks: their own box, and each tap adds one, so a day of teas is three taps ---- */
 const DRINK_BASE = [['Coffee with milk',25],['Black coffee',5],['Latte (medium)',190],['Flat white',110],['Cappuccino (medium)',130],['Oat latte (medium)',150],['Tea with milk',20],['Water',0],['Squash (no added sugar)',10],['Can of Pepsi',140],['Can of Pepsi Max',1],
