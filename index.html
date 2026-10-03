@@ -200,6 +200,13 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .up-day{font-size:var(--fs-small);font-weight:700;color:var(--muted);margin:2px 2px 10px}
 .up-list{padding-top:4px;padding-bottom:12px}
 .item.ev{align-items:flex-start}
+.ev-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;flex:none}
+.cal-from{margin-top:18px;font-size:var(--fs-small)}.cal-from .t{font-weight:600}.cal-from .d{color:var(--muted);margin-top:6px}
+.cal-from-l{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
+.cal-d{position:relative}.cal-s{position:absolute;top:3px;right:5px;font:600 10px/1 var(--font-num);font-style:normal;color:var(--muted)}
+.cal-mon{background:none;border:0;font:600 15px var(--font);color:var(--text);cursor:pointer;padding:6px 8px}
+.mon-g{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.mon-g .chip{justify-content:center;padding-left:0;padding-right:0}.mon-g .chip:disabled{opacity:.35}
+.cal-key{width:100%;justify-content:center;background:none;border:0;padding:4px 0 0;font:inherit;font-size:12px;color:var(--muted);cursor:pointer}
 .ev-when{width:76px;flex:none;display:flex;flex-direction:column;font-size:var(--fs-small);color:var(--muted);padding-top:1px}
 .ev-when b{color:var(--text);font-size:14px}
 .note-add{display:flex;gap:8px;margin-bottom:10px}.note-add .chip{padding:0 18px}
@@ -497,7 +504,7 @@ function signIn(quiet){
 const OUT_KEY = 'ganymede-outbox-v1';
 let OUTBOX = DEMO ? [] : (()=>{ try{ return JSON.parse(localStorage.getItem(OUT_KEY)) || []; }catch(e){ return []; } })();
 let syncErr = '', flushing = null, retryT = null;
-function outSave(){ if (!DEMO) try{ localStorage.setItem(OUT_KEY, JSON.stringify(OUTBOX)); }catch(e){ toast('⚠ The phone is out of room for offline changes. Get a signal before adding more.'); } drawSync(); }
+function outSave(){ if (!DEMO) try{ localStorage.setItem(OUT_KEY, JSON.stringify(OUTBOX)); }catch(e){ toast('\u26a0 The phone is out of room for offline changes. Get a signal before adding more.'); } drawSync(); }
 function outPush(k, fn, args, msg){ OUTBOX.push({k, fn, args, msg:msg||'', at:Date.now()}); outSave(); setTimeout(flush, 0); }
 const canSend = () => DEMO ? !window.DEMO_OFFLINE : navigator.onLine && authed();
 function flush(){ return flushing || (flushing = flushRun().finally(()=>{ flushing = null; drawSync(); })); }
@@ -530,7 +537,7 @@ async function flushRun(){
     try{ raw = await queued(o.fn, o.args, false); syncErr = ''; }
     catch(e){
       if (e.retry){ syncErr = e.auth ? '' : (e.message || ''); if (e.auth) signIn(true); clearTimeout(retryT); retryT = setTimeout(syncNow, 30000); break; }
-      OUTBOX.shift(); outSave(); did[o.k] = true; toast('⚠ ' + (e.message||e) + '. That change was not saved.'); continue;
+      OUTBOX.shift(); outSave(); did[o.k] = true; toast('\u26a0 ' + (e.message||e) + '. That change was not saved.'); continue;
     }
     OUTBOX.shift(); outSave(); did[o.k] = true;
     if (o.k === 'h') takeH(raw); else if (o.k === 'p') takeP(raw); else takeM(raw, o);
@@ -609,7 +616,7 @@ const Mock = (() => {
       return {name:n,age:s.ages[n],pct:pctOf(n),opening:s.opening[n],paidIn,logged,balance:s.opening[n]+paidIn+logged}});
     const held = s.heldBase + s.parentRows.reduce((a,r)=>a+r.paidIn-r.out,0);
     const bankTotal = s.current+s.savingsAcc, ourSavings = bankTotal-held, inPots = pots.reduce((a,p)=>a+p.balance,0), owner = !s.asLaura;
-    return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null,
+    return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null, spendCal:owner?(s.spendCal||null):null,
       overview:owner?{bankTotal,held,ourSavings,inPots,familyPot:ourSavings-inPots}:{bankTotal:null,held:null,ourSavings,inPots,familyPot:ourSavings-inPots},
       parent:owner?{held,bankTotal,ourSavings,current:s.current,savingsAcc:s.savingsAcc,recent:s.parentRows.map((r,i)=>({row:800+i,note:'',...r})).reverse(), ledger:mockLedger(held)}:{ourSavings,ledger:mockLedger(held),recent:[]},
       syncedAt:new Date().toISOString()};
@@ -644,6 +651,8 @@ const Mock = (() => {
     deleteSalary(m){ s.contrib=s.contrib.filter(c=>c.month!==m); return data(false); },
     saveSettings(v){ if(v.adultPct!==undefined) s.adultPct=Number(v.adultPct); Object.assign(s.ages,v.ages||{}); return data(false); },
     setBankBalances(b){ s.current=Number(b.current); s.savingsAcc=Number(b.savings||0); return data(false); },
+    startSpendCal(){ if (s.asLaura) throw new Error('Only Tom can do this'); s.spendCal={id:'spend@example.com',name:'Ganymede spending',done:3,months:3,at:new Date().toISOString(),err:''}; return data(false); },
+    spendCalTick(){ return s.spendCal||null; },
     syncPayPalNow(){ s.paypal={at:new Date().toISOString(),added:0,matched:0,fetched:0,waiting:0}; return data(false); },
     setTxPot(row,person,amount,nid){ const t=tx(row); if(t.type==='parents') throw new Error("That one is the parents'");
       const id='tx-'+(nid||uid()); if (person && t.potId===id) return ch([t],1);
@@ -733,7 +742,34 @@ function takeM(raw, o){
   if (!raw || !Array.isArray(raw.pots)) return;
   if (raw.changed) takeChanged(raw.changed);
   remember(raw);
+  spendTick();
   if (o && o.fn==='importStatements') IMPORTED.push(raw.summary || {});
+}
+
+/* Spending on Google Calendar (Tom): a calendar of its own, one entry a day. The server fills it a few minutes at a
+   time, so the app nudges it in the background once a session while months are left or it is 6 hours old. */
+let SPEND_TICKED = false;
+function spendTick(){
+  const c = D && D.spendCal;
+  if (SPEND_TICKED || DEMO || !c || !canP() || !canSend()) return;
+  if (c.done >= c.months && c.months && c.at && Date.now() - new Date(c.at) < 6*3600e3) return;
+  SPEND_TICKED = true;
+  api('spendCalTick').then(st=>{ if (st && D) D.spendCal = st; }).catch(()=>{});
+}
+function spendCalText(){
+  const c = D.spendCal;
+  if (!c) return 'A calendar of its own, "Ganymede spending", with an entry for each day we spent: the total and where. Seven years takes a few goes to fill; the app carries on by itself.';
+  const at = c.at ? new Date(c.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+  return `"${esc(c.name)}": ${c.done} of ${c.months} months on it${at ? ', updated ' + esc(at) : ''}.${c.err ? ' Stopped: ' + esc(c.err) + '.' : ''} ${c.done < c.months ? 'The rest goes on a bit at a time while the app is open.' : 'New statements follow by themselves.'}`;
+}
+async function startSpendCal(){
+  if (!canSend()) return toast('Needs a signal');
+  toast('Putting our spending on the calendar. This takes a few minutes.');
+  pendingN++; working(true);
+  try{ const r = await api('startSpendCal'); takeM(r); showM(); const c = D.spendCal;
+    toast(c && c.err ? '\u26a0 ' + c.err : c ? `${c.done} of ${c.months} months on the calendar` : 'Done'); }
+  catch(e){ toast('\u26a0 ' + (e.message||e)); }
+  finally{ if (--pendingN === 0) working(false); }
 }
 
 /* the same change made to our copy (as Code.js makes it), so it shows at once, with or without signal */
@@ -1125,7 +1161,10 @@ function vSettings(){
   </div>
   ${canP()?`<h2>PayPal</h2>
   <div class="card"><div class="hint" style="margin-top:0">${D.paypal?`Checked ${esc(new Date(D.paypal.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))} · ${D.paypal.added} added, ${D.paypal.matched} matched to the bank`:'Not checked yet'}. It checks by itself every morning.</div>
-    <button class="secondary" onclick="run('syncPayPalNow',[],'PayPal checked')">Check PayPal now</button></div>`:''}
+    <button class="secondary" onclick="run('syncPayPalNow',[],'PayPal checked')">Check PayPal now</button></div>
+  <h2>Spending on Google Calendar</h2>
+  <div class="card"><div class="hint" style="margin-top:0">${spendCalText()}</div>
+    <button class="secondary" onclick="startSpendCal()">${D.spendCal ? 'Update it now' : 'Put our spending on Google Calendar'}</button></div>`:''}
   <h2>Bank statement and data</h2>
   <div class="card"><div class="hint" style="margin-top:0">The app keeps a copy of your transactions on this phone and only fetches new ones. If you edit old rows in the sheet by hand, reload them all.</div>
     <button class="secondary" onclick="load(true).then(()=>toast('All transactions reloaded'))">Reload everything from the sheet</button>
@@ -1761,7 +1800,7 @@ function readStatementFile(f){ return new Promise((res,rej)=>{ const r=new FileR
 function pickStatements(){
   const i = document.createElement('input'); i.type='file'; i.multiple=true; i.accept='.xls,.htm,.html,application/vnd.ms-excel,text/html';
   i.onchange = async () => { if (!i.files.length) return; toast('Reading ' + i.files.length + ' file' + (i.files.length>1?'s':'') + '…');
-    try { const texts = await Promise.all([...i.files].map(readStatementFile)); await importTexts(texts); } catch(e){ toast('⚠ ' + (e.message||e)); } };
+    try { const texts = await Promise.all([...i.files].map(readStatementFile)); await importTexts(texts); } catch(e){ toast('\u26a0 ' + (e.message||e)); } };
   i.click();
 }
 function importTexts(texts){
@@ -2472,12 +2511,12 @@ async function amEstimate(){
   try{ const e = await api('estimateFood', q, AM.meal, ''); if (e.skip) return toast('That reads as not eaten');
     AM.est = {name:q.charAt(0).toUpperCase()+q.slice(1), kcal:e.kcal, group:e.group, veg:e.veg, src:'estimate', guessed:e.guessed}; drawAddMeal();
     if (e.guessed) toast('No foods recognised, so that is a typical ' + AM.meal.toLowerCase()); }
-  catch(e){ toast('⚠ '+(e.message||e)); }
+  catch(e){ toast('\u26a0 '+(e.message||e)); }
 }
 async function amOnline(){
   const q = AM.q.trim(); if (!q) return; toast('Searching Open Food Facts…');
   try{ const r = await api('searchFoodOnline', q); AM.online = r.map(x=>({...x, group:'Snack', veg:0, src:'online'})); drawAddMeal(); if (!r.length) toast('Nothing found online for that'); }
-  catch(e){ toast('⚠ '+(e.message||e)); }
+  catch(e){ toast('\u26a0 '+(e.message||e)); }
 }
 function amCustom(){ const k = parseFloat($('#amKcal').value); if (!(k>=0)) return toast('Type the kcal for one adult portion');
   amAdd({name:AM.q.trim().charAt(0).toUpperCase()+AM.q.trim().slice(1), kcal:k, group:'Meal', veg:0, src:'custom'}); }
@@ -2669,7 +2708,7 @@ async function emEstimate(){
   try{ const e = await api('estimateFood', q, EM.meal, ''); if (e.skip) return toast('That reads as not eaten');
     EM.kcal = Math.round(e.kcal*(EM.portion||1)); EM.veg = e.veg||0; EM.group = e.group||EM.group; drawEditMeal();
     toast(e.guessed ? 'No foods recognised, so that is a typical '+EM.meal.toLowerCase() : 'Worked out: '+EM.kcal+' kcal'); }
-  catch(e){ toast('⚠ '+(e.message||e)); }
+  catch(e){ toast('\u26a0 '+(e.message||e)); }
 }
 /* swap the food: the add-a-meal picker, but a tap replaces this entry (and its mates) instead of adding */
 function emSwap(){
@@ -2967,7 +3006,7 @@ async function ffEstimate(){
     const e = await api('estimateFood', t, FF.slot||'Dinner', ''); if (e.skip) return;
     FF.kcal = e.kcal; FF.veg = e.veg || FF.veg; drawFoodForm();
     toast(e.guessed ? 'Nothing recognised, so that is a typical meal. Adding the parts gets closer.' : 'About ' + kcalF(e.kcal) + ' for an adult');
-  }catch(err){ toast('⚠ ' + (err.message||err)); }
+  }catch(err){ toast('\u26a0 ' + (err.message||err)); }
 }
 async function ffSave(){
   const name = FF.name.trim(); if (!name) return toast('Give it a name');
@@ -3066,12 +3105,13 @@ const PMock = (() => {
     items:[['n1','Milk',false,'Laura',st(T,'08:10'),'',''],['n2','Bread',false,'Tom',st(T,'08:12'),'',''],['n3','Book the dentist for Nathan',false,'Laura',st(addDays(T,-2),'19:40'),'',''],
       ['n4','Bin bags',true,'Tom',st(addDays(T,-1),'12:00'),'Laura',st(T,'09:30')]],
     marks:[], events:[
-      ['e1','Nathan swimming',st(T,'17:30'),st(T,'18:15'),false,'Leisure centre','','',true],
-      ['e2','Bins out',addDays(T,1),addDays(T,2),true,'','','',false],
-      ['e3','Dinner at Nan\'s',st(addDays(T,2),'18:00'),st(addDays(T,2),'20:00'),false,'','Take a pudding','',false],
-      ['e4','Half term',addDays(T,9),addDays(T,14),true,'','','',false],
-      ['e5','Evy jabs',st(addDays(T,4),'10:20'),st(addDays(T,4),'10:40'),false,'GP surgery','','',false]],
-    cal:{name:'Family', id:'family@example.com'}};
+      ['e1','Nathan swimming',st(T,'17:30'),st(T,'18:15'),false,'Leisure centre','','',true,'family@example.com','Family','#7986cb',false],
+      ['e2','Bins (Black)',addDays(T,1),addDays(T,2),true,'','','',false,'bins@example.com','Bins','#616161',false],
+      ['e3','Dinner at Nan\'s',st(addDays(T,2),'18:00'),st(addDays(T,2),'20:00'),false,'','Take a pudding','',false,'family@example.com','Family','#7986cb',false],
+      ['e4','Half term',addDays(T,9),addDays(T,14),true,'','','',false,'tom@example.com','Tom Poon','#039be5',false],
+      ['e6',"Emily's birthday",addDays(T,6),addDays(T,7),true,'','','',true,'addressbook#contacts','Birthdays','#33b679',true],
+      ['e5','Evy jabs',st(addDays(T,4),'10:20'),st(addDays(T,4),'10:40'),false,'GP surgery','','',false,'family@example.com','Family','#7986cb',false]],
+    cal:{name:'Family', id:'family@example.com', shown:[{id:'tom@example.com',name:'Tom Poon',color:'#039be5'},{id:'bins@example.com',name:'Bins',color:'#616161'},{id:'addressbook#contacts',name:'Birthdays',color:'#33b679'},{id:'family@example.com',name:'Family',color:'#7986cb'}]}};
   for (let k = 5; k >= 1; k--) for (let j = 0; j < 4; j++) s.marks.push(['m'+k+j, addDays(T, -k*28 + 6 + j), "Laura's period", '', 'Laura']);
   s.marks.push(['mh', addDays(T,-12), 'Haircut, Nathan', '', 'Tom']);
   const me = () => Mock.getData().canSeeParents === false ? 'Laura' : 'Tom';
@@ -3087,7 +3127,7 @@ const PMock = (() => {
     clearDone(ids){ s.items = s.items.filter(x=>!(x[2] && ids.includes(x[0]))); return out(false); },
     addMark(m){ if (!s.marks.some(x=>x[0]===m.id)) s.marks.push([m.id, m.date, String(m.what).trim(), m.note||'', me()]); return out(false); },
     deleteMark(id){ s.marks = s.marks.filter(x=>x[0]!==id); return out(false); },
-    addEvent(e){ if (!s.events.some(x=>x[7]===e.cid)) s.events.push(['g'+e.cid, e.title, e.time ? e.date+'T'+e.time : e.date, end(e), !e.time, '', e.note||'', e.cid, false]); return out(true); },
+    addEvent(e){ if (!s.events.some(x=>x[7]===e.cid)) s.events.push(['g'+e.cid, e.title, e.time ? e.date+'T'+e.time : e.date, end(e), !e.time, '', e.note||'', e.cid, false, s.cal.id, s.cal.name, '#7986cb', false]); return out(true); },
     deleteEvent(k){ if (s.events.some(x=>((k.cid && x[7]===k.cid) || (x[0]===k.id && x[2]===k.start)) && x[8])) throw new Error('That one repeats. Remove it in Google Calendar');
       s.events = s.events.filter(x=>!((k.cid && x[7]===k.cid) || (x[0]===k.id && x[2]===k.start))); return out(true); },
     getPlanCalendars:()=>({cur:s.cal.id, list:[{id:s.cal.id, name:s.cal.name, mine:true},{id:'en.uk#holiday@group.v.calendar.google.com', name:'Holidays in the UK', mine:false}]}),
@@ -3104,7 +3144,7 @@ function pExpand(raw){
   return {me:raw.me||'', syncedAt:raw.syncedAt, cal:raw.cal||null,
     items:(raw.items||[]).map(r=>({id:r[0], text:r[1], done:!!r[2], by:r[3], at:r[4], doneBy:r[5], doneAt:r[6]})),
     marks:(raw.marks||[]).map(r=>({id:r[0], date:r[1], what:r[2], note:r[3], by:r[4]})),
-    events:raw.events ? raw.events.map(r=>({id:r[0], title:r[1], start:r[2], end:r[3], allDay:!!r[4], loc:r[5], note:r[6], cid:r[7], rec:!!r[8]})) : null};
+    events:raw.events ? raw.events.map(r=>({id:r[0], title:r[1], start:r[2], end:r[3], allDay:!!r[4], loc:r[5], note:r[6], cid:r[7], rec:!!r[8], calId:r[9]||'', calName:r[10]||'', color:r[11]||'', ro:!!r[12]})) : null};
 }
 function pSave(raw){ PRAW = raw; if (DEMO) return; try{ localStorage.setItem(P_KEY, JSON.stringify(raw)); }catch(e){} }
 function takeP(raw){ if (!raw || !Array.isArray(raw.items)) return; if (raw.events === undefined && PRAW){ raw.events = PRAW.events; raw.cal = PRAW.cal; } pSave(raw); }
@@ -3143,7 +3183,7 @@ const PLOCAL = {
     if (!p.marks.some(x=>x.id===m.id)) p.marks.push({id:m.id, date:m.date, what:String(m.what).trim(), note:m.note||'', by:p.me}); },
   deleteMark(p, id){ p.marks = p.marks.filter(x=>x.id!==id); },
   addEvent(p, e){ if (!String(e.title||'').trim()) throw new Error('Give it a name'); if (!e.date) throw new Error('Pick a date');
-    if (p.events && !p.events.some(x=>x.cid===e.cid)) p.events.push({id:'', cid:e.cid, title:String(e.title).trim(), start:e.time ? e.date+'T'+e.time : e.date, end:evEnd(e), allDay:!e.time, loc:'', note:e.note||'', rec:false}); },
+    if (p.events && !p.events.some(x=>x.cid===e.cid)) p.events.push({id:'', cid:e.cid, title:String(e.title).trim(), start:e.time ? e.date+'T'+e.time : e.date, end:evEnd(e), allDay:!e.time, loc:'', note:e.note||'', rec:false, calId:(p.cal&&p.cal.id)||'', calName:(p.cal&&p.cal.name)||''}); },
   deleteEvent(p, k){ if (p.events) p.events = p.events.filter(x=>!((k.cid && x.cid===k.cid) || (x.id===k.id && x.start===k.start))); }
 };
 function pRun(fn, args, msg, undo, keep){
@@ -3205,11 +3245,12 @@ function pRender(){
   if (!paint('p:'+pview, head, ({up:pUp, cal:pCal, track:pTrack}[pview])(), synced)) return;
   window.scrollTo(0,y);
 }
+const evCol = e => /^#[0-9a-fA-F]{3,8}$/.test(e.color||'') ? e.color : 'var(--family-2)';
 function evRow(e, showDay){
   const k = jsA({id:e.id, start:e.start, cid:e.cid});
   return `<button class="item tap ev" onclick="openEvent(${k})">
     <div class="ev-when">${showDay ? `<b>${esc(dayLabel(evDay(e)))}</b>` : ''}<span>${e.allDay ? 'All day' : esc(hhmm(e.start))}</span></div>
-    <div class="mid"><div class="t">${esc(e.title)}</div>${e.loc || (!e.allDay && showDay) ? `<div class="d">${esc(e.loc || evWhen(e))}</div>` : ''}</div><span class="chev">&nbsp;&rsaquo;</span></button>`;
+    <div class="mid"><div class="t"><i class="ev-dot" style="background:${evCol(e)}"></i>${esc(e.title)}</div>${e.loc || (!e.allDay && showDay) ? `<div class="d">${esc(e.loc || evWhen(e))}</div>` : ''}</div><span class="chev">&nbsp;&rsaquo;</span></button>`;
 }
 function calNote(){
   if (P.cal && P.cal.err) return `<div class="card hint" style="margin-top:0">Calendar not connected: ${esc(P.cal.err)}${REMOTE ? ` <button class="linkish" onclick="signIn(false)">Sign in again</button>` : ''}</div>`;
@@ -3225,14 +3266,15 @@ function pUp(){
   const open = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
   const nDone = P.items.filter(n=>n.done).length + (D && canP() ? checks().filter(isChecked).length : 0);
   return `${homeWins()}
-  ${mealsCard()}
-  ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}${D ? paceCard() : ''}
   <h2>To do</h2>
   <div class="note-add"><input class="inp" id="noteIn" placeholder="Add a note or reminder" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
-  <div class="card notes">${open.map(noteRow).join('')}${chk.map(checkTask).join('')}
-    ${!open.length && !chk.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
-  ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}
-  ${homeCal()}`;
+  <div class="card notes">${open.map(noteRow).join('')}
+    ${!open.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
+  ${mealsCard()}
+  ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}${D ? paceCard() : ''}
+  ${homeCal()}
+  ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
+  ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}`;
 }
 function homeWins(){
   const m = D ? moneyWins() : [], h = H ? healthWinList() : [], wk = addDays(today(), -6);
@@ -3289,15 +3331,16 @@ function homeCal(){
   const t = today(), first = dOf(HCM + '-01'), lead = (first.getDay() + 6) % 7, n = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   const days = Array.from({length:n}, (_, i)=>HCM + '-' + String(i + 1).padStart(2, '0'));
   const due = markStats().filter(s=>s.next && dayN(s.next)-dayN(t) <= 7 && dayN(s.next)-dayN(t) >= -10 && s.since > 2);
-  const cells = Array(lead).fill('<span></span>').concat(days.map(d=>{ const k = dayEvents(d).length;
-    return `<button class="cal-d ${d===t?'now':''} ${k?'has':''} ${d<t?'past':''} ${due.some(x=>x.next===d)?'exp':''}" onclick="openCalDay('${d}')"><b>${+d.slice(8)}</b><span>${k ? '&bull;'.repeat(Math.min(3, k)) : ''}</span></button>`; })).join('');
+  const cells = Array(lead).fill('<span></span>').concat(days.map(d=>{ const k = dayEvents(d);
+    return `<button class="cal-d ${d===t?'now':''} ${k.length?'has':''} ${d<t?'past':''} ${due.some(x=>x.next===d)?'exp':''}" onclick="openCalDay('${d}')"><b>${+d.slice(8)}</b>${spendByDay()[d] ? '<em class="cal-s">&pound;</em>' : ''}<span>${k.slice(0,3).map(e=>`<i style="color:${evCol(e)}">&bull;</i>`).join('')}</span></button>`; })).join('');
   let ev = upcoming(7); if (ev.length < 3) ev = upcoming(60).slice(0, 3);   // a quiet week still shows what is next
   let last = '';
   return `<div class="sec-h"><h2>Calendar</h2><button class="link" onclick="pgo('cal')">See all</button></div>
   ${calNote()}
-  <div class="card cal"><div class="cal-top"><button class="icon-btn" onclick="HCM=shiftMonth(HCM,-1);render()" ${HCM<=t.slice(0,7)?'disabled':''} aria-label="Month before">&lsaquo;</button>
-      <b>${esc(monthName(HCM))}</b><button class="icon-btn" onclick="HCM=shiftMonth(HCM,1);render()" ${HCM>=shiftMonth(t.slice(0,7),3)?'disabled':''} aria-label="Month after">&rsaquo;</button></div>
-    <div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div></div>
+  <div class="card cal"><div class="cal-top"><button class="icon-btn" onclick="HCM=shiftMonth(HCM,-1);render()" ${HCM<=calMin()?'disabled':''} aria-label="Month before">&lsaquo;</button>
+      <button class="cal-mon" onclick="openMonthPick()">${esc(monthName(HCM))} &#9662;</button><button class="icon-btn" onclick="HCM=shiftMonth(HCM,1);render()" ${HCM>=shiftMonth(t.slice(0,7),3)?'disabled':''} aria-label="Month after">&rsaquo;</button></div>
+    <div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div>
+    ${P.cal && P.cal.shown && P.cal.shown.length ? `<button class="cal-from-l cal-key" onclick="pgo('cal')">${P.cal.shown.map(c=>`<span><i class="ev-dot" style="background:${evCol(c)}"></i>${esc(c.name)}</span>`).join('')}</button>` : ''}</div>
   <div class="card list up-list">
     ${due.map(s=>`<button class="item tap ev" onclick="openKind(${jsA(s.what)})"><div class="ev-when"><b>${esc(dayLabel(s.next < t ? t : s.next))}</b><span>Expected</span></div>
       <div class="mid"><div class="t">${esc(s.what)}</div><div class="d">Due ${esc(inText(dayN(s.next)-dayN(t)))}, about every ${s.gap} days</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`).join('')}
@@ -3307,10 +3350,29 @@ function homeCal(){
   </div>`;
 }
 function openCalDay(d){
-  const l = dayEvents(d);
-  showSheet(`<h3 style="margin:0 0 8px">${esc(dayLabel(d))} &middot; ${esc(niceDate(d))}</h3>
-    ${l.length ? `<div class="card list" style="margin-top:0">${l.map(e=>evRow(e, false)).join('')}</div>` : `<div class="empty">${P.events ? 'Nothing on.' : 'The calendar shows once this phone has synced.'}</div>`}
-    <button class="primary" onclick="openAddEvent('${d}')">+ Add on this day</button>`);
+  const l = dayEvents(d), sp = (spendByDay()[d]||[]).slice().sort((a,b)=>a.amount-b.amount), tot = sp.reduce((a,t)=>a-t.amount, 0);
+  const rel = Math.abs(dayN(d) - dayN(today())) < 2 ? dayLabel(d) + ' &middot; ' : '';
+  showSheet(`<h3 style="margin:0 0 8px">${rel}${esc(dOf(d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:d.slice(0,4)===today().slice(0,4)?undefined:'numeric'}))}</h3>
+    ${l.length ? `<div class="card list" style="margin-top:0">${l.map(e=>evRow(e, false)).join('')}</div>` : sp.length ? '' : `<div class="hint" style="margin-top:0">${P.events ? 'Nothing on.' : 'The calendar shows once this phone has synced.'}</div>`}
+    ${d >= today() ? `<button class="primary" onclick="openAddEvent('${d}')">+ Add on this day</button>` : ''}
+    ${sp.length ? `<label class="f">Spent ${gbp(tot)}</label><div class="card list" style="margin-top:0">${sp.map(txItem).join('')}</div>` : ''}`);
+}
+/* spending by day from the payments we already hold: a small mark in the grid, the payments in the day */
+let SPD = null, SPD_SRC = null;
+function spendByDay(){
+  if (!D || !D.transactions) return {};
+  if (SPD_SRC === D.transactions) return SPD;
+  const m = {}; D.transactions.forEach(t=>{ if (t.type==='spend' && t.amount<0) (m[t.date] = m[t.date] || []).push(t); });
+  SPD_SRC = D.transactions; return SPD = m;
+}
+function calMin(){ const k = Object.keys(spendByDay()); return k.length ? k.reduce((a,b)=>a<b?a:b).slice(0,7) : today().slice(0,7); }
+function openMonthPick(){
+  const lo = calMin(), hi = shiftMonth(today().slice(0,7), 3), ys = [];
+  for (let y = +hi.slice(0,4); y >= +lo.slice(0,4); y--) ys.push(y);
+  showSheet(`<h3 style="margin:0 0 8px">Go to a month</h3>
+    <button class="secondary" style="margin-top:0" onclick="HCM=today().slice(0,7);closeSheet();render()">This month</button>
+    ${ys.map(y=>`<label class="f">${y}</label><div class="mon-g">${Array.from({length:12}, (_, i)=>{ const m = y + '-' + String(i+1).padStart(2,'0');
+      return `<button class="chip ${m===HCM?'on':''}" ${m<lo||m>hi?'disabled':''} onclick="HCM='${m}';closeSheet();render()">${shortMonth(m)}</button>`; }).join('')}</div>`).join('')}`);
 }
 function addNoteNow(){
   const el = $('#noteIn'), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
@@ -3338,7 +3400,15 @@ function pCal(){
   return `<button class="primary" style="margin-top:0" onclick="openAddEvent()">+ Add to the calendar</button>
     ${calNote()}
     ${out || (P.events ? '<div class="card empty" style="margin-top:12px">Nothing on the calendar yet.</div>' : '')}
-    <div class="hint" style="margin-top:18px;text-align:center">${P.cal && P.cal.name ? 'Google Calendar: ' + esc(P.cal.name) + ', the next ' + Math.round(CAL_SHOWN/30) + ' months. ' : ''}${P.me==='Tom' ? '<button class="linkish" onclick="pickCalendar()">Change calendar</button>' : ''}</div>`;
+    ${calsShown()}`;
+}
+function calsShown(){
+  if (!P.cal || !P.cal.name) return '';
+  const l = P.cal.shown && P.cal.shown.length ? P.cal.shown : [{name:P.cal.name}];
+  return `<div class="card cal-from"><div class="t">From Google Calendar, the next ${Math.round(CAL_SHOWN/30)} months</div>
+    <div class="cal-from-l">${l.map(c=>`<span><i class="ev-dot" style="background:${evCol(c)}"></i>${esc(c.name)}</span>`).join('')}</div>
+    <div class="d">${P.me==='Tom' ? 'The calendars ticked in your Google Calendar. Tick or untick one there and it follows here.' : 'The calendars Tom has ticked, where they are shared with you.'}
+    New events go in <b>${esc(P.cal.name)}</b>.${P.me==='Tom' ? ' <button class="linkish" onclick="pickCalendar()">Change</button>' : ''}</div></div>`;
 }
 const CAL_SHOWN = 120;
 let AE = null;
@@ -3368,15 +3438,17 @@ function openEvent(k){
   showSheet(`<h3>${esc(e.title)}</h3>
     <div class="stat-row"><span class="k">${esc(dayLabel(e.start.slice(0,10)))} &middot; ${esc(niceDate(e.start.slice(0,10)))}</span><span class="v">${esc(evWhen(e))}</span></div>
     ${e.loc ? `<div class="stat-row"><span class="k">Where</span><span class="v">${esc(e.loc)}</span></div>` : ''}
+    ${e.calName ? `<div class="stat-row"><span class="k">Calendar</span><span class="v"><i class="ev-dot" style="background:${evCol(e)}"></i>${esc(e.calName)}</span></div>` : ''}
     ${e.note ? `<div class="hint" style="white-space:pre-wrap">${esc(e.note)}</div>` : ''}
-    ${e.rec ? `<div class="hint">This one repeats. Change or remove it in Google Calendar.</div>`
-      : `<button class="secondary neg" onclick="pRun('deleteEvent', [${jsA({id:e.id, start:e.start, cid:e.cid})}], 'Taken off the calendar', ()=>pRun('addEvent', [${jsA(again)}], 'Put back'))">Take it off the calendar</button>`}`);
+    ${e.ro ? `<div class="hint">This one comes from ${esc(e.calName || 'another calendar')}. Change it in Google Calendar.</div>`
+      : e.rec ? `<div class="hint">This one repeats. Change or remove it in Google Calendar.</div>`
+      : `<button class="secondary neg" onclick="pRun('deleteEvent', [${jsA({id:e.id, start:e.start, cid:e.cid, cal:e.calId})}], 'Taken off the calendar', ()=>pRun('addEvent', [${jsA(again)}], 'Put back'))">Take it off the calendar</button>`}`);
 }
 async function pickCalendar(){
   if (!canSend()) return toast('Needs a signal');
   showSheet(`<h3>Which calendar</h3><div class="hint">Loading&hellip;</div>`);
   try{ const r = await queued('getPlanCalendars', [], false);
-    showSheet(`<h3>Which calendar</h3><div class="hint" style="margin-top:0">Pick the one shared with Laura. Both phones use it.</div>
+    showSheet(`<h3>New events go in</h3><div class="hint" style="margin-top:0">Pick the one shared with Laura, so her phone can add to it too. What the app shows is every calendar you have ticked in Google Calendar.</div>
       <div class="card list" style="margin-top:10px">${r.list.map(c=>`<button class="item tap" onclick="setCal(${jsA(c.id)})"><div class="mid"><div class="t">${esc(c.name)}</div><div class="d">${esc(c.id)}${c.mine?'':' &middot; shared with you'}</div></div>${(r.cur||P.cal&&P.cal.id)===c.id?'<b>&check;</b>':''}</button>`).join('')}</div>`); }
   catch(e){ showSheet(`<h3>Which calendar</h3><div class="hint">${esc(e.message||e)}</div>`); }
 }
@@ -3500,8 +3572,8 @@ document.querySelector('nav').onclick = e => { const b = e.target.closest('butto
 document.addEventListener('visibilitychange',()=>{ if (!document.hidden) syncNow(); });
 
 // Any error shows up on screen instead of failing silently
-window.addEventListener('error', e => toast('⚠ ' + (e.message || 'Something went wrong')));
-window.addEventListener('unhandledrejection', e => toast('⚠ ' + ((e.reason && e.reason.message) || e.reason || 'Something went wrong')));
+window.addEventListener('error', e => toast('\u26a0 ' + (e.message || 'Something went wrong')));
+window.addEventListener('unhandledrejection', e => toast('\u26a0 ' + ((e.reason && e.reason.message) || e.reason || 'Something went wrong')));
 if (MODE!=='money'){ setNav(); render(); }
 flush(); load(); hLoad(); pLoad();   // both sides are fetched, so both work offline
 /* once the first screen is up, build the other screens once in idle time, so the first tap on each is quick */
