@@ -2172,7 +2172,7 @@ function weighDue(){
 function hToday(){
   const isToday = HD===today(), dayLabel = isToday ? 'Today' : HD===addDays(today(),-1) ? 'Yesterday' : dOf(HD).toLocaleDateString('en-GB',{weekday:'long'});
   const day = H.meals.filter(e=>e.date===HD), veg = day.reduce((a,e)=>a+(e.veg||0),0);
-  return `${setupCard()}${isToday?healthWins():''}
+  return `${setupCard()}
   <div class="daybar"><button class="icon-btn" onclick="HD=addDays(HD,-1);render()" aria-label="Day before">‹</button>
     <button class="daybar-mid" onclick="HM=HD.slice(0,7);hgo('month')" aria-label="Open the month"><b>${dayLabel}</b><span>${dateY(HD)}</span><span class="month-chip">&#x1F4C5; See the month</span></button>
     <button class="icon-btn" onclick="HD=addDays(HD,1);render()" ${isToday?'disabled':''} aria-label="Day after">›</button></div>
@@ -2400,31 +2400,6 @@ function slotRemove(id){
   hRun('deleteMeal', [id], 'Removed ' + e.food, back ? ()=>hRun('addMeals',[back,null],'Put back') : null);
 }
 function slotChange(id){ editMeal(id); EM.all = false; emSwap();
-}
-/* the Health side's good news: streaks, fruit and veg, fewer takeaways, weight going the right way, kids growing */
-function healthWinList(){
-  if (!H.meals.length && !H.body.length) return [];
-  const W = [], t = today(), logged = new Set(H.meals.map(e=>e.date));
-  let n = 0; for (let d = logged.has(t) ? t : addDays(t,-1); logged.has(d); d = addDays(d,-1)) n++;
-  if (n >= 3) W.push([60+n, '&#x1F525;', `<b>${n} days in a row</b> of meals logged`, `HM=today().slice(0,7);hgo('month')`]);
-  const wk = (a,b) => EATERS.map(p=>personStats(p, a, b)), now = wk(addDays(t,-6), t), before = wk(addDays(t,-13), addDays(t,-7));
-  const fv = l => { const f = l.filter(s=>s.full.length); return f.length ? f.reduce((a,s)=>a+s.veg,0)/f.length : 0; }, fv1 = fv(now), fv0 = fv(before);
-  if (fv1 && fv0 && fv1 >= fv0*1.1) W.push([50, '&#x1F955;', `Fruit and veg is <b>up to ${fv1.toFixed(1)} a day</b> from ${fv0.toFixed(1)} the week before`, `HS.who='All';hgo('stats')`]);
-  const best = EATERS.map((p,i)=>[p, now[i]]).filter(([,s])=>s.full.length>=3).sort((a,b)=>b[1].veg-a[1].veg)[0];
-  if (best && best[1].veg >= 3) W.push([40+best[1].veg, '&#x1F31F;', `${esc(best[0])} is the fruit and veg champion this week: <b>${best[1].veg.toFixed(1)} a day</b>`, `HS.who='${best[0]}';hgo('stats')`]);
-  const take = (a,b) => new Set(H.meals.filter(e=>e.group==='Takeaway' && e.date>=a && e.date<=b).map(e=>e.date)).size, k1 = take(addDays(t,-27),t), k0 = take(addDays(t,-55),addDays(t,-28));
-  if (k0 && k1 < k0) W.push([45, '&#x1F957;', `<b>${k0-k1} fewer takeaway${k0-k1>1?'s':''}</b> than the 4 weeks before`, `HM=today().slice(0,7);hgo('month')`]);
-  PEOPLE.forEach(p=>{ const a = ageYears(p), B = H.body.filter(b=>b.person===p);
-    if (a != null && a < 18){ const h = B.filter(b=>b.cm!=null), h1 = h[h.length-1], h0 = h1 && h.filter(b=>b.date<=addDays(h1.date,-150))[0];
-      if (h0 && h1.cm-h0.cm >= 1) W.push([35, '&#x1F4CF;', `${esc(p)} has grown <b>${(h1.cm-h0.cm).toFixed(1)} cm</b> since ${esc(dOf(h0.date).toLocaleDateString('en-GB',{month:'long'}))}`, `BW='${p}';hgo('body')`]); return; }
-    const w = B.filter(b=>b.kg!=null), w1 = w[w.length-1], w0 = w1 && w.filter(b=>b.date<=addDays(w1.date,-60))[0], g = hp(p).goal, bi = bmiInfo(p);
-    if (!w0) return; const d = w1.kg - w0.kg, want = g ? Math.sign(g - w0.kg) : bi && bi.hi && w0.kg > bi.hi ? -1 : bi && bi.lo && w0.kg < bi.lo ? 1 : 0;
-    if (want && Math.sign(d) === want && Math.abs(d) >= 1) W.push([55+Math.abs(d)*3, '&#x1F4AA;', `${esc(p)} is <b>${d<0?'down':'up'} ${Math.abs(d).toFixed(1)} kg</b> since ${esc(dOf(w0.date).toLocaleDateString('en-GB',{month:'long'}))}${g?', heading for '+kgF(g):''}`, `BW='${p}';hgo('body')`]); });
-  return W.sort((a,b)=>b[0]-a[0]);
-}
-function healthWins(){
-  const top = healthWinList().slice(0,3); if (!top.length) return '';
-  return `<div class="wins"><div class="wins-h">Going well<span>From your meals and weigh-ins</span></div><ul>${top.map(w=>`<li>${w[3]?`<button class="win-tap" onclick="${w[3]}">`:''}<span class="wi">${w[1]}</span><span>${w[2]}</span>${w[3]?'<span class="chev">›</span></button>':''}</li>`).join('')}</ul></div>`;
 }
 function mealItem(e){
   return `<div class="item" style="--c:${COLOR[e.person]};cursor:pointer" onclick="editMeal('${e.id}')">
@@ -3274,16 +3249,6 @@ function pUp(){
   ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
   ${D ? paceCard() : ''}
   ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}`;
-}
-function homeWins(){
-  const m = D ? moneyWins() : [], h = H ? healthWinList() : [], wk = addDays(today(), -6);
-  const ticked = P.items.filter(n=>n.done && n.doneAt && n.doneAt.slice(0,10) >= wk).length;
-  const l = [m[0] && [...m[0], "go('home')"], h[0], ticked >= 3 ? [0, '&#x2705;', `<b>${ticked} things</b> ticked off this week`, 'openDone()'] : null,
-    m[1] && [...m[1], "go('home')"], h[1]].filter(Boolean).slice(0, 3);
-  const day = esc(new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'}));
-  if (!l.length) return `<div class="up-day">${day}</div>`;
-  return `<div class="wins"><div class="wins-h">${greeting()}${P.me ? ', ' + esc(P.me) : ''}<span>${day}</span></div>
-    <ul>${l.map(w=>`<li><button class="win-tap" onclick="${w[3]}"><span class="wi">${w[1]}</span><span>${w[2]}</span><span class="chev">&rsaquo;</span></button></li>`).join('')}</ul></div>`;
 }
 /* a meal counts as missing from this hour of the day */
 const MEAL_DUE = [['Breakfast', 10], ['Lunch', 14], ['Dinner', 19]];
