@@ -159,7 +159,17 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .quick-drink{border:1px dashed var(--line);background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--text);border-radius:var(--r-sm);padding:7px 8px;margin-top:6px;cursor:pointer;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot-wrap{display:flex;flex-direction:column;min-width:0}.slot-wrap .slot{flex:1}
 .part-eat{padding:10px 0;border-bottom:1px solid var(--line)}.part-eat .chips{margin:6px 0 0}.pe-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.pe-h span{font-size:var(--fs-small)}
-.chip-add{border-style:dashed}.am-more{display:flex;justify-content:space-between;gap:12px}.am-typed{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:2px}.am-typed small{font-weight:400;opacity:.85;font-size:var(--fs-small)}.b-new{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;margin:8px 0 4px}
+.chip-add{border-style:dashed}
+.veg-switch{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.veg-switch small{display:block;color:var(--muted);font-size:var(--fs-small)}
+.veg-switch .vs-box{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-weight:700}
+.veg-switch.on{border-color:var(--nathan)}.veg-switch.on .vs-box{background:var(--nathan);border-color:var(--nathan);color:#fff}
+.iron{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
+.iron.on{border-color:var(--nathan)}
+.iron .tick{flex:none}.iron.on .tick{background:var(--nathan);border-color:var(--nathan);color:#fff}
+.iron-t{flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0;cursor:pointer}
+.iron-t small{display:block;color:var(--muted);font-size:var(--fs-small)}
+.iron-week{display:flex;gap:3px;flex:none}.iron-week i{width:7px;height:7px;border-radius:50%;background:var(--line)}.iron-week i.on{background:var(--nathan)}.am-more{display:flex;justify-content:space-between;gap:12px}.am-typed{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:2px}.am-typed small{font-weight:400;opacity:.85;font-size:var(--fs-small)}.b-new{border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;margin:8px 0 4px}
 .am-opts{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;margin:10px 0 4px}
 .am-opts summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer;font-size:var(--fs-small);color:var(--muted);font-weight:600;list-style:none}
 .am-opts summary::-webkit-details-marker{display:none}
@@ -2007,24 +2017,18 @@ function showH(){
   H = mineH();
   if ((MODE==='health' || onHome()) && !(had && open)){ SOFT = had; try{ render(); } finally{ SOFT = false; } if (had) scrollTo(0,y); } else drawSync();
 }
-/* everything eaten goes on our menu (menuFromMeals_ in Health.js): the foods in list not yet saved, one adult portion each */
-function menuNew(names, list){
-  const have = new Set(names.map(n=>String(n).trim().toLowerCase())), add = {};
-  list.forEach(e=>{ const name = String(e.food||'').trim(), k = name.toLowerCase(); if (!name || k==='skipped' || e.meal==='Drinks' || name.indexOf(' + ')>-1 || have.has(k)) return;
-    const eaten = e.eaten==null ? 1 : e.eaten, sv = e.served!=null ? e.served : eaten>0 ? e.kcal/eaten : 0; if (!(sv>0)) return;
-    const a = add[k] || (add[k] = {name, meals:{}}); a.kcal = Math.round(sv/(Number(e.portion)||1)); a.veg = Number(e.veg)||0; a.group = e.group||'Meal'; a.meals[e.meal] = (a.meals[e.meal]||0)+1; });
-  return Object.values(add).map(a=>({name:a.name, kcal:a.kcal, group:a.group, veg:a.veg, meal:Object.keys(a.meals).sort((x,y)=>a.meals[y]-a.meals[x])[0]||''}));
-}
-const menuLocal = (h, list) => menuNew(h.foods.map(f=>f.name), list).forEach(f=>h.foods.push({name:f.name, kcal:f.kcal, group:f.group, veg:f.veg, slot:f.meal, items:[], place:'', person:''}));
+/* one id per row: batch.Person, then batch.Person-2 for a second food of theirs in the same batch (Health.js addMeals) */
+const mealIds = (batch, list) => { const c = {}; return list.map(e=>{ c[e.person] = (c[e.person]||0)+1; return batch+'.'+e.person+(c[e.person]>1?'-'+c[e.person]:''); }); };
 /* the same change made to our copy, so the screen updates before the sheet replies; the reply replaces it */
 const HLOCAL = {
   addMeals(h, list, keep, batch){ if (!list || !list.length) throw new Error('Pick who ate it');
-    list.forEach(e=>h.meals.push({date:e.date, person:e.person, meal:e.meal, food:String(e.food).trim(), kcal:Math.round(e.kcal), portion:Number(e.portion)||1, veg:e.veg||0, group:e.group||'Meal', id:batch+'.'+e.person, diary:false,
+    const ids = mealIds(batch, list);
+    list.forEach((e,i)=>h.meals.push({date:e.date, person:e.person, meal:e.meal, food:String(e.food).trim(), kcal:Math.round(e.kcal), portion:Number(e.portion)||1, veg:e.veg||0, group:e.group||'Meal', id:ids[i], diary:false,
       eaten:e.eaten==null?1:e.eaten, note:e.note||'', served:e.served==null?Math.round(e.kcal):Math.round(e.served)}));
-    if (keep) HLOCAL.saveFood(h, keep); menuLocal(h, list); },
+    if (keep) HLOCAL.saveFood(h, keep); },
   editMeals(h, list){ list.forEach(e=>{ const m = h.meals.find(x=>x.id===e.id); if (!m) throw new Error('That entry has gone, tap refresh');
     Object.assign(m, {date:e.date, meal:e.meal, food:String(e.food).trim(), kcal:Math.round(e.kcal), portion:e.portion, veg:e.veg||0, group:e.group,
-      eaten:e.eaten==null?1:e.eaten, note:e.note||'', served:e.served==null?Math.round(e.kcal):Math.round(e.served)}); }); menuLocal(h, list); },
+      eaten:e.eaten==null?1:e.eaten, note:e.note||'', served:e.served==null?Math.round(e.kcal):Math.round(e.served)}); }); },
   saveDayNote(h, date, person, note){ h.notes = (h.notes||[]).filter(x=>!(x.date===date && x.person===person)); if (String(note||'').trim()) h.notes.push({date, person, note:String(note).trim()}); },
   deleteMeal(h, id){ h.meals = h.meals.filter(m=>!(Array.isArray(id) ? id.includes(m.id) : m.id===id || (id.indexOf('.')===-1 && m.id.indexOf(id+'.')===0))); },
   saveFood(h, f, old){ if (!String(f.name||'').trim()) throw new Error('Give it a name');
@@ -2138,7 +2142,7 @@ function topFoods(filter, limit){
 
 /* ---- views ---- */
 function hRender(){
-  const titles = {today:'Health', month:'Our month', stats:'Health stats', body:'Weight & height', foods:'Our meals', hsettings:'Health settings'};
+  const titles = {today:'Health', month:'Our month', stats:'Health stats', body:'Weight & height', foods:'Meals we have had', hsettings:'Health settings'};
   const synced = H ? new Date(H.syncedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
   setNav();
   const head = masterHTML() + `<header><div><h1>${titles[hview]}</h1>
@@ -2176,6 +2180,7 @@ function hToday(){
   <div class="daybar"><button class="icon-btn" onclick="HD=addDays(HD,-1);render()" aria-label="Day before">‹</button>
     <button class="daybar-mid" onclick="HM=HD.slice(0,7);hgo('month')" aria-label="Open the month"><b>${dayLabel}</b><span>${dateY(HD)}</span><span class="month-chip">&#x1F4C5; See the month</span></button>
     <button class="icon-btn" onclick="HD=addDays(HD,1);render()" ${isToday?'disabled':''} aria-label="Day after">›</button></div>
+  ${ironCard(HD)}
   ${isToday?eatingWatch():''}
   ${takeawayCard(HD)}
   <div class="grid">${EATERS.map(n=>{ const e = day.filter(x=>x.person===n);
@@ -2288,10 +2293,8 @@ function mealRowsHTML(rows){
 function foodDetail(name, person){
   const k = name.toLowerCase(), rows = H.meals.filter(e=>e.food.toLowerCase()===k && (!person || e.person===person)).sort((a,b)=>a.date<b.date?1:-1);
   const byP = EATERS.map(n=>{ const l = rows.filter(e=>e.person===n); return l.length ? `<div class="stat-row"><span class="k"><span class="mini" style="--c:${COLOR[n]}"></span> ${n}</span><span class="v">${l.length}× · eats ${Math.round(l.reduce((a,e)=>a+e.eaten,0)/l.length*100)}% on average</span></div>` : ''; }).join('');
-  const i = H.foods.findIndex(f=>f.name.toLowerCase()===k);
   showSheet(`<div class="grab"></div><h3 style="margin:0">${esc(name)}</h3><div class="hint" style="margin:2px 0 10px">${rows.length} time${rows.length===1?'':'s'}${person?' for '+esc(person):''}. Tap a day to open it.</div>
-    ${byP}<label class="f">When</label>${mealRowsHTML(rows.slice(0,60))}
-    ${i>-1 ? `<button class="secondary" onclick="openFoodForm({i:${i}})">Change this saved meal</button>` : `<button class="secondary" onclick="openFoodForm({name:${jsA(name)}, kcal:${rows[0]?Math.round((rows[0].served||rows[0].kcal)/(rows[0].portion||1)):0}})">Save as one of our meals</button>`}`);
+    ${byP}<label class="f">When</label>${mealRowsHTML(rows.slice(0,60))}`);
 }
 function foodsSheet(title, filter){
   const rows = H.meals.filter(filter).sort((a,b)=>a.date<b.date?1:-1);
@@ -2411,7 +2414,7 @@ function mealItem(e){
 /* ---- adding a meal: who, which meal, then one tap on the food ---- */
 let AM = null, AMLIST = [];
 function openAddMeal(person, meal){
-  AM = {who: person ? [person] : EATERS.slice(), meal: meal || (HD===today() ? defaultSlot() : 'Dinner'), size:1, q:'', online:null, est:null, eaten:1, note:''}; AMS.full = false;
+  AM = {who: person ? [person] : EATERS.slice(), meal: meal || (HD===today() ? defaultSlot() : 'Dinner'), size:1, q:'', online:null, est:null, eaten:1, note:''}; AMS.full = false; AMS.all = false;
   drawAddMeal(); showSheet(); amFocus();
 }
 /* the keyboard comes up ready to type (only from a tap, so a phone allows it) */
@@ -2438,44 +2441,47 @@ function nameFit(words, name){
   for (const t of words){ let best = -1; for (const w of ws){ const f = wordFit(t, w); if (f > -1 && (best < 0 || f < best)) best = f; } if (best < 0) return -1; worst = Math.max(worst, best); }
   return worst;
 }
+const VEG_FOOD = 'Mixed veg';
+/* each food as it was last had (latest name, portion and kcal), so an edit carries on to next time */
+const histF = f => ({name:f.name, kcal:Math.round(f.one), group:f.group, veg:f.veg, times:f.n, last:f.last});
 function amCandidates(){
   const q = AM.q.trim().toLowerCase(), words = q.split(/[^a-z0-9]+/).filter(Boolean), seen = new Set(), out = [];
   const push = (f, src) => { const k = f.name.toLowerCase(); if (seen.has(k)) return; if (words.length && nameFit(words, k) < 0) return; seen.add(k); out.push({...f, src}); };
-  const since = addDays(today(), -120), yday = addDays(HD, -1);
-  if (!q) topFoods(e=>AM.who.includes(e.person) && e.date===yday && e.meal===AM.meal, 6).forEach(f=>{ const sv = H.foods.find(x=>x.name.toLowerCase()===f.name.toLowerCase()); push(sv ? {...sv} : {name:f.name, kcal:Math.round(f.one), group:f.group, veg:f.veg, times:f.n}, 'yesterday'); });
-  const times = f => H.meals.filter(e=>e.food.toLowerCase()===f.name.toLowerCase()).length;
-  const sc = AM.who.length===1 ? eatScores(AM.who[0]) : {}, liked = f => { const x = sc[f.name.toLowerCase()]; return x && x.n>=2 ? (x.avg>=0.8 ? 1 : x.avg<0.5 ? -1 : 0) : 0; };
-  const mine = H.foods.filter(f=>!f.person || AM.who.includes(f.person)).map(f=>[f, times(f)]).sort((a,b)=>liked(b[0])-liked(a[0]) || b[1]-a[1]);
-  if (!q){   // the menu is one list, this meal's foods or everything, most recently had or A to Z
-    const last = {}; H.meals.forEach(e=>{ if (AM.who.includes(e.person)){ const k = e.food.toLowerCase(); if (!last[k] || e.date>last[k]) last[k] = e.date; } });
-    const l = mine.filter(([f])=>AMS.all || !f.slot || f.slot===AM.meal);
-    l.sort(AMS.sort==='az' ? (a,b)=>a[0].name.localeCompare(b[0].name) : (a,b)=>(last[b[0].name.toLowerCase()]||'').localeCompare(last[a[0].name.toLowerCase()]||'') || b[1]-a[1] || a[0].name.localeCompare(b[0].name));
-    l.forEach(([f,n])=>push({...f, times:n, last:last[f.name.toLowerCase()]}, 'saved'));
+  const ours = e => AM.who.includes(e.person) && !e.skip && e.food!=='Skipped' && e.meal!=='Drinks' && e.food!==VEG_FOOD && !(e.eaten===0 && /^Refused/.test(e.note||'')), yday = addDays(HD, -1);
+  if (!q){
+    topFoods(e=>ours(e) && e.date===yday && e.meal===AM.meal, 6).forEach(f=>push(histF(f), 'yesterday'));
+    topFoods(e=>ours(e) && (AMS.all || e.meal===AM.meal), 400).sort((a,b)=>a.last<b.last?1:a.last>b.last?-1:b.n-a.n).forEach(f=>push(histF(f), 'recent'));
     return out;
   }
-  mine.forEach(([f,n])=>push({...f, times:n}, 'saved'));
-  topFoods(e=>AM.who.includes(e.person) && e.meal!=='Drinks' && (q ? !e.skip && e.food!=='Skipped' : e.date>=since && e.meal===AM.meal), q?60:8).forEach(f=>push({name:f.name, kcal:Math.round(f.one), group:f.group, veg:f.veg, times:f.n}, 'usual'));
+  topFoods(ours, 400).forEach(f=>push(histF(f), 'usual'));
   H.base.slice(0, 40).forEach(f=>push(f, 'base'));
   const fit = f => f.name.toLowerCase().startsWith(q) ? 0 : 1 + nameFit(words, f.name);
   return out.map((f,i)=>[f,i]).sort((a,b)=>fit(a[0])-fit(b[0]) || a[1]-b[1]).map(x=>x[0]).slice(0, 30);
 }
-let AMS = {sort:'recent', all:false, full:false, veg:false};
-try{ AMS.veg = localStorage.getItem('ganymede-plus-veg')==='1'; }catch(e){}
-function amVegT(){ AMS.veg = !AMS.veg; try{ localStorage.setItem('ganymede-plus-veg', AMS.veg?'1':'0'); }catch(e){} drawAddMeal(); }
-const amVegOn = () => AMS.veg && !AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner');
-const withVeg = f => !amVegOn() || f.person || f.group==='Drink' || /\bveg|salad/i.test(f.name) ? f : {...f, name:f.name+' + veg', kcal:f.kcal+50, veg:Math.min(5,(f.veg||0)+1)};
-try{ AMS.sort = localStorage.getItem('ganymede-menu-sort') || 'recent'; }catch(e){}
-function amSort(v){ AMS.sort = v; try{ localStorage.setItem('ganymede-menu-sort', v); }catch(e){} drawAddMeal(); }
+/* + veg: a portion of mixed veg goes in as its own item next to the food. Remembered for lunch and dinner apart; dinner starts on */
+let AMS = {all:false, full:false, veg:{Lunch:false, Dinner:true}};
+try{ const v = JSON.parse(localStorage.getItem('ganymede-plus-veg2')); if (v) AMS.veg = v; }catch(e){}
+function amVegT(){ AMS.veg[AM.meal] = !AMS.veg[AM.meal]; try{ localStorage.setItem('ganymede-plus-veg2', JSON.stringify(AMS.veg)); }catch(e){} drawAddMeal(); }
+const amVegOn = () => !!AMS.veg[AM.meal] && !AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner');
+const vegFits = f => !f.person && f.src!=='built' && f.group!=='Drink' && f.group!=='Takeaway' && !/\bveg|salad/i.test(f.name);
+/* a portion of mixed veg, its own row: 50 kcal and one of the five a day for an adult */
+const vegRow = (n, date, meal, portion, ate) => ({date, person:n, meal, food:VEG_FOOD, kcal:Math.round(50*portion*(ate==null?1:ate)), served:Math.round(50*portion), eaten:ate==null?1:ate, note:'', portion, veg:1, group:'Fruit & veg'});
+/* the meat for a meat-and-veg dinner, the ones we have most first */
+function meatChips(){
+  const n = {}; H.meals.forEach(e=>{ if (!AM.who.includes(e.person) || e.meal!=='Dinner') return; const k = e.food.toLowerCase(); BUILD.Protein.forEach(([m])=>{ if (k.includes(m.toLowerCase())) n[m] = (n[m]||0)+1; }); });
+  return BUILD.Protein.map((p,i)=>[p,i]).sort((a,b)=>(n[b[0][0]]||0)-(n[a[0][0]]||0) || a[1]-b[1]).slice(0, 10).map(x=>x[0]);
+}
+function amMeat(name){ const x = BUILD.Protein.find(p=>p[0]===name); if (x) amAdd({name:x[0], kcal:x[1], group:'Meal', veg:0, src:'meat'}); }
 const agoF = d => { if (!d) return ''; const n = daysBetween(d, today())-1; return n<=0 ? 'today' : n===1 ? 'yesterday' : n<7 ? n+' days ago' : n<60 ? Math.round(n/7)+' weeks ago' : Math.round(n/30.44)+' months ago'; };
 function drawAddMeal(){
   if (AM.build) return drawBuilder();
-  const q = AM.q.trim(); let list = amCandidates();
+  const q = AM.q.trim(); let list = amCandidates(), more = 0;
   if (q) list = list.slice(0, 8);
-  else if (!AMS.full && !AM.swap) list = [];   // suggestions come as you type (Tom)
+  else { const y = list.filter(f=>f.src==='yesterday'), rc = list.filter(f=>f.src==='recent'), n = AMS.full ? 40 : 6; more = rc.length - n; list = y.concat(rc.slice(0, n)); }
   AMLIST = list;
   const sc = AM.who.length===1 ? eatScores(AM.who[0]) : {};
   const row = (f, i) => `<button class="item food" onclick="amPick(${i})"><div class="dot" style="background:var(--card-2);font-size:17px">${GROUP_ICON[f.group]||'🍽️'}</div>
-    <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">${f.src==='yesterday'?'Yesterday':f.src==='usual'?`Had ${f.times} time${f.times>1?'s':''}`:f.src==='saved'?(f.person?esc(f.person)+"'s order":f.last?'Had '+agoF(f.last):'Our meal')+(f.items&&f.items.length?' · '+esc(f.items.map(x=>x.name).join(', ')):''):'Typical meal'}${f.veg?' · '+f.veg+' fruit &amp; veg':''}${esc(likeTag(sc[f.name.toLowerCase()]))}</div></div>
+    <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">${f.src==='yesterday'?'Yesterday':f.src==='recent'?'Had '+agoF(f.last)+(f.times>1?` · ${f.times} times`:''):f.src==='usual'?`Had ${f.times} time${f.times>1?'s':''}`:'Typical meal'}${f.veg?' · '+f.veg+' fruit &amp; veg':''}${esc(likeTag(sc[f.name.toLowerCase()]))}</div></div>
     </button>`;
   const sect = (title, src) => { const l = AMLIST.map((f,i)=>[f,i]).filter(([f])=>f.src===src); return l.length ? `${title?`<label class="f">${title}</label>`:''}<div class="list">${l.map(([f,i])=>row(f,i)).join('')}</div>` : ''; };
   const scaled = AM.who.map(n=>`${n} ${FRAC[amMult(n)]||amMult(n)}`).join(' · ');
@@ -2490,18 +2496,18 @@ function drawAddMeal(){
           <button class="mid plain" onclick="editMeal('${e.id}')"><div class="t">${esc(e.food)}${esc(eatTag(e))}</div><div class="d">${esc(fmtPortion(e.portion))}${e.diary?' · Food diary':''} · tap to adjust</div>${e.note?`<div class="d note">&ldquo;${esc(e.note)}&rdquo;</div>`:''}</button>
           <button class="chip" onclick="slotChange('${e.id}')">Change</button>
           <button class="icon-btn" aria-label="Remove ${esc(e.food)}" onclick="slotRemove('${e.id}')">&times;</button></div>`).join('')}</div>
-        <label class="f">Add something else from our menu</label>` : `<div class="hint" style="margin:0 0 4px">Pick what ${esc(AM.who[0])} had from our menu.</div>`}`
+        <label class="f">Add something else</label>` : `<div class="hint" style="margin:0 0 4px">Type it, or tap one ${esc(AM.who[0])} has had.</div>`}`
     : AM.swap ? `<button class="back-link" onclick="drawEditMeal()">&lsaquo; Back</button><h3 style="margin:0 0 2px">Swap ${esc(AM.swap.name)}</h3><div class="hint" style="margin:0 0 6px">Tap the food they had instead, for ${esc(AM.who.join(', '))}.</div>`
     : `<label class="f" style="margin-top:0">Who ate it</label>
     <div class="chips">${EATERS.map(n=>`<button class="chip ${AM.who.length===1&&AM.who[0]===n?'on':''}" style="--c:${COLOR[n]}" onclick="AM.who=['${n}'];drawAddMeal()">${n}</button>`).join('')}
       <button class="chip ${AM.who.length===EATERS.length?'on':''}" onclick="AM.who=EATERS.slice();drawAddMeal()">Both</button></div>`}
     ${AM.slot && !AM.swap ? '' : `<div class="seg four" style="margin-top:12px">${SLOTS.map(s=>`<button class="${AM.meal===s?'on':''}" onclick="AM.meal='${s}';drawAddMeal()"><span>${SLOT_ICON[s]}</span>${s}</button>`).join('')}</div>`}
     <input class="inp" id="amQ" placeholder="Type what they had" value="${esc(AM.q)}" autocomplete="off" oninput="AM.q=this.value;AM.est=null;AM.online=null;clearTimeout(window._aq);window._aq=setTimeout(()=>{drawAddMeal();const i=$('#amQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)},150)" onkeydown="if(event.key==='Enter'){AM.q=this.value;amTyped()}">
-    ${!AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner') ? `<div class="chips" style="margin-top:8px"><button class="chip ${AMS.veg?'on':''}" onclick="amVegT()">&#x1F966; + veg</button><span class="hint" style="margin:0;align-self:center">${AMS.veg?'A portion of veg goes with it':'Tap if it came with veg'}</span></div>` : ''}
-    ${q && !AMLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<button class="primary am-typed" onclick="amTyped()">${AM.swap?'Use':'Add'} &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}${amVegOn()&&!/veg|salad/i.test(q)?' + veg':''}&rdquo;</button>` : ''}
+    ${!AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner') ? `<button class="veg-switch ${amVegOn()?'on':''}" onclick="amVegT()" aria-pressed="${amVegOn()}"><span class="vs-box">${amVegOn()?'&#x2713;':''}</span><span>&#x1F966; <b>+ veg</b><small>${amVegOn()?'A portion of mixed veg goes in with it':'Tap to add a portion of mixed veg with it'}</small></span></button>` : ''}
+    ${!q && !AM.swap && AM.meal==='Dinner' ? `<label class="f">Meat and veg</label><div class="chips wrap">${meatChips().map(([m])=>`<button class="chip" onclick="amMeat(${jsA(m)})">${esc(m)}</button>`).join('')}</div>` : ''}
+    ${q && !AMLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<button class="primary am-typed" onclick="amTyped()">${AM.swap?'Use':'Add'} &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}&rdquo;${amVegOn()&&!/veg|salad/i.test(q)?' + veg':''}</button>` : ''}
     ${q?`<label class="f">${AMLIST.length?'Or one we have had':''}</label>`:''}
-    ${q?sect('','saved')+sect('','usual')+sect('','base'):''}
-    ${q?`<button class="link-btn" onclick="amNewFood()">+ Save &ldquo;${esc(q)}&rdquo; as one of our meals</button>`:''}
+    ${q?sect('','usual')+sect('','base'):''}
     <details class="am-opts" ${AM.optsOpen || AM.eaten<1 || AM.note ? 'open' : ''} ontoggle="AM.optsOpen=this.open">
       <summary><span>Portion, how much eaten, comment</span><b>${esc([{0.5:'Small',1:'Usual',1.5:'Big',2:'Double'}[AM.size], eatLabel(AM.eaten==null?1:AM.eaten)].join(' · '))}</b></summary>
       <div class="chips">${[[0.5,'Small'],[1,'Usual'],[1.5,'Big'],[2,'Double']].map(([v,l])=>`<button class="chip ${AM.size===v?'on':''}" onclick="AM.size=${v};drawAddMeal()">${l}</button>`).join('')}</div>
@@ -2513,11 +2519,10 @@ function drawAddMeal(){
     ${sect('Worked out','estimate')}${sect('Found online','online')}
     ${q?'':`<button class="build-btn" onclick="amBuild()"><span>&#x1F373;</span><span><b>Build a meal</b><small>Pick the protein, carbs and veg</small></span><span class="chev">&rsaquo;</span></button>`}
     ${q?'':sect('Same as '+(HD===today()?'yesterday':'the day before'),'yesterday')}
-    ${q?'':!AMS.full?'':`<div class="menu-h"><label class="f">Our menu</label>
-      <div class="mini-seg">${[[false,AM.meal],[true,'All']].map(([v,l])=>`<button class="${AMS.all===v?'on':''}" onclick="AMS.all=${v};drawAddMeal()">${esc(l)}</button>`).join('')}</div>
-      <div class="mini-seg">${[['recent','Recent'],['az','A&ndash;Z']].map(([v,l])=>`<button class="${AMS.sort===v?'on':''}" onclick="amSort('${v}')">${l}</button>`).join('')}</div></div>`}
-    ${q?'':sect('','saved')}
-    ${q?'':`<div class="am-more"><button class="link-btn" onclick="AMS.full=!AMS.full;drawAddMeal()">${AMS.full?'Show fewer':'Or pick from our whole menu'}</button><button class="link-btn" onclick="amNewFood()">+ Save a new meal</button></div>`}
+    ${q?'':`<div class="menu-h"><label class="f">Had before</label>
+      <div class="mini-seg">${[[false,AM.meal],[true,'Any meal']].map(([v,l])=>`<button class="${AMS.all===v?'on':''}" onclick="AMS.all=${v};drawAddMeal()">${esc(l)}</button>`).join('')}</div></div>`}
+    ${q?'':sect('','recent') || '<div class="hint" style="margin:4px 2px">Nothing yet. Whatever you add shows here next time.</div>'}
+    ${q||(more<=0&&!AMS.full)?'':`<button class="link-btn" onclick="AMS.full=!AMS.full;drawAddMeal()">${AMS.full?'Show fewer':'Show more'}</button>`}
     ${AM.slot && !AM.swap && !inSlot.length ? `<button class="link-btn" style="margin-top:14px" onclick="slotSkip()">${esc(AM.who[0])} didn't have this meal (skipped)</button>` : ''}
     <button class="${added||(AM.slot&&inSlot.length)?'primary':'secondary'}" onclick="closeSheet()">${AM.swap?'Cancel':added||(AM.slot&&inSlot.length)?'Done':'Close'}</button>`;
 }
@@ -2534,19 +2539,17 @@ function amAdd(f){
   const ate = AM.eaten==null ? 1 : AM.eaten, note = (AM.note||'').trim();
   if (AM.swap){ const old = AM.swap.rows, list = old.map(x=>{ const m = f.person ? AM.size : AM.size===1 ? x.portion : amMult(H.meals.find(e=>e.id===x.id).person), sv = Math.round(f.kcal*m);
       return {id:x.id, date:AM.swap.date, meal:AM.meal, food:f.name, kcal:Math.round(sv*ate), served:sv, eaten:ate, note:note||x.note||'', portion:m, veg:f.veg||0, group:f.group||'Meal'}; });
-    const keep = ['online','estimate','custom'].includes(f.src) && !H.foods.some(x=>x.name.toLowerCase()===f.name.toLowerCase());
     HD = AM.swap.date;
-    return hRun('editMeals', [list], `Swapped for ${f.name}`, ()=>hRun('editMeals',[old],'Put back')).then(r=>{ if (r && keep) hRun('saveFood', [{name:f.name, kcal:Math.round(f.kcal), group:f.group||'Meal', veg:f.veg||0, meal:AM.meal}, null], null); });
+    return hRun('editMeals', [list], `Swapped for ${f.name}`, ()=>hRun('editMeals',[old],'Put back'));
   }
-  const plain = f; f = withVeg(f);
   const eaters = f.person ? [f.person] : AM.who, mult = n => f.person ? AM.size : amMult(n);
-  const list = eaters.map(n=>({date:HD, person:n, meal:AM.meal, food:f.name, kcal:Math.round(f.kcal*mult(n)*ate), served:Math.round(f.kcal*mult(n)), eaten:ate, note, portion:mult(n), veg:f.veg||0, group:f.group||'Meal'}));
-  const keep = ['online','estimate','custom'].includes(plain.src) && !H.foods.some(x=>x.name.toLowerCase()===plain.name.toLowerCase())
-    ? {name:plain.name, kcal:Math.round(plain.kcal), group:plain.group||'Meal', veg:plain.veg||0, meal:AM.meal} : null;
-  const who = eaters.length===EATERS.length && EATERS.length>1 ? 'both' : eaters.join(' & ');
+  const veg = amVegOn() && vegFits(f) && !H.meals.some(e=>e.date===HD && e.meal===AM.meal && eaters.includes(e.person) && e.food===VEG_FOOD);
+  const list = eaters.map(n=>({date:HD, person:n, meal:AM.meal, food:f.name, kcal:Math.round(f.kcal*mult(n)*ate), served:Math.round(f.kcal*mult(n)), eaten:ate, note, portion:mult(n), veg:f.veg||0, group:f.group||'Meal'}))
+    .concat(veg ? eaters.map(n=>vegRow(n, HD, AM.meal, mult(n), ate)) : []);
+  const who = eaters.length===EATERS.length && EATERS.length>1 ? 'both' : eaters.join(' & '), label = f.name + (veg ? ' + veg' : '');
   const stay = {keep:true, redraw:drawAddMeal, mark:'addMealSheet'};
-  AM.added = (AM.added||[]).concat(f.name); AM.q = ''; AM.est = null; AM.online = null; AM.build = null;
-  hRun('addMeals', [list, keep], `${f.name} for ${who}${ate<1?' ('+eatLabel(ate).toLowerCase()+')':''}`, raw=>{ const i = AM.added.lastIndexOf(f.name); if (i > -1) AM.added.splice(i,1); return hRun('deleteMeal',[raw.batch],'Undone',null,stay); }, stay);
+  AM.added = (AM.added||[]).concat(label); AM.q = ''; AM.est = null; AM.online = null; AM.build = null;
+  hRun('addMeals', [list, null], `${label} for ${who}${ate<1?' ('+eatLabel(ate).toLowerCase()+')':''}`, raw=>{ const i = AM.added.lastIndexOf(label); if (i > -1) AM.added.splice(i,1); return hRun('deleteMeal',[raw.batch],'Undone',null,stay); }, stay);
 }
 
 /* ---- the meal builder: protein, carbs, veg, and it adds up; kcal are one adult portion of each ---- */
@@ -2568,7 +2571,7 @@ const BUILD_GUESS = {Protein:250, Carbs:250, Veg:30, Extras:100};
 function bGuess(n, g){ const k = n.trim().toLowerCase(); if (!k) return null;
   const f = (H.foods||[]).concat(H.base||[]).find(f=>f.name.toLowerCase()===k) || (H.foods||[]).concat(H.base||[]).find(f=>f.name.toLowerCase().includes(k));
   return f ? {kcal:Math.round(f.kcal), from:f.name} : {kcal:BUILD_GUESS[g], from:''}; }
-function amBuild(){ AM.build = {parts:[], save:false, adding:null}; drawAddMeal(); }
+function amBuild(){ AM.build = {parts:[], adding:null}; drawAddMeal(); }
 function bToggle(name){ const B = AM.build, i = B.parts.findIndex(p=>p.name===name);
   if (i > -1) B.parts.splice(i,1); else { const x = buildPart(name); if (x) B.parts.push(x); } drawBuilder(); }
 function bNew(g){ AM.build.adding = AM.build.adding===g ? null : g; drawBuilder(); const i = $('#bName'); if (i) i.focus({preventScroll:true}); }
@@ -2585,19 +2588,18 @@ function builtBefore(){
   return Object.keys(last).filter(n=>n.split(' + ').every(buildPart)).sort((a,b)=>last[b].localeCompare(last[a])).slice(0,6);
 }
 function bFood(){ const order = Object.keys(BUILD), l = AM.build.parts.slice().sort((a,b)=>order.indexOf(a.g)-order.indexOf(b.g));
-  return {name:l.map(p=>p.name).join(' + '), kcal:l.reduce((a,p)=>a+p.kcal,0), veg:Math.min(5,l.reduce((a,p)=>a+p.veg,0)), group:'Meal', src:AM.build.save?'custom':'built'}; }
+  return {name:l.map(p=>p.name).join(' + '), kcal:l.reduce((a,p)=>a+p.kcal,0), veg:Math.min(5,l.reduce((a,p)=>a+p.veg,0)), group:'Meal', src:'built'}; }
 function drawBuilder(){
   const B = AM.build, f = bFood(), on = n => B.parts.some(p=>p.name===n), before = builtBefore();
   $('#sheet').innerHTML = `<div class="grab" id="addMealSheet"></div>
-    <button class="back-link" onclick="AM.build=null;drawAddMeal()">&lsaquo; Back to our menu</button>
+    <button class="back-link" onclick="AM.build=null;drawAddMeal()">&lsaquo; Back</button>
     <h3 style="margin:0 0 2px">Build ${esc(AM.who.length===1?AM.who[0]+"'s":'a')} ${esc(AM.meal.toLowerCase())}</h3>
     <div class="hint" style="margin:0 0 6px">Tap what was on the plate. Each person's portion is set when it is added.</div>
     ${before.length ? `<label class="f">Built before</label><div class="chips wrap">${before.map(n=>`<button class="chip" onclick="bUse(${jsA(n)})">${esc(n)}</button>`).join('')}</div>` : ''}
     ${Object.keys(BUILD).map(g=>`<label class="f">${BUILD_ICON[g]} ${g}</label><div class="chips wrap">${MYPARTS.filter(p=>p.g===g && !BUILD[g].some(x=>x[0].toLowerCase()===p.name.toLowerCase())).map(p=>`<button class="chip ${on(p.name)?'on':''}" onclick="bToggle(${jsA(p.name)})">${esc(p.name)}</button>`).join('')}${BUILD[g].map(([n])=>`<button class="chip ${on(n)?'on':''}" onclick="bToggle(${jsA(n)})">${esc(n)}</button>`).join('')}<button class="chip chip-add ${B.adding===g?'on':''}" onclick="bNew('${g}')">+ Other</button></div>
       ${B.adding===g ? `<div class="b-new"><div class="two" style="align-items:center"><input class="inp" id="bName" placeholder="${g==='Protein'?'e.g. Pie':g==='Carbs'?'e.g. Gnocchi':g==='Veg'?'e.g. Kale':'e.g. Mint sauce'}" autocomplete="off" onkeydown="if(event.key==='Enter')bOther()"><button class="secondary" style="margin:0" onclick="bOther()">Add</button></div></div>` : ''}`).join('')}
     <div class="save-bar">
-      ${B.parts.length ? `<div class="build-sum"><b>${esc(f.name)}</b><span>${f.veg?f.veg+' fruit &amp; veg':''}</span></div>
-        <label class="build-save"><input type="checkbox" ${B.save?'checked':''} onchange="AM.build.save=this.checked"> Save it on our menu too</label>` : '<div class="hint" style="margin:10px 2px 0">Nothing picked yet.</div>'}
+      ${B.parts.length ? `<div class="build-sum"><b>${esc(f.name)}</b><span>${f.veg?f.veg+' fruit &amp; veg':''}</span></div>` : '<div class="hint" style="margin:10px 2px 0">Nothing picked yet.</div>'}
       <button class="primary" ${B.parts.length?'':'disabled'} onclick="amAdd(bFood())">Add ${AM.who.length===EATERS.length&&EATERS.length>1?'for both':'it'}</button></div>`;
 }
 
@@ -2629,8 +2631,7 @@ function drawDrinks(){
         <button class="icon-btn" aria-label="One more ${esc(c.name)}" onclick="drMore(${i})">+</button></div>`).join('')}</div>` : ''}
     <input class="inp" id="drQ" placeholder="Find a drink, or type a new one" value="${esc(DR.q)}" autocomplete="off" style="margin-top:10px"
       oninput="DR.q=this.value;clearTimeout(window._dq);window._dq=setTimeout(()=>{drawDrinks();const i=$('#drQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)},200)">
-    ${q && !DRLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<button class="primary" onclick="drCustom()">Add &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}&rdquo;</button>
-      <button class="link-btn" onclick="openFoodForm({name:${jsA(q.charAt(0).toUpperCase()+q.slice(1))}, group:'Drink', slot:'Drinks'})">+ Save it as one of our drinks</button>` : ''}
+    ${q && !DRLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<button class="primary" onclick="drCustom()">Add &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}&rdquo;</button>` : ''}
     <div class="drink-grid">${DRLIST.map((f,i)=>`<button class="drink ${had(f.name)?'on':''}" onclick="drAdd(${i})"><span class="t">${esc(f.name)}</span>${had(f.name)?'<span class="d">&times;'+had(f.name)+'</span>':''}</button>`).join('')}</div>
     ${!DRLIST.length && !q ? '<div class="empty">No drinks yet.</div>' : ''}
     <button class="primary" onclick="closeSheet()">Done</button>`;
@@ -2648,7 +2649,7 @@ function drCustom(){ const q = DR.q.trim(); if (!q) return; DR.q = ''; addDrink(
 let EM = null;
 function mealMates(e){   // everyone else who had the same thing, added together (same batch, same day, same meal)
   const b = e.id.indexOf('.') > -1 ? e.id.slice(0, e.id.indexOf('.')) : null;
-  return b ? H.meals.filter(x=>x.id!==e.id && x.id.indexOf(b+'.')===0 && x.date===e.date && x.meal===e.meal) : [];
+  return b ? H.meals.filter(x=>x.id!==e.id && x.id.indexOf(b+'.')===0 && x.date===e.date && x.meal===e.meal && x.person!==e.person && x.food===e.food) : [];
 }
 function editMeal(id){
   const e = H.meals.find(x=>x.id===id); if (!e) return;
@@ -2661,9 +2662,7 @@ function editMeal(id){
 const PART_LV = [[1,'All','all the'],[0.75,'Most','most of the'],[0.5,'Half','half the'],[0.25,'A bit','a bit of the'],[0,'None','none of the']];
 const ATE_RE = /(^|\.\s*)Ate (all|most|half|a bit|none)[^.]*\.?\s*$/;
 function mealParts(food, served){
-  const f = H.foods.find(x=>x.name.toLowerCase()===food.trim().toLowerCase());
-  const l = f && f.items && f.items.length > 1 ? f.items.map(x=>x.name)
-    : food.split(/\s*(?:\+|,|&|\band\b|\bwith\b)\s*/i).map(n=>n.trim()).filter(Boolean);
+  const l = food.split(/\s*(?:\+|,|&|\band\b|\bwith\b)\s*/i).map(n=>n.trim()).filter(Boolean);
   return l.length < 2 ? [] : l.map(name=>({name, s:1/l.length, f:1}));
 }
 function partsFromNote(parts, note, eaten){
@@ -2676,7 +2675,7 @@ function emPart(i, v){ EM.parts[i].f = v; EM.eaten = Math.round(EM.parts.reduce(
 function emPortion(p){ EM.served = Math.round((EM.served||0)/(EM.portion||1)*p); EM.portion = p; drawEditMeal(); }
 function drawEditMeal(){
   const c = COLOR[EM.person], names = [EM.person].concat(EM.mates.map(id=>(H.meals.find(x=>x.id===id)||{}).person).filter(Boolean));
-  const saved = H.foods.some(f=>f.name.toLowerCase()===EM.food.trim().toLowerCase());
+  const vegIn = H.meals.some(e=>e.date===EM.date && e.meal===EM.meal && e.person===EM.person && e.food===VEG_FOOD);
   $('#sheet').innerHTML = `<div class="grab"></div>
     <h3 style="margin:0 0 2px">Change what ${esc(EM.person)} had</h3>
     <div class="hint" style="margin:0 0 6px">${EM.diary?'From the Food diary. Your changes stay unless that diary cell is edited again.':'Change anything, then Save.'}</div>
@@ -2706,7 +2705,7 @@ function drawEditMeal(){
     <label class="f">Type</label>
     <div class="chips wrap">${GROUPS.map(g=>`<button class="chip ${EM.group===g?'on':''}" onclick="EM.group='${g}';drawEditMeal()">${GROUP_ICON[g]} ${g}</button>`).join('')}</div>
     <div class="save-bar"><button class="primary" onclick="emSave()">Save changes</button></div>
-    ${saved?'':`<button class="secondary" onclick="emKeep()">Save as one of our meals</button>`}
+    ${EM.food===VEG_FOOD || vegIn || !['Lunch','Dinner'].includes(EM.meal) ? '' : `<button class="secondary" onclick="emVeg()">&#x1F966; + veg: add a portion of mixed veg</button>`}
     <button class="secondary" style="color:var(--neg)" onclick="emRemove()">Remove${EM.all&&EM.mates.length?' for everyone':''}</button>
     <button class="secondary" onclick="closeSheet()">Close</button>`;
 }
@@ -2714,10 +2713,11 @@ function emRows(){ return [EM.id].concat(EM.all ? EM.mates : []).map(id=>H.meals
 const mealVals = x => ({id:x.id, date:x.date, meal:x.meal, food:x.food, kcal:Math.round(x.kcal), portion:x.portion||1, veg:x.veg||0, group:x.group||'Meal', eaten:x.eaten==null?1:x.eaten, note:x.note||'', served:Math.round(x.served==null?x.kcal:x.served)});
 function emNote(){ const b = EM.note.trim(), pn = partsNote(EM.parts||[]); return b && pn ? b.replace(/\.?$/, '.') + ' ' + pn : b || pn; }
 function emSave(){
-  const food = EM.food.trim(), sv = Math.round(EM.served) || 0, k = Math.round(sv*EM.eaten);
+  const food = EM.food.trim();
   if (!food) return toast('Give the food a name');
   if (!EM.date || EM.date > today()) return toast('Pick a day, not in the future');
   const me = H.meals.find(x=>x.id===EM.id); if (!me) return toast('That entry has gone, tap refresh');
+  const sv = Math.round(renamedOne(me.food, food, (Math.round(EM.served)||0)/(EM.portion||1))*(EM.portion||1)), k = Math.round(sv*EM.eaten);
   const one = sv / (EM.portion||1), kcalChanged = sv !== Math.round(me.served) || Math.abs((EM.portion||1)-(me.portion||1)) > 0.001;
   const rows = emRows(), old = rows.map(mealVals);
   const list = rows.map(x=>x.id===EM.id
@@ -2732,8 +2732,17 @@ function emRemove(){
   const rows = emRows(), ids = rows.map(x=>x.id), back = rows.filter(x=>!x.diary).map(x=>({date:x.date, person:x.person, meal:x.meal, food:x.food, kcal:x.kcal, portion:x.portion, veg:x.veg, group:x.group, eaten:x.eaten, note:x.note, served:x.served}));
   hRun('deleteMeal', [ids], rows.length>1 ? `Removed for ${rows.length} people` : 'Removed', back.length ? ()=>hRun('addMeals',[back,null],'Put back') : null);
 }
-function emKeep(){ const food = EM.food.trim(); if (!food) return toast('Give the food a name');
-  hRun('saveFood',[{name:food, kcal:Math.round(EM.served/(EM.portion||1)), group:EM.group, veg:EM.veg, meal:EM.meal}],'Saved to our meals'); }
+function emVeg(){ const rows = emRows().filter(x=>!H.meals.some(e=>e.date===x.date && e.meal===x.meal && e.person===x.person && e.food===VEG_FOOD));
+  if (!rows.length) return closeSheet();
+  hRun('addMeals', [rows.map(x=>vegRow(x.person, x.date, x.meal, x.portion||1, 1)), null], 'Added mixed veg', raw=>hRun('deleteMeal',[raw.batch],'Undone')); }
+/* a renamed food: kcal per portion from the last time we had that name, or scaled when only the number in front changed (2 sausages to 3) */
+function renamedOne(was, now, one){
+  if (now.toLowerCase()===was.toLowerCase()) return one;
+  const h = topFoods(e=>e.food.toLowerCase()===now.toLowerCase() && e.food!=='Skipped', 1)[0]; if (h && h.one > 0) return h.one;
+  const a = was.match(/^(\d+(?:\.\d+)?)\s*(?:x\s*)?(.*)$/i), b = now.match(/^(\d+(?:\.\d+)?)\s*(?:x\s*)?(.*)$/i);
+  if (a && b && +a[1] > 0 && stemW(a[2].trim().toLowerCase())===stemW(b[2].trim().toLowerCase())) return one * b[1] / a[1];
+  return one;
+}
 /* swap the food: the add-a-meal picker, but a tap replaces this entry (and its mates) instead of adding */
 function emSwap(){
   const rows = emRows();
@@ -2874,20 +2883,18 @@ async function saveBody(){
   if (raw && next && H.body.filter(b=>b.person===next && daysBetween(b.date,today())<=31).length===0) openBody(next);
 }
 
-/* ---- saved meals ---- */
+/* ---- the Meals tab: everything we have had, by meal, most often first; each opens its days ---- */
 function hFoods(){
-  const most = topFoods(()=>true, 25).filter(f=>!H.foods.some(x=>x.name.toLowerCase()===f.name.toLowerCase()));
-  const order = H.foods.map((f,i)=>[f,i,H.meals.filter(e=>e.food.toLowerCase()===f.name.toLowerCase()).length]).sort((a,b)=>b[2]-a[2] || a[0].name.localeCompare(b[0].name));
-  return `<button class="primary" style="margin-top:0" onclick="openFoodForm()">+ Save a meal</button>
-  <div class="hint" style="text-align:center">Saved meals come up first when adding what someone ate.</div>
-  <h2>Our meals</h2>
-  <div class="card list">${order.map(([f,i,n])=>`<button class="item food" onclick="openFoodForm({i:${i}})"><div class="dot" style="background:var(--card-2);font-size:17px">${GROUP_ICON[f.group]||'&#x1F37D;&#xFE0F;'}</div>
-      <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">${f.person?esc(f.person)+"'s · ":''}${f.place?esc(niceName(f.place))+' · ':''}${[f.items&&f.items.length ? esc(f.items.map(x=>x.name).join(', ')) : [f.group!=='Meal'?esc(f.group):'', esc(f.slot||'')].filter(Boolean).join(' · '), f.veg ? f.veg+' fruit &amp; veg' : '', n ? 'had '+n+'&times;' : ''].filter(Boolean).join(' · ')}</div></div>
-      </button>`).join('') || '<div class="empty">No saved meals yet.</div>'}</div>
-  ${most.length?`<h2>Eaten often, not saved</h2><div class="hint" style="margin-top:-6px">Tap one to check it and save it.</div><div class="card list">${most.map(f=>`<button class="item food" onclick='openFoodForm(${JSON.stringify({name:f.name,kcal:Math.round(f.one),group:f.group||'Meal',slot:f.slot||''}).replace(/'/g,'&#39;')})'><div class="dot" style="background:var(--card-2);font-size:17px">${GROUP_ICON[f.group]||'🍽️'}</div>
-      <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">Had ${f.n}×</div></div><span class="chip">Save&nbsp;›</span></button>`).join('')}</div>`:''}
+  const ok = e => e.food!=='Skipped' && !e.skip && e.meal!=='Drinks', all = topFoods(ok, 400);
+  return `<div class="hint" style="margin:0 2px 10px">Everything we have had, most often first. Tap one to see when. Adding a meal suggests these.</div>
+  ${SLOTS.map(sl=>{ const l = topFoods(e=>ok(e) && e.meal===sl, 12);
+    return l.length ? `<h2>${SLOT_ICON[sl]} ${sl}</h2><div class="card list">${l.map(foodRow).join('')}</div>` : ''; }).join('')}
+  ${all.length > 12 ? `<h2>Everything</h2><div class="card list">${all.map(foodRow).join('')}</div>` : ''}
+  ${all.length ? '' : '<div class="card empty">Nothing yet. Add what someone ate on the Today page.</div>'}
   <div class="hint">Nathan's Food diary tab is read in automatically.</div>`;
 }
+const foodRow = f => `<button class="item food" onclick="foodDetail(${jsA(f.name)})"><div class="dot" style="background:var(--card-2);font-size:17px">${GROUP_ICON[f.group]||'&#x1F37D;&#xFE0F;'}</div>
+  <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">Had ${f.n} time${f.n>1?'s':''} &middot; last ${esc(agoF(f.last))}</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`;
 /* ---- takeaway days from the bank. A card payment posts the day after, so the meal was the day before
    (147 of 152 takeaway payments checked); PayPal rows carry their own day. ---- */
 const normPlace = s => String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -2910,13 +2917,12 @@ function takeawayCard(d){
   const pays = bankTakeaways(d, d); if (!pays.length) return '';
   const had = H.meals.filter(e=>e.date===d && e.group==='Takeaway');
   return pays.map(p=>{
-    const orders = H.foods.filter(f=>placeMatch(f, p.merchant)), place = niceName(p.merchant), todo = EATERS.filter(n=>!had.some(e=>e.person===n));
-    const picks = todo.map(n=>{ const o = orders.find(f=>f.person===n) || orders.find(f=>!f.person); return o ? [n, H.foods.indexOf(o)] : null; }).filter(Boolean);
+    const place = niceName(p.merchant), todo = EATERS.filter(n=>!had.some(e=>e.person===n));
+    const picks = todo.map(n=>{ const o = lastOrder(n, p.merchant, d); return o ? [n, o] : null; }).filter(Boolean);
     return `<div class="due take" style="--due:var(--laura)"><b>&#x1F35F; Takeaway day: ${esc(place)} <span class="muted" style="font-weight:500">${gbp(p.amount)}</span></b>
       <span class="hint" style="margin:0">From the bank statement${had.length?'. Logged: '+esc(had.map(e=>e.person+', '+e.food).join(' · ')):''}.</span>
-      ${picks.map(([n,i])=>`<button class="secondary take-add" onclick="addOrders('${d}',[['${n}',${i}]])"><span>Add ${esc(n)}'s usual: <b>${esc(H.foods[i].name)}</b></span></button>`).join('')}
+      ${picks.map(pk=>`<button class="secondary take-add" onclick="addOrders('${d}',${jsA([pk])})"><span>Add ${esc(pk[0])}'s last order: <b>${esc(pk[1].food)}</b></span></button>`).join('')}
       ${picks.length>1?`<button class="primary" onclick="addOrders('${d}',${jsA(picks)})">Add both</button>`:''}
-      ${todo.filter(n=>!picks.some(x=>x[0]===n)).map(n=>`<button class="secondary" onclick="openFoodForm({place:${jsA(place)},group:'Takeaway',slot:'Dinner',person:'${n}',date:'${d}'})">Save ${esc(n)}'s usual from ${esc(place)}</button>`).join('')}
       ${todo.length?`<button class="secondary" onclick="HD='${d}';openAddMeal(null,'Dinner')">Pick what we had</button>`:''}
     </div>`; }).join('');
 }
@@ -2935,70 +2941,17 @@ function fillInCard(){
       <div class="amt">${gbp(p.amount)}</div></button>`).join('')}</div>
     <div class="hint">From the bank statement, so they show once it is uploaded. Tap a day to add what you had.</div>`;
 }
-function addOrders(d, pairs){   // pairs = [[person, index in H.foods]]
-  const list = pairs.map(([n,i])=>{ const f = H.foods[i];
-    return {date:d, person:n, meal:f.slot||'Dinner', food:f.name, kcal:orderKcal(f,n), portion:orderPortion(f,n), veg:f.veg||0, group:f.group||'Takeaway'}; });
+/* what n had the last time we paid that place, else an order saved for it before */
+function lastOrder(n, merchant, d){
+  const k = normPlace(merchant), days = new Set(bankTakeaways(addDays(d,-730), addDays(d,-1)).filter(p=>normPlace(p.merchant).slice(0,10)===k.slice(0,10)).map(p=>p.date));
+  const l = H.meals.filter(e=>e.person===n && e.group==='Takeaway' && days.has(e.date)).sort((a,b)=>a.date<b.date?1:-1), e = l[0];
+  if (e){ const same = l.filter(x=>x.date===e.date && x.meal===e.meal); return {food:same.map(x=>x.food).join(', '), rows:same.map(x=>({food:x.food, kcal:Math.round(x.served||x.kcal), portion:x.portion||1, veg:x.veg||0, meal:x.meal}))}; }
+  const f = H.foods.find(f=>placeMatch(f, merchant) && f.person===n) || H.foods.find(f=>placeMatch(f, merchant) && !f.person);
+  return f ? {food:f.name, rows:[{food:f.name, kcal:orderKcal(f,n), portion:orderPortion(f,n), veg:f.veg||0, meal:f.slot||'Dinner'}]} : null;
+}
+function addOrders(d, pairs){   // pairs = [[person, lastOrder()]]
+  const list = [].concat(...pairs.map(([n,o])=>o.rows.map(r=>({date:d, person:n, meal:r.meal, food:r.food, kcal:r.kcal, served:r.kcal, portion:r.portion, veg:r.veg, group:'Takeaway'}))));
   hRun('addMeals', [list, null], list.length>1 ? 'Added for both' : `Added ${list[0].person}'s ${list[0].food}`, raw=>hRun('deleteMeal',[raw.batch],'Undone'));
-}
-
-/* ---- saving one of our meals: a name and kcal, or its parts (they add up), and for a takeaway where it's from ---- */
-let FF = null, RPL = [];
-function openFoodForm(o){
-  o = o || {};
-  const f = o.i>=0 ? H.foods[o.i] : null;
-  FF = f ? {i:o.i, old:f.name, name:f.name, kcal:f.kcal, items:(f.items||[]).map(x=>({...x})), group:f.group, veg:f.veg||0, slot:f.slot||'', place:f.place||'', person:f.person||''}
-    : {i:-1, old:'', name:o.name||'', kcal:o.kcal||'', items:[], group:o.group||'Meal', veg:0, slot:o.slot||'', place:o.place||'', person:o.person||'', then:o.then||null, date:o.date||null};
-  if (!FF.items.length && FF.group==='Takeaway') FF.items = [{name:'',kcal:''}];
-  drawFoodForm(); showSheet();
-  $('#sheet').scrollTop = 0;   // it opens from the foot of the add list: start at the name
-  if (FF.i<0) { const n = $('#ffN'); if (n) n.focus({preventScroll:true}); }
-}
-function drawFoodForm(){
-  RPL = recentPlaces();
-  const take = FF.group==='Takeaway', go = FF.then ? (FF.then.am.swap ? 'Save and use it' : 'Save and add for '+FF.then.who.join(' & ')) : FF.date && FF.person ? 'Save and add for '+FF.person : 'Save';
-  $('#sheet').innerHTML = `<div class="grab"></div>
-    <h3 style="margin:0 0 2px">${FF.i>=0?'Change this meal':'Save one of our meals'}</h3>
-    <div class="hint" style="margin:0 0 6px">Saved meals come first when you add what someone ate, so the usual ones are one tap.</div>
-    <label class="f">Name</label>
-    <input class="inp" id="ffN" value="${esc(FF.name)}" placeholder="${take?'e.g. Santas':'e.g. Chicken fajitas'}" oninput="FF.name=this.value" autocomplete="off">
-    <label class="f">Type</label>
-    <div class="chips wrap">${GROUPS.map(g=>`<button class="chip ${FF.group===g?'on':''}" onclick="FF.group='${g}';${g==='Takeaway'?"if(!FF.items.length)FF.items=[{name:'',kcal:''}];":''}drawFoodForm()">${GROUP_ICON[g]} ${g}</button>`).join('')}</div>
-    ${take?`<label class="f">Where from</label>
-      <input class="inp" id="ffP" value="${esc(FF.place)}" placeholder="The name on the bank statement" oninput="FF.place=this.value" autocomplete="off">
-      ${RPL.length?`<div class="chips wrap" style="margin-top:6px">${RPL.map((p,k)=>`<button class="chip ${normPlace(FF.place)===normPlace(p)?'on':''}" onclick="FF.place=RPL[${k}];if(!FF.name.trim())FF.name=RPL[${k}];drawFoodForm()">${esc(p)}</button>`).join('')}</div>`:''}
-      <div class="hint" style="margin:4px 2px 0">${RPL.length?'From your bank. ':''}Linked to the bank name, the app spots your takeaway days on the statement and offers this order.</div>`:''}
-    <label class="f">Whose ${take?'order':'meal'}</label>
-    <div class="seg">${['',...EATERS].map(n=>`<button class="${FF.person===n?'on':''}" onclick="FF.person='${n}';drawFoodForm()">${n||'Anyone'}</button>`).join('')}</div>
-    <label class="f">What's in it${FF.items.length?'':' <span class="opt">(optional)</span>'}</label>
-    ${FF.items.map((x,k)=>`<div class="part"><input class="inp" placeholder="${['e.g. Burger meal','e.g. Chips','e.g. Can of Pepsi','e.g. Chicken fillets x3'][k]||'Another part'}" value="${esc(x.name)}" oninput="FF.items[${k}].name=this.value" autocomplete="off">
-      <button class="icon-btn" aria-label="Remove this part" onclick="FF.items.splice(${k},1);drawFoodForm()">&times;</button></div>`).join('')}
-    <button class="secondary" onclick="ffAddPart()">+ Add a part</button>
-    <label class="f">Fruit &amp; veg portions</label>
-    <div class="stepper"><button class="icon-btn" aria-label="One less" onclick="FF.veg=Math.max(0,FF.veg-1);drawFoodForm()">&minus;</button><b>${FF.veg}</b>
-      <button class="icon-btn" aria-label="One more" onclick="FF.veg=Math.min(9,FF.veg+1);drawFoodForm()">+</button></div>
-    <label class="f">Usually for</label>
-    <div class="seg four">${SLOTS.map(s=>`<button class="${FF.slot===s?'on':''}" onclick="FF.slot=FF.slot==='${s}'?'':'${s}';drawFoodForm()"><span>${SLOT_ICON[s]}</span>${s}</button>`).join('')}</div>
-    <div class="save-bar"><button class="primary" onclick="ffSave()">${esc(go)}</button></div>
-    ${FF.i>=0?`<button class="secondary" style="color:var(--neg)" onclick="hRun('deleteFood',[FF.old],'Removed')">Remove</button>`:''}
-    <button class="secondary" onclick="closeSheet()">Close</button>`;
-}
-function ffAddPart(){ FF.items.push({name:'',kcal:''}); drawFoodForm(); const l = [...document.querySelectorAll('#sheet .part input')]; if (l.length) l[l.length-1].focus(); }
-async function ffSave(){
-  const name = FF.name.trim(); if (!name) return toast('Give it a name');
-  const typical = {Drink:100, Snack:200}[FF.group] || {Breakfast:350, Lunch:500, Snack:200, Drinks:100}[FF.slot] || 650;
-  const old = Math.round(parseFloat(FF.kcal)) || typical, items = FF.items.filter(x=>x.name.trim()).map((x,k,l)=>({name:x.name.trim(), kcal:Math.round(parseFloat(x.kcal)||old/l.length)}));
-  const kcal = items.length ? items.reduce((a,x)=>a+x.kcal,0) : old;
-  if (H.foods.some((f,k)=>k!==FF.i && f.name.toLowerCase()===name.toLowerCase())) return toast('There is already a meal called ' + name);
-  const f = {name, kcal, group:FF.group, veg:FF.veg, meal:FF.slot, items, place:FF.group==='Takeaway' ? FF.place.trim() : '', person:FF.person};
-  const then = FF.then, date = FF.date;
-  const raw = await hRun('saveFood', FF.i>=0 ? [f, FF.old] : [f, null], 'Saved to our meals'); if (!raw) return;
-  const k = H.foods.findIndex(x=>x.name.toLowerCase()===name.toLowerCase()); if (k < 0) return;
-  if (then){ AM = then.am; amAdd({...H.foods[k], src:'saved'}); }
-  else if (date && f.person) addOrders(date, [[f.person, k]]);
-}
-function amNewFood(){
-  const q = AM.q.trim();
-  openFoodForm({name: q ? q.charAt(0).toUpperCase()+q.slice(1) : '', slot:AM.meal, then:{am:{...AM, q:'', est:null, online:null}, who:AM.who.slice()}});
 }
 
 /* ---- health settings ---- */
@@ -3040,16 +2993,16 @@ const HMock = (() => {
     const d = addDays(today(), -ago); [['Tom',v[0],v[1]],['Laura',v[2],v[3]],['Nathan',v[4],v[5]],['Evy',v[6],v[7]]].forEach(([n,kg,cm])=>s.body.push([d,n,kg,cm,uid()])); });
   const data = () => ({people:s.people.map(r=>({name:r[0],sex:r[1],dob:r[2],activity:r[3],target:r[4],goal:r[5]||null})), meals:s.meals.map(r=>[...r.slice(0,9), /^diary/.test(r[8])?'diary':'', r[10]==null?1:r[10], r[11]||'', r[12]==null?null:r[12]]), notes:s.notes.slice(),
     foods:s.foods, body:s.body.slice(), base, ear, syncedAt:new Date().toISOString()});
-  const mockMenu = list => menuNew(s.foods.map(r=>r[0]), list).forEach(f=>s.foods.push([f.name, f.kcal, f.group, f.veg, f.meal, '', '', '']));
   return {
-    getHealth(){ mockMenu(s.meals.map(r=>({date:r[0], meal:r[2], food:r[3], kcal:r[4], portion:r[5], veg:r[6], group:r[7], eaten:r[10], served:r[12]}))); return data(); },
+    getHealth(){ return data(); },
     addMeals(list, keep, bid){ if (!list.length) throw new Error('Pick who ate it'); const batch = bid || uid();
-      list.forEach(e=>s.meals.push([e.date,e.person,e.meal,e.food,Math.round(e.kcal),e.portion,e.veg,e.group,batch+'.'+e.person,'app',e.eaten==null?1:e.eaten,e.note||'',e.served==null?Math.round(e.kcal):Math.round(e.served)]));
-      if (keep) HMock.saveFood(keep); mockMenu(list); const d = data(); d.batch = batch; return d; },
+      const ids = mealIds(batch, list);
+      list.forEach((e,i)=>s.meals.push([e.date,e.person,e.meal,e.food,Math.round(e.kcal),e.portion,e.veg,e.group,ids[i],'app',e.eaten==null?1:e.eaten,e.note||'',e.served==null?Math.round(e.kcal):Math.round(e.served)]));
+      if (keep) HMock.saveFood(keep); const d = data(); d.batch = batch; return d; },
     updateMeal(id, ch){ const r = s.meals.find(x=>x[8]===id); if (!r) throw new Error('That entry has gone');
       if (ch.meal) r[2] = ch.meal; if (ch.portion){ if (ch.kcal==null) r[4] = Math.round(r[4]/(r[5]||1)*ch.portion); r[5] = ch.portion; } if (ch.kcal!=null) r[4] = Math.round(ch.kcal); return data(); },
     editMeals(list){ const rows = list.map(e=>{ const r = s.meals.find(x=>x[8]===e.id); if (!r) throw new Error('That entry has gone, tap refresh'); if (!String(e.food||'').trim()) throw new Error('Give the food a name'); return [r,e]; });
-      rows.forEach(([r,e])=>{ r[0]=e.date; r[2]=e.meal; r[3]=String(e.food).trim(); r[4]=Math.round(e.kcal); r[5]=e.portion; r[6]=e.veg||0; r[7]=e.group; r[10]=e.eaten==null?1:e.eaten; r[11]=e.note||''; r[12]=e.served==null?Math.round(e.kcal):Math.round(e.served); }); mockMenu(list); return data(); },
+      rows.forEach(([r,e])=>{ r[0]=e.date; r[2]=e.meal; r[3]=String(e.food).trim(); r[4]=Math.round(e.kcal); r[5]=e.portion; r[6]=e.veg||0; r[7]=e.group; r[10]=e.eaten==null?1:e.eaten; r[11]=e.note||''; r[12]=e.served==null?Math.round(e.kcal):Math.round(e.served); }); return data(); },
     saveDayNote(date, person, note){ s.notes = s.notes.filter(x=>!(x[0]===date && x[1]===person)); if (String(note||'').trim()) s.notes.push([date, person, String(note).trim()]); return data(); },
     deleteMeal(id){ s.meals = s.meals.filter(r=>!(Array.isArray(id) ? id.includes(r[8]) : r[8]===id || (!id.includes('.') && r[8].startsWith(id+'.')))); return data(); },
     saveFood(f, old){ if (!f.name) throw new Error('Give it a name'); const items = (f.items||[]).filter(x=>x.name), i = s.foods.findIndex(r=>r[0].toLowerCase()===String(old||f.name).toLowerCase());
@@ -3142,7 +3095,7 @@ function showP(){
   if (!PRAW) return;
   const had = !!P, y = scrollY, open = sheetShown();
   P = mineP();
-  if (MODE==='plans' && !(had && open)){ SOFT = had; try{ render(); } finally{ SOFT = false; } if (had) scrollTo(0,y); } else drawSync();
+  if ((MODE==='plans' || (MODE==='health' && !had)) && !(had && open)){ SOFT = had; try{ render(); } finally{ SOFT = false; } if (had) scrollTo(0,y); } else drawSync();
 }
 const evEnd = e => { if (e.time) { const [h,m] = e.time.split(':').map(Number), t = h*60 + m + (Number(e.mins)||60), d = addDays(e.date, Math.floor(t/1440)), r = t % 1440;
   return d + 'T' + String(Math.floor(r/60)).padStart(2,'0') + ':' + String(r%60).padStart(2,'0'); } return addDays(e.date, Math.max(1, Number(e.days)||1)); };
@@ -3187,10 +3140,27 @@ function upcoming(days){
   return P.events.filter(e=>evLive(e) && e.start.slice(0,10) < until).sort((a,b)=>evDay(a)<evDay(b)?-1:evDay(a)>evDay(b)?1:(a.allDay===b.allDay ? (a.start<b.start?-1:1) : a.allDay?-1:1));
 }
 
+/* ---- Nathan's iron supplement: a tick a day, stored as a mark so it syncs like the rest of Plans ---- */
+const IRON = "Nathan's iron";
+function ironCard(d){
+  if (!P){ if (PRAW || canSend()) pLoad(); return ''; }
+  const m = P.marks.find(x=>x.what===IRON && x.date===d), week = [...Array(7)].map((_,i)=>addDays(d, i-6));
+  const n = week.filter(x=>P.marks.some(m=>m.what===IRON && m.date===x)).length, isT = d===today();
+  return `<div class="iron ${m?'on':''}"><button class="tick" aria-label="${m?'Untick':'Tick'} Nathan's iron" onclick="ironTick('${d}')">${m?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
+    <button class="iron-t" onclick="ironTick('${d}')"><b>&#x1F48A; Nathan's iron${isT?'':', '+esc(dayLabel(d).toLowerCase())}</b><small>${m ? 'Given'+(m.by?' by '+esc(m.by):'') : isT ? 'Not given yet today' : 'Not ticked'} &middot; ${n} of the last 7 days</small></button>
+    <span class="iron-week">${week.map(x=>`<i class="${P.marks.some(m=>m.what===IRON && m.date===x)?'on':''}"></i>`).join('')}</span></div>`;
+}
+function ironTick(d){
+  const m = P && P.marks.find(x=>x.what===IRON && x.date===d), redraw = () => { if (MODE!=='plans'){ const y = scrollY; render(); scrollTo(0,y); } };
+  if (m){ pRun('deleteMark', [m.id], 'Iron unticked', ()=>{ pRun('addMark', [{id:newId(), what:IRON, date:d, note:''}], 'Put back', null, true); redraw(); }, true); }
+  else { const n = {id:newId(), what:IRON, date:d, note:''}; pRun('addMark', [n], "Nathan's iron ticked", ()=>{ pRun('deleteMark', [n.id], 'Taken off', null, true); redraw(); }, true); }
+  redraw();
+}
+
 /* ---- marked days: runs of days close together are one time (a period of 5 days is one) ---- */
 function markStats(){
   const by = {};
-  P.marks.forEach(m=>{ (by[m.what] = by[m.what] || []).push(m); });
+  P.marks.forEach(m=>{ if (m.what!==IRON) (by[m.what] = by[m.what] || []).push(m); });
   return Object.entries(by).map(([what, list])=>{
     list.sort((a,b)=>a.date<b.date?-1:1);
     const runs = []; list.forEach(m=>{ const r = runs[runs.length-1]; if (r && dayN(m.date) - dayN(r.last) <= 2){ r.last = m.date; r.n++; } else runs.push({start:m.date, last:m.date, n:1}); });
@@ -3243,6 +3213,7 @@ function pUp(){
   <div class="note-add"><input class="inp" id="noteIn" placeholder="Add a note or reminder" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
   <div class="card notes">${open.map(noteRow).join('')}
     ${!open.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
+  ${ironCard(today())}
   ${homeCal()}
   ${mealsCard()}
   ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
