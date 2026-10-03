@@ -237,7 +237,7 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .cal-key{width:100%;justify-content:center;background:none;border:0;padding:4px 0 0;font:inherit;font-size:12px;color:var(--muted);cursor:pointer}
 .ev-when{width:76px;flex:none;display:flex;flex-direction:column;font-size:var(--fs-small);color:var(--muted);padding-top:1px}
 .ev-when b{color:var(--text);font-size:14px}
-.note-add{display:flex;gap:8px;margin-bottom:10px}.note-add .chip{padding:0 18px}
+.note-add{display:flex;gap:8px;margin-bottom:8px}.note-tag{margin:0 0 10px}.note-add .chip{padding:0 18px}
 .notes{padding:6px 14px}
 .note-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
 .note-row:last-child{border-bottom:0}
@@ -324,6 +324,7 @@ label.f{display:block;font-size:var(--fs-small);font-weight:700;color:var(--mute
 .sw{width:10px;height:10px;border-radius:3px;flex:none}
 button.stat-row{width:100%;background:none;border-left:0;border-right:0;border-top:0;cursor:pointer;text-align:left}
 .stat-row small{font-size:var(--fs-small);font-weight:600}
+.stat-row.alert .v{text-align:right}.stat-row.alert .v small{display:block}.stat-row.alert .v small+small{font-weight:400;color:var(--muted)}
 .trend{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:6px 10px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 0;cursor:pointer;text-align:left}
 .trend:last-of-type{border-bottom:0}
 .trend .k{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -389,6 +390,9 @@ details.nums summary{font-size:13px;font-weight:700;color:var(--family-2);cursor
 .wins li{display:flex;gap:10px;align-items:baseline;margin:6px 0}
 .wins .wi{flex:0 0 22px;text-align:center}
 .wins b{color:var(--pos)}
+.wotd{margin-top:12px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--pos) 25%,var(--line))}
+.wotd small{display:block;font-size:var(--fs-small);color:var(--muted)}.wotd b{display:block;color:var(--text);font:600 17px/1.3 var(--font-num);margin:2px 0}
+.wotd span{display:block;line-height:1.45}
 .due{position:relative;overflow:hidden;background:var(--card);border-radius:var(--r);padding:14px 16px 14px 19px;border:1px solid var(--line);margin-bottom:12px}
 .due::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tom)}
 .due>b{display:block;margin-bottom:2px}
@@ -660,6 +664,7 @@ const Mock = (() => {
   const ch = (list, extra) => { const d=data(false); d.changed=list.map(t=>({row:t.row,category:t.category,type:t.type,...(extra?{pot:t.pot||'',potAmt:t.potAmt==null?null:t.potAmt,potId:t.potId||''}:{})})); s.ver++; d.txVersion=s.ver; return d; };
   return {
     getData:()=>data(),
+    getWords:(from, n)=>Array.from({length:n||14}, (_, i)=>({date:addDays(from, i), word:['Muscle','Clue','Daisy'][i%3], fact:['From Latin musculus, little mouse.','From clew, a ball of thread.','From Old English, day\'s eye.'][i%3]})),
     viewAs(who){ s.asLaura = who==='Laura'; return data(); },
     setChecked(key, on){ s.checked = (s.checked||[]).filter(x=>x!==key); if (on) s.checked.push(key); return data(false); },
     setGoal(person, goal, target){ s.goals = s.goals||{}; if (!goal || !(target>0)) delete s.goals[person]; else s.goals[person] = {goal, target:Number(target)}; return data(false); },
@@ -1036,8 +1041,23 @@ function winsCard(){
   if (!(D.transactions||[]).length) return '';
   const top = moneyWins().slice(0,3);
   if (!top.length) top.push([0, '&#x2728;', 'Every payment is tracked. Keep going.']);
+  const w = wordToday();
   return `<div class="wins"><div class="wins-h">${greeting()}<span>Here's what's going well</span></div>
-    <ul>${top.map(w=>`<li><span class="wi">${w[1]}</span><span>${w[2]}</span></li>`).join('')}</ul></div>`;
+    <ul>${top.map(w=>`<li><span class="wi">${w[1]}</span><span>${w[2]}</span></li>`).join('')}</ul>
+    ${w ? `<div class="wotd"><small>Word of the day</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span></div>` : ''}</div>`;
+}
+/* word of the day: the phone keeps the next fortnight, so it shows offline, and tops up when it has signal */
+const WORDS_KEY = 'ganymede-words';
+function wordsSaved(){ try { return JSON.parse(localStorage.getItem(WORDS_KEY) || '[]'); } catch(e) { return []; } }
+function wordToday(){ const t = today(), w = wordsSaved().find(x=>x.date===t); wordsTopUp(); return w; }
+let wordsAsked = 0;
+function wordsTopUp(){
+  const t = today(), l = wordsSaved();
+  if (l.some(x=>x.date===addDays(t, 7)) || !navigator.onLine || Date.now() - wordsAsked < 6e5) return;
+  wordsAsked = Date.now();
+  api('getWords', t, 14).then(got=>{ const had = l.some(x=>x.date===t);
+    try { localStorage.setItem(WORDS_KEY, JSON.stringify(got)); } catch(e) {}
+    if (!had && MODE==='money' && view==='home') render(); }).catch(()=>{});
 }
 
 /* Monthly nudge: from the 5th, ask for the next Santander export until the statement reaches the last few days
@@ -1646,14 +1666,18 @@ function paceAlerts(){
   Object.keys(typical).forEach(k=>typical[k]/=ms.length);
   const now = {}; (D.transactions||[]).forEach(t=>{ if (famSpend(t) && t.date.slice(0,7)===cm.m) now[t.category]=(now[t.category]||0)-t.amount; });
   const frac = cm.complete ? 1 : cm.day/cm.days;
-  return Object.entries(now).map(([c,v])=>{ const exp=(typical[c]||0)*frac; return {c, v, exp, ch: exp? (v-exp)/exp : null}; })
+  /* the same month a year ago, to the same day while this one is still going */
+  const ly = shiftMonth(cm.m, -12), lyTo = ly + '-' + String(cm.complete ? 31 : cm.day).padStart(2,'0'), last = {};
+  (D.transactions||[]).forEach(t=>{ if (famSpend(t) && t.date.slice(0,7)===ly && t.date<=lyTo) last[t.category]=(last[t.category]||0)-t.amount; });
+  return Object.entries(now).map(([c,v])=>{ const exp=(typical[c]||0)*frac; return {c, v, exp, avg:typical[c]||0, ly:last[c]||0, ch: exp? (v-exp)/exp : null}; })
     .filter(a=> a.exp>0 ? (a.v>a.exp*1.4 && a.v-a.exp>30) : a.v>100).sort((a,b)=>(b.v-b.exp)-(a.v-a.exp)).slice(0,4);
 }
 function paceCard(){
   const cm = currentMonth(), al = paceAlerts(); if (!al.length) return '';
   return `<h2>Heads up</h2><div class="card">${al.map(a=>`<button class="stat-row alert" onclick="openCat('${esc(a.c)}')"><span class="k">${CAT_ICON[a.c]||''} ${esc(a.c)}</span>
-    <span class="v">${gbp(a.v)} <small class="neg">${a.exp? '▲ '+Math.round(a.ch*100)+'% vs usual':'new this month'}</small></span></button>`).join('')}
-    <div class="hint">${esc(monthName(cm.m))}${cm.complete?'':' so far (day '+cm.day+')'}, against a typical month from the last year${cm.complete?'':', pro rata'}.</div></div>`;
+    <span class="v">${gbp(a.v)} <small class="neg">${a.exp? '▲ '+Math.round(a.ch*100)+'% on the 12-month average':'new this month'}</small>
+      <small>12-month average ${gbp(a.avg)} a month &middot; ${esc(shortMonth(shiftMonth(cm.m,-12)))} ${shiftMonth(cm.m,-12).slice(0,4)}${cm.complete?'':' to day '+cm.day}: ${gbp(a.ly)}</small></span></button>`).join('')}
+    <div class="hint">${esc(monthName(cm.m))}${cm.complete?'':' so far (day '+cm.day+')'}. The percentage compares it with the average month over the last 12${cm.complete?'':', pro rata to today'}.</div></div>`;
 }
 
 /* ---- worth checking: payments that might be a billing error ---- */
@@ -1922,7 +1946,6 @@ function openPot(person, mode){
   S.to = PEOPLE.find(n=>n!==S.person);
   $('#sheet').innerHTML='';
   drawSheet(); showSheet();
-  setTimeout(()=>{ const a=$('#amt'); a&&a.focus(); }, 280);
 }
 function drawSheet(){
   const pot = D.pots.find(p=>p.name===S.person);
@@ -2097,6 +2120,9 @@ function usualPortion(name){ const a = ageYears(name); if (a == null || a >= 18)
   return Math.max(0.25, Math.min(1, Math.round(kcalNeed(name).kcal/2250*4)/4)); }
 const FRAC = {0.25:'¼',0.5:'½',0.75:'¾',1:'1',1.25:'1¼',1.5:'1½',2:'2'};
 const fmtPortion = p => (FRAC[Math.round(p*100)/100] || String(Math.round(p*100)/100)) + ' portion' + (p>1?'s':'');
+/* a portion against that person's own usual one (a child's usual is smaller, set by age, and never shown) */
+const relPortion = e => Math.round((e.portion||1) / (usualPortion(e.person)||1) * 100) / 100;
+const portionWord = e => { const r = relPortion(e); return {0.5:'Small', 1:'Usual', 1.5:'Big', 2:'Double'}[r] || (FRAC[r] || r) + ' of usual'; };
 const kcalF = n => Math.round(n).toLocaleString('en-GB') + ' kcal';
 const kgF = n => n==null ? '–' : (Math.round(n*10)/10).toLocaleString('en-GB') + ' kg';
 const stF = kg => { const lb = Math.round(kg/0.453592), st = Math.floor(lb/14); return st+' st '+(lb-st*14)+' lb'; };
@@ -2176,7 +2202,7 @@ function setupCard(){
   const miss = PEOPLE.filter(n=>!hp(n).sex || (!hp(n).dob && ageYears(n)==null));
   if (!miss.length) return '';
   return `<div class="due" style="--due:var(--family-2)"><b>Tell the app about everyone</b>
-    <span class="hint" style="margin:0">Sex and date of birth for ${esc(miss.join(', '))}. It sets each person's usual portion and the children's growth centiles.</span>
+    <span class="hint" style="margin:0">Sex and date of birth for ${esc(miss.join(', '))}. It sets the children's growth centiles.</span>
     <button class="primary" onclick="hgo('hsettings')">Set up</button></div>`;
 }
 function weighDue(){
@@ -2214,7 +2240,7 @@ function eatenCtl(v, fn){
 function amEat(v, live){ AM.eaten = v; if (!live) drawAddMeal(); }
 function emEat(v, live){ EM.eaten = v; if (EM.parts) EM.parts.forEach(x=>x.f=v); if (!live) drawEditMeal(); }
 /* the amount, on the box, when it is not their usual portion and the name does not already say it ("3 sausages") */
-const qtyTag = e => { const p = Math.round((e.portion||1)*100)/100; return e.food==='Skipped' || /^\d/.test(e.food) || Math.abs(p - usualPortion(e.person)) < 0.01 ? '' : ' ×' + (FRAC[p] || p); };
+const qtyTag = e => { const r = relPortion(e); return e.food==='Skipped' || /^\d/.test(e.food) || Math.abs(r - 1) < 0.01 ? '' : ' ×' + (FRAC[r] || r); };
 const eatTag = e => e.food==='Skipped' ? '' : e.eaten <= 0.001 ? ' · none' : e.eaten < 0.995 ? ' · ' + Math.round(e.eaten*100) + '%' : '';
 
 /* per person, per food: how often it was offered and how much of it was eaten on average */
@@ -2411,7 +2437,7 @@ function quickMealAdd(n, sl){ const g = quickMeal(n, sl); if (!g) return;
   hRun('addMeals', [list, null], `${g.rows.map(r=>r.food).join(', ')} for ${n}`, raw=>hRun('deleteMeal',[raw.batch],'Undone')); }
 function quickAdd(n){ const q = quickDrink(n); if (!q) return;
   hRun('addMeals', [[{date:HD, person:n, meal:'Drinks', food:q.name, kcal:q.kcal, portion:1, veg:q.veg, group:'Drink'}], null], `${q.name} for ${n}`, raw=>hRun('deleteMeal',[raw.batch],'Undone')); }
-function openSlot(n, sl){ openAddMeal(n, sl); AM.slot = true; drawAddMeal(); if (!H.meals.some(e=>e.date===HD && e.person===n && e.meal===sl)) amFocus(); }
+function openSlot(n, sl){ openAddMeal(n, sl); AM.slot = true; drawAddMeal(); }
 function slotRemove(id){
   const e = H.meals.find(x=>x.id===id); if (!e) return;
   const back = e.diary ? null : [{date:e.date, person:e.person, meal:e.meal, food:e.food, kcal:e.kcal, portion:e.portion, veg:e.veg, group:e.group, eaten:e.eaten, note:e.note, served:e.served}];
@@ -2422,7 +2448,7 @@ function slotChange(id){ editMeal(id); EM.all = false; emSwap();
 function mealItem(e){
   return `<div class="item" style="--c:${COLOR[e.person]};cursor:pointer" onclick="editMeal('${e.id}')">
     <div class="dot">${esc(e.person[0])}</div>
-    <div class="mid"><div class="t">${esc(e.food)}</div><div class="d">${e.diary?'<span class="pp">Food diary</span>':''}${esc(e.person)} · ${GROUP_ICON[e.group]||''} ${esc(fmtPortion(e.portion))}${e.veg?' · '+e.veg+' fruit &amp; veg':''}</div></div>
+    <div class="mid"><div class="t">${esc(e.food)}</div><div class="d">${e.diary?'<span class="pp">Food diary</span>':''}${esc(e.person)} · ${GROUP_ICON[e.group]||''} ${esc(portionWord(e))}${e.veg?' · '+e.veg+' fruit &amp; veg':''}</div></div>
     <span class="edit-i" aria-hidden="true">&#x270E;</span></div>`;
 }
 
@@ -2430,10 +2456,8 @@ function mealItem(e){
 let AM = null, AMLIST = [];
 function openAddMeal(person, meal){
   AM = {who: person ? [person] : EATERS.slice(), meal: meal || (HD===today() ? defaultSlot() : 'Dinner'), size:1, q:'', online:null, est:null, eaten:1, note:''}; AMS.full = false; AMS.all = false;
-  drawAddMeal(); showSheet(); amFocus();
+  drawAddMeal(); showSheet();
 }
-/* the keyboard comes up ready to type (only from a tap, so a phone allows it) */
-function amFocus(){ const i = $('#amQ'); if (i) try { i.focus({preventScroll:true}); } catch(e) {} }
 function amMult(n){ return Math.round(usualPortion(n)*AM.size*100)/100; }
 const stemW = w => w.replace(/ies$/, 'y').replace(/(es|s)$/, '');
 function editsWithin(a, b, n){
@@ -2498,7 +2522,6 @@ function drawAddMeal(){
     <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">${f.src==='yesterday'?'Yesterday':f.src==='recent'?'Had '+agoF(f.last)+(f.times>1?` · ${f.times} times`:''):f.src==='usual'?`Had ${f.times} time${f.times>1?'s':''}`:'Typical meal'}${f.veg?' · '+f.veg+' fruit &amp; veg':''}${esc(likeTag(sc[f.name.toLowerCase()]))}</div></div>
     </button>`;
   const sect = (title, src) => { const l = AMLIST.map((f,i)=>[f,i]).filter(([f])=>f.src===src); return l.length ? `${title?`<label class="f">${title}</label>`:''}<div class="list">${l.map(([f,i])=>row(f,i)).join('')}</div>` : ''; };
-  const scaled = AM.who.map(n=>`${n} ${FRAC[amMult(n)]||amMult(n)}`).join(' · ');
   const inSlot = AM.slot && !AM.swap ? H.meals.filter(e=>e.date===HD && e.person===AM.who[0] && e.meal===AM.meal) : [];
   const dayName = HD===today() ? 'today' : HD===addDays(today(),-1) ? 'yesterday' : dOf(HD).toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'short'});
   const added = !AM.slot && !AM.swap && AM.added && AM.added.length;
@@ -2506,7 +2529,7 @@ function drawAddMeal(){
     ${added ? `<div class="am-added">&#x2713; Added ${esc(AM.added.join(', '))}</div>` : ''}
     ${AM.slot && !AM.swap ? `<h3 style="margin:0 0 2px">${esc(AM.who[0])}'s ${AM.meal.toLowerCase()}, ${esc(dayName)}</h3>
       ${inSlot.length ? `<label class="f">What ${esc(AM.who[0])} had</label><div class="list slot-list">${inSlot.map(e=>`<div class="item">
-          <button class="mid plain" onclick="editMeal('${e.id}')"><div class="t">${esc(e.food)}${esc(eatTag(e))}</div><div class="d">${esc(fmtPortion(e.portion))}${e.diary?' · Food diary':''} · tap to adjust</div>${e.note?`<div class="d note">&ldquo;${esc(e.note)}&rdquo;</div>`:''}</button>
+          <button class="mid plain" onclick="editMeal('${e.id}')"><div class="t">${esc(e.food)}${esc(eatTag(e))}</div><div class="d">${esc(portionWord(e))}${e.diary?' · Food diary':''} · tap to adjust</div>${e.note?`<div class="d note">&ldquo;${esc(e.note)}&rdquo;</div>`:''}</button>
           <button class="chip" onclick="slotChange('${e.id}')">Change</button>
           <button class="icon-btn" aria-label="Remove ${esc(e.food)}" onclick="slotRemove('${e.id}')">&times;</button></div>`).join('')}</div>
         <label class="f">Add something else</label>` : `<div class="hint" style="margin:0 0 4px">Type it, or tap one ${esc(AM.who[0])} has had.</div>`}`
@@ -2524,7 +2547,7 @@ function drawAddMeal(){
     <details class="am-opts" ${AM.optsOpen || AM.eaten<1 || AM.note ? 'open' : ''} ontoggle="AM.optsOpen=this.open">
       <summary><span>Portion, how much eaten, comment</span><b>${esc([{0.5:'Small',1:'Usual',1.5:'Big',2:'Double'}[AM.size], eatLabel(AM.eaten==null?1:AM.eaten)].join(' · '))}</b></summary>
       <div class="chips">${[[0.5,'Small'],[1,'Usual'],[1.5,'Big'],[2,'Double']].map(([v,l])=>`<button class="chip ${AM.size===v?'on':''}" onclick="AM.size=${v};drawAddMeal()">${l}</button>`).join('')}</div>
-      <div class="hint" style="margin:2px 2px 6px">${AM.swap?'Usual keeps everyone\'s portion as it was.':`Usual = ${esc(scaled)||'pick someone'} of an adult plate${AM.who.some(n=>(ageYears(n)??99)<18)?', set by age for children':''}.`}</div>
+      <div class="hint" style="margin:2px 2px 6px">${AM.swap?'Usual keeps everyone\'s portion as it was.':'Usual is what they normally have.'}</div>
       ${eatenCtl(AM.eaten==null?1:AM.eaten, 'amEat')}
       <input class="inp" id="amNote" placeholder="Comment (optional)" value="${esc(AM.note||'')}" oninput="AM.note=this.value" autocomplete="off" style="margin:8px 0 4px">
     </details>
@@ -2655,8 +2678,8 @@ function drawEditMeal(){
     <label class="f">Day</label>
     <div class="two" style="align-items:center"><input class="inp" id="emDate" type="date" max="${today()}" value="${EM.date}" onchange="if(this.value){EM.date=this.value;drawEditMeal()}">
       <div class="chips" style="margin:0">${[[today(),'Today'],[addDays(today(),-1),'Yesterday']].map(([d,l])=>`<button class="chip ${EM.date===d?'on':''}" onclick="EM.date='${d}';drawEditMeal()">${l}</button>`).join('')}</div></div>
-    <label class="f">${esc(EM.person)}'s portion (of an adult's)</label>
-    <div class="chips">${[0.25,0.5,0.75,1,1.25,1.5,2].map(p=>`<button class="chip ${Math.abs(EM.portion-p)<0.01?'on':''}" style="--c:${c}" onclick="emPortion(${p})">${FRAC[p]}</button>`).join('')}</div>
+    <label class="f">${esc(EM.person)}'s portion</label>
+    <div class="chips">${(u=>[[0.5,'Small'],[1,'Usual'],[1.5,'Big'],[2,'Double']].map(([v,l])=>`<button class="chip ${Math.abs(EM.portion-u*v)<0.01?'on':''}" style="--c:${c}" onclick="emPortion(${Math.round(u*v*100)/100})">${l}</button>`).join(''))(usualPortion(EM.person))}</div>
     ${EM.parts.length ? `<label class="f">What ${esc(EM.person)} ate of it</label><div class="list">${EM.parts.map((x,i)=>`<div class="part-eat"><div class="pe-h"><b>${esc(x.name.charAt(0).toUpperCase()+x.name.slice(1))}</b></div>
         <div class="chips">${PART_LV.map(([v,l])=>`<button class="chip ${x.f===v?'on':''}" onclick="emPart(${i},${v})">${l}</button>`).join('')}</div></div>`).join('')}</div>`
       : eatenCtl(EM.eaten, 'emEat')}
@@ -2921,14 +2944,14 @@ function addOrders(d, pairs){   // pairs = [[person, lastOrder()]]
 
 /* ---- health settings ---- */
 function hSettings(){
-  return `<div class="hint" style="margin:0 2px 10px">Used for each person's usual portion and the growth centiles. Stored in the Health People tab.</div>
+  return `<div class="hint" style="margin:0 2px 10px">Used for the growth centiles. Stored in the Health People tab.</div>
   ${PEOPLE.map(n=>{ const p = hp(n), age = ageYears(n);
     return `<div class="card hset" data-name="${n}" style="margin-bottom:10px;border-left:3px solid ${COLOR[n]}">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><b>${n}</b><span class="hint" style="margin:0">${age!=null?Math.floor(age)+(Math.floor(age)===1?' year':' years'):''}</span></div>
       <div class="two"><div><label class="f">Sex</label><select class="inp hs-sex"><option value="">–</option><option value="F" ${p.sex==='F'?'selected':''}>Female</option><option value="M" ${p.sex==='M'?'selected':''}>Male</option></select></div>
         <div><label class="f">Date of birth</label><input class="inp hs-dob" type="date" value="${esc(p.dob||'')}"></div></div>
       ${age==null||age>=18?`<label class="f">Goal weight in kg (optional)</label><input class="inp hs-goal" inputmode="decimal" value="${p.goal||''}" placeholder="${(()=>{ const b = bmiInfo(n); return b&&b.hi ? 'Healthy range '+Math.round(b.lo)+' to '+Math.round(b.hi) : 'e.g. 75'; })()}">`:''}
-      ${EATERS.includes(n)?`<div class="hint">Usual portion: ${esc(fmtPortion(usualPortion(n)).replace(/ portions?$/,''))} of an adult's.</div>`:'<div class="hint">Weight and height only. Food is tracked for '+EATERS.join(' and ')+'.</div>'}</div>`; }).join('')}
+      ${EATERS.includes(n)?'':'<div class="hint">Weight and height only. Food is tracked for '+EATERS.join(' and ')+'.</div>'}</div>`; }).join('')}
   <div class="page-save"><button class="primary" onclick="saveHSettings()">Save</button></div>
   <div class="hint">Children's portions follow the UK averages for their age; for anything medical, the GP or health visitor knows best.</div>`;
 }
@@ -3165,17 +3188,24 @@ function calNote(){
   if (!P.events) return `<div class="card hint" style="margin-top:0">The calendar shows once this phone has synced.</div>`;
   return '';
 }
+/* a note tagged #app is an idea for the app: its own section on Home, the tag hidden */
+const APP_TAG = /(^|\s)#app\b/i;
+const isAppNote = n => APP_TAG.test(n.text);
+const noteText = t => String(t).replace(/(^|\s)#app\b/ig, ' ').replace(/\s+/g, ' ').trim();
+let NOTE_APP = false;
 function noteRow(n){
   return `<div class="note-row ${n.done?'done':''}"><button class="tick" aria-label="${n.done?'Untick':'Tick'}" onclick="tickNote('${n.id}', ${!n.done})">${n.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
-    <button class="note-t" onclick="openNote('${n.id}')">${esc(n.text)}${n.done && n.doneBy ? `<small>${esc(n.doneBy)}, ${esc(dayLabel(n.doneAt.slice(0,10)).toLowerCase())}</small>` : n.by && n.by !== P.me ? `<small>${esc(n.by)}</small>` : ''}</button></div>`;
+    <button class="note-t" onclick="openNote('${n.id}')">${esc(noteText(n.text))}${n.done && n.doneBy ? `<small>${esc(n.doneBy)}, ${esc(dayLabel(n.doneAt.slice(0,10)).toLowerCase())}</small>` : n.by && n.by !== P.me ? `<small>${esc(n.by)}</small>` : ''}</button></div>`;
 }
 /* Home: the to-do list, the calendar, meals still to add today, what needs a look, payments to check, Heads up last */
 function pUp(){
-  const open = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
+  const all = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
+  const open = all.filter(n=>!isAppNote(n)), app = all.filter(isAppNote);
   const nDone = P.items.filter(n=>n.done).length + (D && canP() ? checks().filter(isChecked).length : 0);
   return `
   <h2>To do</h2>
-  <div class="note-add"><input class="inp" id="noteIn" placeholder="Add a note or reminder" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
+  <div class="note-add"><input class="inp" id="noteIn" placeholder="${NOTE_APP?'An idea for the app':'Add a note or reminder'}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
+  <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App improvement</button></div>
   <div class="card notes">${open.map(noteRow).join('')}
     ${!open.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
   ${ironCard(today())}
@@ -3183,6 +3213,7 @@ function pUp(){
   ${mealsCard()}
   ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
   ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
+  ${app.length ? `<h2>App improvements</h2><div class="card notes">${app.map(noteRow).join('')}</div>` : ''}
   ${D ? paceCard() : ''}
   ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}`;
 }
@@ -3312,18 +3343,23 @@ function openMonthPick(){
 function addNoteNow(){
   const el = $('#noteIn'), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return el.focus();
-  lines.forEach(t=>pRun('addNote', [{id:newId(), text:t}], null, null, true));
+  lines.forEach(t=>pRun('addNote', [{id:newId(), text:NOTE_APP && !APP_TAG.test(t) ? t + ' #app' : t}], null, null, true));
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#noteIn'); if (i){ i.value = ''; i.focus(); } }));
 }
+/* the chip under the note box: what the next note is (keeps anything typed) */
+function noteTag(on){ const v = ($('#noteIn')||{}).value || ''; NOTE_APP = on; render(); const i = $('#noteIn'); if (i) i.value = v; }
+function noteSetApp(id, on){ const n = P.items.find(x=>x.id===id); if (!n) return;
+  const t = noteText(n.text); pRun('editNote', [id, on ? t + ' #app' : t], on ? 'Moved to App improvements' : 'Moved to To do'); }
 function tickNote(id, on){ const d = inDone(); pRun('setNoteDone', [id, on], null, null, true); if (d) openDone(); }
 function clearTicked(){ const ids = P.items.filter(n=>n.done).map(n=>n.id), keep = P.items.filter(n=>n.done);
   pRun('clearDone', [ids], `Cleared ${ids.length} ticked`, ()=>keep.forEach(n=>{ pRun('addNote', [{id:newId(), text:n.text}], null, null, true); })); }
 function openNote(id){
   const n = P.items.find(x=>x.id===id); if (!n) return;
   showSheet(`<h3>Note</h3>
-    <textarea class="inp" id="noteEd" rows="3">${esc(n.text)}</textarea>
+    <textarea class="inp" id="noteEd" rows="3">${esc(noteText(n.text))}</textarea>
+    <div class="chips"><button class="chip ${isAppNote(n)?'':'on'}" onclick="noteSetApp('${id}', false)">To do</button><button class="chip ${isAppNote(n)?'on':''}" onclick="noteSetApp('${id}', true)">&#x1F4A1; App improvement</button></div>
     <div class="hint">Added by ${esc(n.by||'?')}${n.at ? ', ' + esc(dayLabel(n.at.slice(0,10))) : ''}${n.done && n.doneBy ? '. Ticked by ' + esc(n.doneBy) : ''}</div>
-    <button class="primary" onclick="const t=$('#noteEd').value; pRun('editNote', ['${id}', t], 'Saved')">Save</button>
+    <button class="primary" onclick="const t=$('#noteEd').value; pRun('editNote', ['${id}', ${isAppNote(n)} && !APP_TAG.test(t) ? t + ' #app' : t], 'Saved')">Save</button>
     <button class="secondary" onclick="pRun('setNoteDone', ['${id}', ${!n.done}])">${n.done ? 'Untick it' : 'Tick it off'}</button>
     <button class="secondary neg" onclick="pRun('deleteNote', ['${id}'], 'Note removed', ()=>pRun('addNote', [{id:newId(), text:${jsA(n.text)}}], null, null, true))">Remove</button>`);
 }
