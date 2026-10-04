@@ -249,6 +249,7 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
 .note-row.done .note-t small{text-decoration:none}
 .done-link{border:0;background:none;font:inherit;font-size:var(--fs-small);color:var(--muted);text-decoration:underline;padding:10px 12px 0;cursor:pointer}
+.shop-got>summary{list-style:none;text-align:center;padding-bottom:10px}.shop-got>summary::-webkit-details-marker{display:none}
 .notes .iron{margin:0;padding:12px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}.remind{padding:8px 0;border-bottom:1px solid var(--line)}.remind:last-child{border-bottom:0}
 .remind-t{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;font-weight:600;color:var(--text);text-align:left;padding:4px 0;cursor:pointer}.remind-t .chev{margin-left:auto}
 .cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.cal-top b{font-size:15px}
@@ -3327,16 +3328,17 @@ function addTagged(inp, tag){
 }
 const tagInput = (inp, tag, ph) => `<div class="note-add"><input class="inp" id="${inp}" placeholder="${ph}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addTagged('${inp}','${tag}')}"><button class="chip on" onclick="addTagged('${inp}','${tag}')">Add</button></div>`;
 const byAt = (a,b) => a.at<b.at ? -1 : 1;
-/* the shopping list: what we need, then what was got today (struck through); things bought before come back with one tap */
+/* the shopping list: what we need; what was bought sits under a folded "Bought (n)", newest first, no repeats; untick to add again */
+let SHOP_OPEN = false;
 function shopCard(){
-  const l = P.items.filter(n=>noteKind(n)==='shop'), t = today();
-  const need = l.filter(n=>!n.done).sort(byAt), got = l.filter(n=>n.done && String(n.doneAt).slice(0,10)===t);
-  const seen = new Set(), again = l.filter(n=>n.done && !got.includes(n)).sort((a,b)=>a.doneAt<b.doneAt?1:-1)
-    .filter(n=>{ const k = noteText(n.text).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
+  const l = P.items.filter(n=>noteKind(n)==='shop'), need = l.filter(n=>!n.done).sort(byAt), seen = new Set();
+  const got = l.filter(n=>n.done).sort((a,b)=>a.doneAt<b.doneAt?1:-1)
+    .filter(n=>{ const k = noteText(n.text).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 30);
   return `<h2>Shopping list</h2>
   ${tagInput('shopIn', 'shop', 'e.g. Dishwasher tabs')}
-  ${need.length || got.length ? `<div class="card notes">${need.concat(got).map(noteRow).join('')}</div>` : ''}
-  ${again.length ? `<div class="hint" style="margin:12px 2px 8px">Bought before, tap to add again</div><div class="chips">${again.map(n=>`<button class="chip" onclick="tickNote('${n.id}', false)">+ ${esc(noteText(n.text))}</button>`).join('')}</div>` : ''}`;
+  ${need.length ? `<div class="card notes">${need.map(noteRow).join('')}</div>` : ''}
+  ${got.length ? `<details class="shop-got" ${SHOP_OPEN?'open':''} ontoggle="SHOP_OPEN=this.open"><summary class="done-link">Bought (${got.length})</summary>
+    <div class="card notes">${got.map(noteRow).join('')}</div><div class="hint">Untick one to put it back on the list.</div></details>` : ''}`;
 }
 /* ---- the holiday ---- */
 const HOL_RE = /#holiday (\d{4}-\d{2}-\d{2})(?: (\d{4}-\d{2}-\d{2}))?/i;
