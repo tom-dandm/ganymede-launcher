@@ -1880,7 +1880,35 @@ function importTexts(texts){
   outPush('m', 'importStatements', [texts], '');
   toast(canSend() ? 'Adding the statement\u2026' : 'Statement saved on this phone. It is added when there is signal.');
 }
+/* The Santander extension (tools/extension) opens this page in a background tab: it asks for the last bank date,
+   hands over the exports it fetched, and waits for the summary. 'ganymede-ext' in sessionStorage survives a sign-in. */
+const EXT_KEY = 'ganymede-ext';
+const extSay = m => window.postMessage({to:'ganymede-ext', ...m}, location.origin);
+function lastBankDate(){
+  if (D && D.transactions) return D.transactions.reduce((a,t)=>t.balance!=null && t.balance!=='' && t.date>a ? t.date : a, '');
+  const raw = lastRaw || readCache(), rows = raw && raw.txRows || [];
+  return rows.reduce((a,r)=>r[0] && r[6]!=='' && r[6]!=null && r[0]>a ? r[0] : a, '');
+}
+window.addEventListener('message', async e=>{
+  const m = e.data;
+  if (e.source !== window || !m || m.to !== 'ganymede') return;
+  if (m.ask === 'last'){
+    if (!lastBankDate() && canSend()) await load().catch(()=>{});
+    extSay({last: lastBankDate(), owner: canP(), signedIn: authed()});
+  }
+  if (Array.isArray(m.files)){
+    try{ sessionStorage.setItem(EXT_KEY, '1'); }catch(err){}
+    importTexts(m.files);
+    const b = m.balances;   // My accounts: the current account, then the rest (Parent Savings G2 = current + savings)
+    if (b && isFinite(b.current) && isFinite(b.savings) && canP()) outPush('m', 'setBankBalances', [{current:b.current, savings:b.savings}], '');
+  }
+});
+function extDone(list){
+  try{ if (!sessionStorage.getItem(EXT_KEY)) return; sessionStorage.removeItem(EXT_KEY); }catch(err){ return; }
+  extSay({done: list.find(x=>x.added) || list[0] || {}});
+}
 function showImport(list){
+  extDone(list);
   const s = list.find(x=>x.added) || list[0] || {};
   if (sheetShown()) return toast(s.added ? 'Statement added: ' + s.added + ' new' : 'Nothing new in that statement');
   showSheet(`<div class="grab"></div><h3 style="margin:0 0 6px">${s.added?'Statement added':'Nothing new in that file'}</h3>
