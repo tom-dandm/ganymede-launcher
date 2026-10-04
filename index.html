@@ -389,7 +389,8 @@ details.nums summary{font-size:13px;font-weight:700;color:var(--family-2);cursor
 .wins li{display:flex;gap:10px;align-items:baseline;margin:6px 0}
 .wins .wi{flex:0 0 22px;text-align:center}
 .wins b{color:var(--pos)}
-.wotd{margin-top:14px}
+.wotd-s{display:flex;flex-direction:row-reverse;gap:10px;margin-top:14px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}.wotd-s::-webkit-scrollbar{display:none}
+.wotd-s .wotd{flex:0 0 100%;margin:0;scroll-snap-align:center}.wotd small i{float:right;font-style:normal}
 .hol-line{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;text-align:left;font:inherit;color:inherit;cursor:pointer}.hol-line em{font-style:normal;color:var(--muted);margin-left:auto}
 .hol-hero{display:block;width:100%;text-align:center;font:inherit;color:inherit;cursor:pointer;padding:20px 16px}.hol-hero small{display:block;font-size:var(--fs-small);color:var(--muted)}
 .hol-hero b{display:block;font:700 44px/1.1 var(--font-num);color:var(--family-2);margin:6px 0 2px}.hol-hero span,.hol-hero em{display:block;font-style:normal;color:var(--muted)}.hol-hero .primary{margin-top:12px}
@@ -1094,19 +1095,25 @@ function winsCard(){
     <ul>${top.map(w=>`<li><span class="wi">${w[1]}</span><span>${w[2]}</span></li>`).join('')}</ul>
     </div>`;
 }
-/* word of the day: the phone keeps the next fortnight, so it shows offline, and tops up when it has signal */
-const WORDS_KEY = 'ganymede-words';
+/* word of the day: the phone keeps the last month and the next fortnight, so it shows offline, and tops up when it has
+   signal. Home shows today's; swipe right for the days before (WORD_X keeps the place across a redraw) */
+const WORDS_KEY = 'ganymede-words', WORDS_BACK = 30;
 function wordsSaved(){ try { return JSON.parse(localStorage.getItem(WORDS_KEY) || '[]'); } catch(e) { return []; } }
-function wordToday(){ const t = today(), w = wordsSaved().find(x=>x.date===t); wordsTopUp(); return w; }
-let wordsAsked = 0;
-function wordCard(){ const w = wordToday(); return w ? `<div class="card wotd"><small>Word of the day</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span></div>` : ''; }
+let wordsAsked = 0, WORD_X = 0;
+function wordCard(){
+  wordsTopUp(); const t = today(), l = wordsSaved().filter(x=>x.date<=t && x.date>=addDays(t, -WORDS_BACK)).sort((a,b)=>a.date<b.date?1:-1);
+  if (!l.length || l[0].date!==t) return '';
+  return `<div class="wotd-s" onscroll="WORD_X=this.scrollLeft">${l.map((w, i)=>`<div class="card wotd"><small>${i ? esc(dayLabel(w.date)) : 'Word of the day'}${l.length > 1 ? `<i>${i ? i + 1 + ' of ' + l.length : '&lsaquo; swipe for earlier'}</i>` : ''}</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span></div>`).join('')}</div>`;
+}
+function wordPlace(){ const el = $('.wotd-s'); if (el && WORD_X) el.scrollLeft = WORD_X; }
 function wordsTopUp(){
   const t = today(), l = wordsSaved();
-  if (l.some(x=>x.date===addDays(t, 7)) || !navigator.onLine || Date.now() - wordsAsked < 6e5) return;
+  if (l.some(x=>x.date===addDays(t, 7)) && l.some(x=>x.date===addDays(t, -WORDS_BACK)) || !navigator.onLine || Date.now() - wordsAsked < 6e5) return;
   wordsAsked = Date.now();
-  api('getWords', t, 14).then(got=>{ const had = l.some(x=>x.date===t);
+  const n = got => got.filter(x=>x.date<=t).length;
+  api('getWords', addDays(t, -WORDS_BACK), WORDS_BACK + 15).then(got=>{
     try { localStorage.setItem(WORDS_KEY, JSON.stringify(got)); } catch(e) {}
-    if (!had && onHome()) render(); }).catch(()=>{});
+    if (n(got) > n(l) && onHome()) render(); }).catch(()=>{});
 }
 
 /* Monthly nudge: from the 5th, ask for the next Santander export until the statement reaches the last few days
@@ -3294,6 +3301,7 @@ function pRender(){
   const y = placeY('p:'+pview);
   if (!paint('p:'+pview, head, ({up:pUp, cal:pCal, hol:pHol, track:pTrack}[pview] || pUp)(), synced)) return;
   window.scrollTo(0,y);
+  wordPlace();
 }
 const evCol = e => /^#[0-9a-fA-F]{3,8}$/.test(e.color||'') ? e.color : 'var(--family-2)';
 function evRow(e, showDay){
