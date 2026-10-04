@@ -3186,12 +3186,20 @@ function choreRule(c){
   if (c.unit==='w') return p('Every week', 'weeks') + ' on ' + [1,2,3,4,5,6,0].filter(i=>c.days.includes(i)).map(i=>WDAY[i]).join(', ');
   return p('Every month', 'months') + ' on the ' + ordinal(c.mday);
 }
+/* the last day it was due in the past week and not ticked, unless it is due again today; ticks started 3 Oct 2026 */
+const CHORE_TICKS_FROM = '2026-10-03';
+function choreMissed(c){
+  if (choreDue(c, today())) return '';
+  for (let i = 1; i <= 7; i++){ const d = addDays(today(), -i); if (d < CHORE_TICKS_FROM) return ''; if (choreDue(c, d)) return P.marks.some(x=>x.what===c.what && x.date===d) ? '' : d; }
+  return '';
+}
+function choresMissed(){ return chores().map(c=>[c, choreMissed(c)]).filter(x=>x[1]).sort((a,b)=>a[1]<b[1]?-1:1); }
 function choreNext(c){ for (let i = 0; i < 400; i++){ const d = addDays(today(), i); if (choreDue(c, d)) return d; } return ''; }
 /* the list, from the Chores chip on Home */
 function openChores(){
   const l = chores().sort((a,b)=>a.what.localeCompare(b.what));
-  showSheet(`<h3 id="choresSheet">Chores</h3><div class="hint" style="margin:0 0 10px">Each one shows in To do on its days, to tick off.</div>
-    <div class="card notes">${l.map(c=>{ const nx = choreNext(c); return `<button class="note-t chore-li" onclick="openChore('${c.id}')">${c.icon} ${esc(c.what)}<small>${esc(choreRule(c))}${nx ? ' &middot; next ' + esc(dayLabel(nx).replace(/^(Today|Tomorrow)$/, x=>x.toLowerCase())) : ''}</small></button>`; }).join('') || '<div class="hint" style="text-align:center;padding:8px">No chores yet.</div>'}</div>
+  showSheet(`<h3 id="choresSheet">Chores</h3><div class="hint" style="margin:0 0 10px">Each one shows in To do on its days, to tick off. One not ticked stays there for up to a week.</div>
+    <div class="card notes">${l.map(c=>{ const nx = choreNext(c), mi = choreMissed(c); return `<button class="note-t chore-li" onclick="openChore('${c.id}')">${c.icon} ${esc(c.what)}<small>${esc(choreRule(c))}${nx ? ' &middot; next ' + esc(dayLabel(nx).replace(/^(Today|Tomorrow)$/, x=>x.toLowerCase())) : ''}${mi ? ' &middot; <span class="neg">not done ' + esc(dayLabel(mi).toLowerCase()) + '</span>' : ''}</small></button>`; }).join('') || '<div class="hint" style="text-align:center;padding:8px">No chores yet.</div>'}</div>
     <button class="primary" onclick="openChore()">Add a chore</button>`);
 }
 let CH = null;
@@ -3239,7 +3247,7 @@ function removeChore(){
 function choreRow(c, d){
   const m = P.marks.find(x=>x.what===c.what && x.date===d);
   return `<div class="note-row ${m?'done':''}"><button class="tick" aria-label="${m?'Untick':'Tick'}" onclick="choreTick(${jsA(c.what)},'${d}')">${m?TICK_SVG:''}</button>
-    <button class="note-t" onclick="choreTick(${jsA(c.what)},'${d}')">${c.icon} ${esc(c.what)}<small>${m ? 'Done'+(m.by?' by '+esc(m.by):'') : d===today() ? 'Today' : esc(dayLabel(d))}</small></button></div>`;
+    <button class="note-t" onclick="choreTick(${jsA(c.what)},'${d}')">${c.icon} ${esc(c.what)}<small>${m ? 'Done'+(m.by?' by '+esc(m.by):'') : d===today() ? 'Today' : `<span class="neg">Not done, ${esc(dayLabel(d).toLowerCase())}</span>`}</small></button></div>`;
 }
 function choreTick(what, d){
   const m = P.marks.find(x=>x.what===what && x.date===d);
@@ -3399,13 +3407,13 @@ function pUp(){
   const all = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
   const open = all.filter(n=>!noteKind(n)), app = all.filter(isAppNote);
   const nDone = P.items.filter(n=>n.done && plainNote(n)).length + (D && canP() ? checks().filter(isChecked).length : 0);
-  const todo = choresOn(today());
+  const todo = choresOn(today()), missed = choresMissed();
   return `${wordCard()}${holHome()}
   <h2>To do</h2>
   <div class="note-add"><input class="inp" id="noteIn" placeholder="${NOTE_APP?'An idea for the app':'Add a note or reminder'}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
   <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App improvement</button><button class="chip" onclick="openChores()">&#x1F501; Chores</button></div>
-  <div class="card notes">${todo.map(c=>choreRow(c, today())).join('')}${open.map(noteRow).join('')}
-    ${!open.length && !todo.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
+  <div class="card notes">${missed.map(x=>choreRow(x[0], x[1])).join('')}${todo.map(c=>choreRow(c, today())).join('')}${open.map(noteRow).join('')}
+    ${!open.length && !todo.length && !missed.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
   ${shopCard()}
   <hr class="sep">
   ${mealsCard()}
