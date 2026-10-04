@@ -3081,7 +3081,8 @@ async function pLoadRun(){
   if (!canSend()){ if (!P && MODE==='plans') $('#app').innerHTML = masterHTML() + noData('pLoad()'); return; }
   setSync(true);
   const o = pFresh ? {fresh:true} : undefined; pFresh = false;
-  try{ takeP(await inOrder('getPlans', o)); showP(); }
+  try{ const r = await inOrder('getPlans', o); takeP(r); showP();
+    if (r && r.calStale && !o) setTimeout(()=>{ pFresh = true; pLoad(); }, 50); }   // an old copy shows now, the live calendar follows
   catch(e){ if (e.auth) signIn(true);
     if (!P && MODE==='plans') $('#app').innerHTML = masterHTML() + (e.retry ? noData('pLoad()') : `<div class="loading">Couldn't load: ${esc(e.message||e)}<br><br><button class="secondary" onclick="pLoad()">Try again</button></div>`); }
 }
