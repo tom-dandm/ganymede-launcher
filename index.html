@@ -523,10 +523,10 @@ const authed = () => !REMOTE || (!!AUTH.token && AUTH.exp > Date.now() + 60000);
   else return;
   history.replaceState(null, '', location.pathname + location.search);
 })();
-function signIn(quiet){
+function signIn(quiet, early){
   if (!REMOTE) return false;
   if (quiet){
-    if (authed() || !navigator.onLine || !AUTH.email || sheetShown()) return false;
+    if (!early && (authed() || sheetShown()) || !navigator.onLine || !AUTH.email) return false;
     if (AUTH.tried && Date.now() - AUTH.tried < (AUTH.err ? 30 : 2) * 60000) return false;   // never loop
   }
   AUTH.tried = Date.now(); authSave();
@@ -535,6 +535,9 @@ function signIn(quiet){
   location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + p;
   return true;
 }
+/* opening the app with a sign-in that runs out within 15 minutes renews it now, before anything is drawn,
+   instead of a jump to Google in the middle of using it */
+const RENEW = REMOTE && location.hash.length < 2 && !!AUTH.email && !(AUTH.token && AUTH.exp > Date.now() + 9e5) && signIn(true, true);
 
 /* ============ offline: every change is saved on the phone at once and waits in an outbox, in order,
    until the sheet can take it. Each one is an action ("add this spend"), not a copy of the data, so
@@ -3893,8 +3896,8 @@ document.addEventListener('touchend', e=>{ if (eX0 == null) return; const t = e.
 
 
 let toastT;
-function toast(msg, undo){
-  $('#toastMsg').textContent=msg; const u=$('#toastUndo');
+function toast(msg, undo, label){
+  $('#toastMsg').textContent=msg; const u=$('#toastUndo'); u.textContent = label || 'Undo';
   u.classList.toggle('hidden',!undo); u.onclick=()=>{ $('#toast').classList.remove('show'); undo&&undo(); };
   $('#toast').classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>$('#toast').classList.remove('show'), undo?6000:3000);
 }
@@ -3907,8 +3910,8 @@ document.addEventListener('visibilitychange',()=>{ if (!document.hidden) syncNow
 // Any error shows up on screen instead of failing silently
 window.addEventListener('error', e => toast('\u26a0 ' + (e.message || 'Something went wrong')));
 window.addEventListener('unhandledrejection', e => toast('\u26a0 ' + ((e.reason && e.reason.message) || e.reason || 'Something went wrong')));
-if (MODE!=='money'){ setNav(); render(); }
-flush(); load(); hLoad(); pLoad();   // both sides are fetched, so both work offline
+if (!RENEW){ if (MODE!=='money'){ setNav(); render(); }
+  flush(); load(); hLoad(); pLoad(); }   // both sides are fetched, so both work offline
 /* once the first screen is up, build the other screens once in idle time, so the first tap on each is quick */
 (function warm(){ const idle = window.requestIdleCallback || (f=>setTimeout(f,200));
   const off = html => { const d = document.createElement('div'); d.setAttribute('aria-hidden','true');
@@ -3918,8 +3921,10 @@ flush(); load(); hLoad(); pLoad();   // both sides are fetched, so both work off
   let n = 0; const next = () => idle(dl=>{ if (!D || !H) { if (n++ < 60) return setTimeout(next, 1000); }
     while (jobs.length && (!dl || dl.timeRemaining() > 8)) try{ jobs.shift()(); }catch(e){}
     if (jobs.length) next(); });
-  setTimeout(next, 1500); })();
-if (REMOTE && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if (!RENEW) setTimeout(next, 1500); })();
+/* the app opens from the phone's saved copy; the worker says when a newer one has come in behind it */
+if (REMOTE && 'serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.onmessage = e => { if (e.data === 'updated') toast('A new version is ready', ()=>location.reload(), 'Reload'); }; }
 </script>
 </body>
 </html>
