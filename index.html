@@ -27,11 +27,13 @@
   --bg:#F2F2EF; --card:#FFFFFF; --card-2:#F7F7F4; --text:#0E0E11; --muted:#62626C; --line:#E2E2DD;
   --hero:#0E0E13; --glow:rgba(124,92,255,.55);
   --pos:#1E8449; --neg:#C0392B; --shadow:none;
+  --sugg:#FFF4CC; --sugg-line:#D9A520; --sugg-t:#5C4400;
 }
 @media (prefers-color-scheme: dark){
   :root{ color-scheme:dark; --bg:#08080A; --card:#121216; --card-2:#18181D; --text:#F3F3F5; --muted:#8E8E9A; --line:#24242B;
     --family:#7C5CFF; --family-2:#9B85FF; --hero:#101016; --glow:rgba(124,92,255,.45);
-    --tom-t:#3A2A1A; --laura-t:#3A1F1C; --nathan-t:#1A3325; --evy-t:#1A2C3A; --pos:#58D68D; --neg:#F1948A; }
+    --tom-t:#3A2A1A; --laura-t:#3A1F1C; --nathan-t:#1A3325; --evy-t:#1A2C3A; --pos:#58D68D; --neg:#F1948A;
+    --sugg:#2B2410; --sugg-line:#8C6D1C; --sugg-t:#F4D77E; }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 button,a,[onclick]{touch-action:manipulation}
@@ -169,7 +171,7 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .mini-seg button{border:0;background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--muted);padding:5px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
 .mini-seg button.on{background:var(--text);color:var(--bg)}
 .am-added{background:var(--card-2);border-radius:var(--r-sm);padding:8px 12px;margin:0 0 10px;font-size:var(--fs-small);font-weight:600}
-.quick-drink.qm{white-space:normal}.qm small{display:block;font-weight:500;color:var(--muted);font-size:11px}.qm span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.quick-drink.qm{white-space:normal;background:var(--sugg);border-color:var(--sugg-line);color:var(--sugg-t)}.qm small{display:block;font-weight:500;color:inherit;opacity:.75;font-size:11px}.qm span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .quick-drink{border:1px dashed var(--line);background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--text);border-radius:var(--r-sm);padding:7px 8px;margin-top:6px;cursor:pointer;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot-wrap{display:flex;flex-direction:column;min-width:0}.slot-wrap .slot{flex:1}
 .part-eat{padding:10px 0;border-bottom:1px solid var(--line)}.part-eat .chips{margin:6px 0 0}.pe-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.pe-h span{font-size:var(--fs-small)}
