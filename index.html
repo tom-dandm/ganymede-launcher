@@ -662,7 +662,7 @@ const Mock = (() => {
       return {name:n,age:s.ages[n],pct:pctOf(n),opening:s.opening[n],paidIn,logged,balance:s.opening[n]+paidIn+logged}});
     const held = s.heldBase + s.parentRows.reduce((a,r)=>a+r.paidIn-r.out,0);
     const bankTotal = s.current+s.savingsAcc, ourSavings = bankTotal-held, inPots = pots.reduce((a,p)=>a+p.balance,0), owner = !s.asLaura;
-    return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null, bank:owner?(s.bank||(s.bank={keys:true,auto:true,validUntil:new Date(Date.now()+60*864e5).toISOString(),accounts:[{uid:'a1',name:'Everyday Current Account',type:'CACC',last4:'1234'},{uid:'a2',name:'eSaver',type:'SVGS',last4:'5678'}],current:'a1',savings:'',last:{at:new Date(Date.now()-5*3600e3).toISOString(),added:3,matched:2,err:''}})):null, spendCal:owner?(s.spendCal||null):null,
+    return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null, spendCal:owner?(s.spendCal||null):null,
       overview:owner?{bankTotal,held,ourSavings,inPots,familyPot:ourSavings-inPots}:{bankTotal:null,held:null,ourSavings,inPots,familyPot:ourSavings-inPots},
       parent:owner?{held,bankTotal,ourSavings,current:s.current,savingsAcc:s.savingsAcc,recent:s.parentRows.map((r,i)=>({row:800+i,note:'',...r})).reverse(), ledger:mockLedger(held)}:{ourSavings,ledger:mockLedger(held),recent:[]},
       syncedAt:new Date().toISOString()};
@@ -700,10 +700,6 @@ const Mock = (() => {
     setBankBalances(b){ s.current=Number(b.current); s.savingsAcc=Number(b.savings||0); return data(false); },
     startSpendCal(){ if (s.asLaura) throw new Error('Only Tom can do this'); s.spendCal={id:'spend@example.com',name:'Ganymede spending',done:3,months:3,at:new Date().toISOString(),err:''}; return data(false); },
     spendCalTick(){ return s.spendCal||null; },
-    bankConnect(){ if (s.asLaura) throw new Error('Only Tom can change this'); return {url:'https://example.com/santander', days:90}; },
-    syncBankNow(){ s.bank.last={at:new Date().toISOString(),added:0,matched:0,err:''}; return data(false); },
-    setBankAuto(on){ s.bank.auto=!!on; return data(false); },
-    setBankAccounts(c,v){ s.bank.current=c; s.bank.savings=v||''; return data(false); },
     syncPayPalNow(){ s.paypal={at:new Date().toISOString(),added:0,matched:0,fetched:0,waiting:0}; return data(false); },
     setTxPot(row,person,amount,nid){ const t=tx(row); if(t.type==='parents') throw new Error("That one is the parents'");
       const id='tx-'+(nid||uid()); if (person && t.potId===id) return ch([t],1);
@@ -812,39 +808,6 @@ function spendCalText(){
   if (!c) return 'A calendar of its own, "Ganymede spending", with an entry for each day we spent: the total and where. Seven years takes a few goes to fill; the app carries on by itself.';
   const at = c.at ? new Date(c.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
   return `"${esc(c.name)}": ${c.done} of ${c.months} months on it${at ? ', updated ' + esc(at) : ''}.${c.err ? ' Stopped: ' + esc(c.err) + '.' : ''} ${c.done < c.months ? 'The rest goes on a bit at a time while the app is open.' : 'New statements follow by themselves.'}`;
-}
-/* ---- the bank link (Bank.js): Santander through Enable Banking ---- */
-const bankLeft = () => D && D.bank && D.bank.validUntil ? Math.floor((new Date(D.bank.validUntil) - Date.now())/864e5) : null;
-const bankAcct = a => esc(a.name) + (a.last4 ? ' ' + esc(a.last4) : '');
-function bankText(){
-  const b = D.bank;
-  if (!b || !b.keys) return 'New payments can come in from Santander by themselves every morning. It needs an Enable Banking account first (see the notes in docs/money-notes.md).';
-  if (!b.validUntil) return 'Ready to connect. You sign in to Santander once and agree to read-only access.';
-  const left = bankLeft(), l = b.last, at = l && l.at ? new Date(l.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-  return `${left < 0 ? 'The Santander link ran out. Connect again.' : `Linked until ${esc(dateY(b.validUntil.slice(0,10)))}.`}${l ? ` Checked ${esc(at)}${l.err ? ': ' + esc(l.err) : `, ${l.added} added`}.` : ' Not checked yet.'} ${b.auto ? 'It checks by itself every morning.' : 'The morning check is off.'}`;
-}
-function bankCard(){
-  const b = D.bank; if (!b) return '';
-  const left = bankLeft(), opts = (sel, none) => (none ? `<option value="">${none}</option>` : '') + b.accounts.map(a=>`<option value="${esc(a.uid)}" ${a.uid===sel?'selected':''}>${bankAcct(a)}</option>`).join('');
-  return `<h2>Bank link</h2>
-  <div class="card"><div class="hint" style="margin-top:0">${bankText()}</div>
-    ${b.validUntil && left >= 0 && b.accounts.length ? `<label class="f">Current account</label><select class="inp" id="bkCur" onchange="saveBankAccts()">${opts(b.current)}</select>
-    <label class="f">Savings account in the bank total</label><select class="inp" id="bkSav" onchange="saveBankAccts()">${opts(b.savings, 'Not linked, keep the typed figure')}</select>
-    <button class="secondary" onclick="run('syncBankNow',[],'Bank checked')">Check the bank now</button>
-    <button class="secondary" onclick="run('setBankAuto',[${!b.auto}],'${b.auto ? 'Morning check off' : 'Morning check on'}')">${b.auto ? 'Turn the morning check off' : 'Check every morning'}</button>` : ''}
-    ${b.keys ? `<button class="${b.validUntil && left >= 10 ? 'secondary' : 'primary'}" onclick="connectBank()">${b.validUntil ? 'Connect Santander again' : 'Connect Santander'}</button>` : ''}</div>`;
-}
-function saveBankAccts(){ run('setBankAccounts', [$('#bkCur').value, $('#bkSav').value], 'Saved'); }
-/* a link to open, not window.open: a pop-up after a server call is blocked */
-async function connectBank(){
-  if (!canSend()) return toast('Needs a signal');
-  pendingN++; working(true);
-  try{ const r = await api('bankConnect');
-    showSheet(`<div class="grab"></div><h3 style="margin:0 0 4px">Connect Santander</h3><div class="hint" style="margin:0 0 12px">Sign in to Santander and agree to read-only access for ${r.days} days. It comes back to Ganymede when done.</div>
-      <a class="primary" style="display:block;text-align:center;text-decoration:none" href="${esc(r.url)}" target="_blank" rel="noopener" onclick="closeSheet()">Open Santander</a>
-      <button class="secondary" onclick="closeSheet()">Cancel</button>`);
-  } catch(e){ toast('⚠ ' + (e.message || e)); }
-  finally{ if (--pendingN === 0) working(false); }
 }
 async function startSpendCal(){
   if (!canSend()) return toast('Needs a signal');
@@ -1252,7 +1215,6 @@ function vSettings(){
     <div id="setPreview" style="margin-top:14px"></div>
     <div class="hint" style="margin-bottom:0">Saved as you change it.</div>
   </div>
-  ${canP()?bankCard():''}
   ${canP()?`<h2>PayPal</h2>
   <div class="card"><div class="hint" style="margin-top:0">${D.paypal?`Checked ${esc(new Date(D.paypal.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))} · ${D.paypal.added} added, ${D.paypal.matched} matched to the bank`:'Not checked yet'}. It checks by itself every morning.</div>
     <button class="secondary" onclick="run('syncPayPalNow',[],'PayPal checked')">Check PayPal now</button></div>
