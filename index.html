@@ -1103,7 +1103,7 @@ function winsCard(){
     </div>`;
 }
 /* word of the day: the phone keeps the last month and the next fortnight, so it shows offline, and tops up when it has
-   signal. Home shows today's; swipe right for the days before (WORD_X keeps the place across a redraw) */
+   signal, at least once a day so edited text arrives. Home shows today's; swipe right for the days before (WORD_X keeps the place across a redraw) */
 const WORDS_KEY = 'ganymede-words2', WORDS_BACK = 30;
 function wordsSaved(){ try { return JSON.parse(localStorage.getItem(WORDS_KEY) || '[]'); } catch(e) { return []; } }
 let wordsAsked = 0, WORD_X = 0;
@@ -1122,12 +1122,13 @@ function cnWord(c){
 function wordPlace(){ const el = $('.wotd-s'); if (el && WORD_X) el.scrollLeft = WORD_X; }
 function wordsTopUp(){
   const t = today(), l = wordsSaved();
-  if (l.some(x=>x.date===addDays(t, 7)) && l.some(x=>x.date===addDays(t, -WORDS_BACK)) || !navigator.onLine || Date.now() - wordsAsked < 6e5) return;
+  let asked = ''; try { asked = localStorage.getItem(WORDS_KEY + '-day') || ''; } catch(e) {}
+  if (asked === t && l.some(x=>x.date===addDays(t, 7)) && l.some(x=>x.date===addDays(t, -WORDS_BACK)) || !navigator.onLine || Date.now() - wordsAsked < 6e5) return;
   wordsAsked = Date.now();
-  const n = got => got.filter(x=>x.date<=t).length;
+  const shown = got => JSON.stringify(got.filter(x=>x.date<=t));
   api('getWords', addDays(t, -WORDS_BACK), WORDS_BACK + 15).then(got=>{
-    try { localStorage.setItem(WORDS_KEY, JSON.stringify(got)); } catch(e) {}
-    if (n(got) > n(l) && onHome()) render(); }).catch(()=>{});
+    try { localStorage.setItem(WORDS_KEY, JSON.stringify(got)); localStorage.setItem(WORDS_KEY + '-day', t); } catch(e) {}
+    if (shown(got) !== shown(l) && onHome()) render(); }).catch(()=>{});
 }
 
 /* Monthly nudge: from the 5th, ask for the next Santander export until the statement reaches the last few days
