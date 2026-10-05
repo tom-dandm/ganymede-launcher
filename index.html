@@ -397,6 +397,10 @@ details.nums summary{font-size:13px;font-weight:700;color:var(--family-2);cursor
 .h2-n{font-size:var(--fs-small);font-weight:500;color:var(--muted);margin-left:6px}
 .wotd small{display:block;font-size:var(--fs-small);color:var(--muted)}.wotd b{display:block;color:var(--text);font:600 17px/1.3 var(--font-num);margin:2px 0}
 .wotd span{display:block;line-height:1.45}
+.wotd-cn{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}.wotd-cn span+span{margin-top:4px}
+.cn-w{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0}.cn-w b{font:500 28px/1.2 var(--font);color:var(--text)}.cn-w em{font-style:normal;color:var(--muted)}
+.cn-mean{font-weight:600;color:var(--text)}.cn-say{color:var(--muted)}.cn-say b{display:inline;margin:0;font:inherit;font-weight:600;color:var(--text)}
+.am-close .secondary{margin-top:14px}
 .due{position:relative;overflow:hidden;background:var(--card);border-radius:var(--r);padding:14px 16px 14px 19px;border:1px solid var(--line);margin-bottom:12px}
 .due::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tom)}
 .due>b{display:block;margin-bottom:2px}
@@ -671,7 +675,7 @@ const Mock = (() => {
   const ch = (list, extra) => { const d=data(false); d.changed=list.map(t=>({row:t.row,category:t.category,type:t.type,...(extra?{pot:t.pot||'',potAmt:t.potAmt==null?null:t.potAmt,potId:t.potId||''}:{})})); s.ver++; d.txVersion=s.ver; return d; };
   return {
     getData:()=>data(),
-    getWords:(from, n)=>Array.from({length:n||14}, (_, i)=>({date:addDays(from, i), word:['Muscle','Clue','Daisy'][i%3], fact:['From Latin musculus, little mouse.','From clew, a ball of thread.','From Old English, day\'s eye.'][i%3]})),
+    getWords:(from, n)=>Array.from({length:n||14}, (_, i)=>({date:addDays(from, i), word:['Muscle','Clue','Daisy'][i%3], fact:['From Latin musculus, little mouse.','From clew, a ball of thread.','From Old English, day\'s eye.'][i%3], cn:{w:['\u4f60\u597d','\u6c34','\u5c71'][i%3], jp:['nei5 hou2','seoi2','saan1'][i%3], say:['nay ho','sur-ee','saan'][i%3], mean:['Hello','Water','Mountain'][i%3], why:'How the characters are built.'}})),
     viewAs(who){ s.asLaura = who==='Laura'; return data(); },
     setChecked(key, on){ s.checked = (s.checked||[]).filter(x=>x!==key); if (on) s.checked.push(key); return data(false); },
     setGoal(person, goal, target){ s.goals = s.goals||{}; if (!goal || !(target>0)) delete s.goals[person]; else s.goals[person] = {goal, target:Number(target)}; return data(false); },
@@ -955,7 +959,7 @@ function setNav(){
   const cur = MODE==='plans' ? pview : MODE==='health' ? (hview==='month' ? 'today' : hview) : view==='payments' ? 'spending' : view;
   n.querySelectorAll('button').forEach(b=>{ b.classList.toggle('on', b.dataset.view===cur); if (b.dataset.view==='parents') b.classList.toggle('hidden', !canP()); });
 }
-function setMode(m){ if (m!==MODE) navPush(); MODE = m; try{ localStorage.setItem('ganymede-mode', m); }catch(e){}
+function setMode(m){ if (m!==MODE){ navPush(); NOTE_APP = false; } MODE = m; try{ localStorage.setItem('ganymede-mode', m); }catch(e){}
   if (m==='money' && !D){ setNav(); $('#app').innerHTML = masterHTML()+'<div class="loading">Loading your pots…</div>'; return; }
   render(); if (m==='money' && view==='spending') drawCharts(); if (m==='money' && view==='settings') settingsPreview(); }
 
@@ -1100,13 +1104,20 @@ function winsCard(){
 }
 /* word of the day: the phone keeps the last month and the next fortnight, so it shows offline, and tops up when it has
    signal. Home shows today's; swipe right for the days before (WORD_X keeps the place across a redraw) */
-const WORDS_KEY = 'ganymede-words', WORDS_BACK = 30;
+const WORDS_KEY = 'ganymede-words2', WORDS_BACK = 30;
 function wordsSaved(){ try { return JSON.parse(localStorage.getItem(WORDS_KEY) || '[]'); } catch(e) { return []; } }
 let wordsAsked = 0, WORD_X = 0;
 function wordCard(){
   wordsTopUp(); const t = today(), l = wordsSaved().filter(x=>x.date<=t && x.date>=addDays(t, -WORDS_BACK)).sort((a,b)=>a.date<b.date?1:-1);
   if (!l.length || l[0].date!==t) return '';
-  return `<div class="wotd-s" onscroll="WORD_X=this.scrollLeft">${l.map((w, i)=>`<div class="card wotd"><small>${i ? esc(dayLabel(w.date)) : 'Word of the day'}${l.length > 1 ? `<i>${i ? i + 1 + ' of ' + l.length : '&lsaquo; swipe for earlier'}</i>` : ''}</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span></div>`).join('')}</div>`;
+  return `<div class="wotd-s" onscroll="WORD_X=this.scrollLeft">${l.map((w, i)=>`<div class="card wotd"><small>${i ? esc(dayLabel(w.date)) : 'Word of the day'}${l.length > 1 ? `<i>${i ? i + 1 + ' of ' + l.length : '&lsaquo; swipe for earlier'}</i>` : ''}</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span>${w.cn ? cnWord(w.cn) : ''}</div>`).join('')}</div>`;
+}
+/* the Cantonese word: characters, Jyutping, how to say each syllable and its tone, then how the characters are built */
+const TONES = ['', 'high', 'rising', 'middle', 'low falling', 'low rising', 'low'];
+function cnWord(c){
+  const jp = String(c.jp).split(' '), say = String(c.say).split(' ').map((x, i)=>`<b>${esc(x)}</b>${TONES[+(String(jp[i]||'').slice(-1))] ? ' (' + TONES[+String(jp[i]).slice(-1)] + ')' : ''}`).join(', ');
+  return `<div class="wotd-cn"><small>Cantonese</small><div class="cn-w"><b lang="zh-HK">${esc(c.w)}</b><em>${esc(c.jp)}</em></div>
+    <span class="cn-mean">${esc(c.mean)}</span><span class="cn-say">Say it: ${say}</span><span>${esc(c.why)}</span></div>`;
 }
 function wordPlace(){ const el = $('.wotd-s'); if (el && WORD_X) el.scrollLeft = WORD_X; }
 function wordsTopUp(){
@@ -1880,7 +1891,7 @@ function importTexts(texts){
   outPush('m', 'importStatements', [texts], '');
   toast(canSend() ? 'Adding the statement\u2026' : 'Statement saved on this phone. It is added when there is signal.');
 }
-/* The Santander extension (tools/extension) opens this page in a background tab: it asks for the last bank date,
+/* The Santander extension (extension/) opens this page in a background tab: it asks for the last bank date,
    hands over the exports it fetched, and waits for the summary. 'ganymede-ext' in sessionStorage survives a sign-in. */
 const EXT_KEY = 'ganymede-ext';
 const extSay = m => window.postMessage({to:'ganymede-ext', ...m}, location.origin);
@@ -2601,13 +2612,15 @@ function drawAddMeal(){
       <div class="mini-seg">${[[false,AM.meal],[true,'Any meal']].map(([v,l])=>`<button class="${AMS.all===v?'on':''}" onclick="AMS.all=${v};drawAddMeal()">${esc(l)}</button>`).join('')}</div></div>`}
     ${q?'':sect('','recent') || '<div class="hint" style="margin:4px 2px">Nothing yet. Whatever you add shows here next time.</div>'}
     ${q||(more<=0&&!AMS.full)?'':`<button class="link-btn" onclick="AMS.full=!AMS.full;drawAddMeal()">${AMS.full?'Show fewer':'Show more'}</button>`}
-    ${AM.slot && !AM.swap && !inSlot.length ? `<button class="link-btn" style="margin-top:14px" onclick="slotSkip()">${esc(AM.who[0])} didn't have this meal (skipped)</button>` : ''}
-    <button class="${added||(AM.slot&&inSlot.length)?'primary':'secondary'}" onclick="closeSheet()">${AM.swap?'Cancel':added||(AM.slot&&inSlot.length)?'Done':'Close'}</button>`;
+    ${AM.slot && !AM.swap && !inSlot.length && !added ? `<div class="two am-close"><button class="secondary" onclick="slotSkip()">Skipped, had nothing</button><button class="secondary" onclick="closeSheet()">Close</button></div>`
+      : `<button class="${added||(AM.slot&&inSlot.length)?'primary':'secondary'}" onclick="closeSheet()">${AM.swap?'Cancel':added||(AM.slot&&inSlot.length)?'Done':'Close'}</button>`}`;
 }
 function amWho(n){ AM.who = AM.who.includes(n) ? AM.who.filter(x=>x!==n) : EATERS.filter(x=>x===n||AM.who.includes(x)); drawAddMeal(); }
 /* what was typed, added as it is (kcal behind the scenes is a typical one for that meal) */
+const SKIP_RE = /^(skip|skipped|nothing|none|had nothing|no (breakfast|lunch|dinner|tea))$/i;
 function amTyped(){
   const q = AM.q.trim(); if (!q) return;
+  if (SKIP_RE.test(q) && AM.slot && !AM.swap) return slotSkip();
   const hit = amCandidates().find(f=>f.name.toLowerCase()===q.toLowerCase()); if (hit) return amAdd(hit);
   amAdd({name:q.charAt(0).toUpperCase()+q.slice(1), kcal:{Breakfast:350, Lunch:500, Dinner:650, Snack:200}[AM.meal] || 400, group:'Meal', veg:/salad|veg|fruit|apple|banana|orange|grapes/i.test(q)?1:0, src:'estimate'});
 }
@@ -3170,7 +3183,7 @@ function pRun(fn, args, msg, undo, keep){
   if (msg) toast(msg, undo || null);
   return true;
 }
-function pgo(v){ if (v!==pview || MODE!=='plans') navPush(); MODE = 'plans'; pview = v; try{ localStorage.setItem('ganymede-mode','plans'); localStorage.setItem('ganymede-pview', v); }catch(e){} render(); }
+function pgo(v){ if (v!==pview || MODE!=='plans'){ navPush(); NOTE_APP = false; } MODE = 'plans'; pview = v; try{ localStorage.setItem('ganymede-mode','plans'); localStorage.setItem('ganymede-pview', v); }catch(e){} render(); }
 
 /* ---- dates and times ---- */
 const dayLabel = d => { const n = dayN(d) - dayN(today());
@@ -3347,7 +3360,7 @@ function calNote(){
   if (!P.events) return `<div class="card hint" style="margin-top:0">The calendar shows once this phone has synced.</div>`;
   return '';
 }
-/* a note tagged #app is an idea for the app: its own section on Home, the tag hidden */
+/* a note tagged #app is an idea for the app: the App ideas tab of the list on Home, the tag hidden */
 const APP_TAG = /(^|\s)#app\b/i;
 const isAppNote = n => noteKind(n)==='app';
 const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore)\b/ig, ' ').replace(/\s+/g, ' ').trim();
@@ -3453,18 +3466,17 @@ function pUp(){
   const nDone = P.items.filter(n=>n.done && plainNote(n)).length + (D && canP() ? checks().filter(isChecked).length : 0);
   const todo = choresOn(today()), missed = choresMissed();
   return `${wordCard()}${holHome()}
-  <h2>To do</h2>
+  <h2>${NOTE_APP ? 'App ideas' : 'To do'}</h2>
   <div class="note-add"><input class="inp" id="noteIn" placeholder="${NOTE_APP?'An idea for the app':'Add a note or reminder'}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
-  <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App improvement</button><button class="chip" onclick="openChores()">&#x1F501; Chores</button></div>
-  <div class="card notes">${missed.map(x=>choreRow(x[0], x[1])).join('')}${todo.map(c=>choreRow(c, today())).join('')}${open.map(noteRow).join('')}
-    ${!open.length && !todo.length && !missed.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
+  <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App ideas</button><button class="chip" onclick="openChores()">&#x1F501; Chores</button></div>
+  <div class="card notes">${NOTE_APP ? app.map(noteRow).join('') || '<div class="hint" style="text-align:center;padding:8px">No app ideas. Add one above.</div>' : missed.map(x=>choreRow(x[0], x[1])).join('') + todo.map(c=>choreRow(c, today())).join('') + open.map(noteRow).join('')}
+    ${!NOTE_APP && !open.length && !todo.length && !missed.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
   ${shopCard()}
   <hr class="sep">
   ${mealsCard()}
   ${homeCal()}
   ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
   ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
-  ${app.length ? `<h2>App improvements</h2><div class="card notes">${app.map(noteRow).join('')}</div>` : ''}
   ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}`;
 }
 /* a meal counts as missing from this hour of the day */
@@ -3597,7 +3609,7 @@ function addNoteNow(){
 /* the chip under the note box: what the next note is (keeps anything typed) */
 function noteTag(on){ const v = ($('#noteIn')||{}).value || ''; NOTE_APP = on; render(); const i = $('#noteIn'); if (i) i.value = v; }
 function noteSetApp(id, on){ const n = P.items.find(x=>x.id===id); if (!n) return;
-  const t = noteText(n.text); pRun('editNote', [id, on ? t + ' #app' : t], on ? 'Moved to App improvements' : 'Moved to To do'); }
+  const t = noteText(n.text); pRun('editNote', [id, on ? t + ' #app' : t], on ? 'Moved to App ideas' : 'Moved to To do'); }
 function tickNote(id, on){ const d = inDone(); pRun('setNoteDone', [id, on], null, null, true); if (d) openDone(); }
 function clearTicked(){ const keep = P.items.filter(n=>n.done && plainNote(n)), ids = keep.map(n=>n.id);
   pRun('clearDone', [ids], `Cleared ${ids.length} ticked`, ()=>keep.forEach(n=>{ pRun('addNote', [{id:newId(), text:n.text}], null, null, true); })); }
@@ -3605,7 +3617,7 @@ function openNote(id){
   const n = P.items.find(x=>x.id===id); if (!n) return;
   showSheet(`<h3>Note</h3>
     <textarea class="inp" id="noteEd" rows="3">${esc(noteText(n.text))}</textarea>
-    ${plainNote(n) ? `<div class="chips"><button class="chip ${isAppNote(n)?'':'on'}" onclick="noteSetApp('${id}', false)">To do</button><button class="chip ${isAppNote(n)?'on':''}" onclick="noteSetApp('${id}', true)">&#x1F4A1; App improvement</button></div>` : ''}
+    ${plainNote(n) ? `<div class="chips"><button class="chip ${isAppNote(n)?'':'on'}" onclick="noteSetApp('${id}', false)">To do</button><button class="chip ${isAppNote(n)?'on':''}" onclick="noteSetApp('${id}', true)">&#x1F4A1; App idea</button></div>` : ''}
     <div class="hint">Added by ${esc(n.by||'?')}${n.at ? ', ' + esc(dayLabel(n.at.slice(0,10))) : ''}${n.done && n.doneBy ? '. Ticked by ' + esc(n.doneBy) : ''}</div>
     <button class="primary" onclick="const t=$('#noteEd').value; pRun('editNote', ['${id}', ${jsA(noteKind(n))} && !TAG_RE.test(t) ? t + ' #' + ${jsA(noteKind(n))} : t], 'Saved')">Save</button>
     <button class="secondary" onclick="pRun('setNoteDone', ['${id}', ${!n.done}])">${n.done ? 'Untick it' : 'Tick it off'}</button>
