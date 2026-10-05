@@ -3370,6 +3370,7 @@ let NOTE_APP = false;
 const TAG_RE = /(^|\s)#(app|shop|pack|hol|holiday|chore)\b/i;
 const noteKind = n => { const m = String(n.text).match(TAG_RE); return m ? m[2].toLowerCase() : ''; };
 const plainNote = n => { const k = noteKind(n); return !k || k==='app'; };
+const doneNote = n => n.done && !noteKind(n);
 /* add to a tagged list; something already on it (ticked before) comes back instead of a second copy */
 function addTagged(inp, tag){
   const el = $('#' + inp), lines = String(el.value||'').split(/\n|;|,/).map(s=>s.trim()).filter(Boolean);
@@ -3463,7 +3464,7 @@ function noteRow(n){
 function pUp(){
   const all = P.items.filter(n=>!n.done).sort((a,b)=>a.at<b.at?1:-1), chk = checkTasks();
   const open = all.filter(n=>!noteKind(n)), app = all.filter(isAppNote);
-  const nDone = P.items.filter(n=>n.done && plainNote(n)).length + (D && canP() ? checks().filter(isChecked).length : 0);
+  const nDone = P.items.filter(doneNote).length + (D && canP() ? checks().filter(isChecked).length : 0);
   const todo = choresOn(today()), missed = choresMissed();
   return `${wordCard()}${holHome()}
   <h2>${NOTE_APP ? 'App ideas' : 'To do'}</h2>
@@ -3508,7 +3509,7 @@ function tickCheck(key, on){ const d = inDone();
   run('setChecked', [key, on], d ? null : on ? 'Checked, off the list' : 'Back on the list', on && !d ? ()=>run('setChecked', [key, false], 'Back on the list') : null);
   if (d) openDone(); }
 function openDone(){
-  const notes = P.items.filter(n=>n.done && plainNote(n)).sort((a,b)=>a.doneAt<b.doneAt?1:-1), ch = D && canP() ? checks().filter(isChecked) : [];
+  const notes = P.items.filter(doneNote).sort((a,b)=>a.doneAt<b.doneAt?1:-1), ch = D && canP() ? checks().filter(isChecked) : [];
   showSheet(`<h3 id="doneSheet" style="margin:0 0 8px">Done</h3>
     ${notes.length ? `<div class="card notes">${notes.map(noteRow).join('')}</div>` : ''}
     ${ch.length ? `<h3 style="margin:16px 0 8px">Payments checked</h3><div class="card notes">${ch.map(f=>`<div class="note-row done"><button class="tick" aria-label="Untick" onclick="tickCheck(${jsA(f.key)}, false)">${TICK_SVG}</button>
@@ -3611,7 +3612,7 @@ function noteTag(on){ const v = ($('#noteIn')||{}).value || ''; NOTE_APP = on; r
 function noteSetApp(id, on){ const n = P.items.find(x=>x.id===id); if (!n) return;
   const t = noteText(n.text); pRun('editNote', [id, on ? t + ' #app' : t], on ? 'Moved to App ideas' : 'Moved to To do'); }
 function tickNote(id, on){ const d = inDone(); pRun('setNoteDone', [id, on], null, null, true); if (d) openDone(); }
-function clearTicked(){ const keep = P.items.filter(n=>n.done && plainNote(n)), ids = keep.map(n=>n.id);
+function clearTicked(){ const keep = P.items.filter(doneNote), ids = keep.map(n=>n.id);
   pRun('clearDone', [ids], `Cleared ${ids.length} ticked`, ()=>keep.forEach(n=>{ pRun('addNote', [{id:newId(), text:n.text}], null, null, true); })); }
 function openNote(id){
   const n = P.items.find(x=>x.id===id); if (!n) return;
