@@ -1008,7 +1008,7 @@ function render(){
 }
 
 function vHome(){
-  return `${winsCard()}${bankDue()}${statementDue()}${inOutCard()}`;
+  return `${winsCard()}${bankDue()}${inOutCard()}`;
 }
 
 /* Pots: the family pot and the four pots, then their history or the monthly top-ups */
@@ -1129,26 +1129,6 @@ function wordsTopUp(){
   api('getWords', addDays(t, -WORDS_BACK), WORDS_BACK + 15).then(got=>{
     try { localStorage.setItem(WORDS_KEY, JSON.stringify(got)); localStorage.setItem(WORDS_KEY + '-day', t); } catch(e) {}
     if (shown(got) !== shown(l) && onHome()) render(); }).catch(()=>{});
-}
-
-/* Monthly nudge: from the 5th, ask for the next Santander export until the statement reaches the last few days
-   of the month before (a quiet day or two at the end of a month should not keep it showing) */
-function statementDue(){
-  const tx = D.transactions||[]; if(!tx.length) return '';
-  const last = tx.reduce((a,t)=>t.balance!=null&&t.date>a?t.date:a,''); if (!last) return '';
-  const age = Math.floor((dOf(today())-dOf(last))/864e5);
-  const prevEnd = dOf(today().slice(0,7)+'-01'); if (+today().slice(8) < 5) prevEnd.setMonth(prevEnd.getMonth()-1);
-  prevEnd.setDate(prevEnd.getDate()-4);
-  if (last > iso(prevEnd)) return '';
-  // each export stops at 600 transactions, so ask for 4 months at a time; windows share a day, which the import removes
-  const f = x => dOf(x).toLocaleDateString('en-GB'), wins = [];
-  for (let a = last; a < today(); ){ const e = dOf(a); e.setMonth(e.getMonth()+4); const b = iso(e) < today() ? iso(e) : today(); wins.push([a,b]); a = b; }
-  return `<div class="due"><b>Time for a new bank statement</b>
-    <span class="hint" style="margin:0">The latest transaction is from ${dateY(last)}, ${age} days ago.</span>
-    <ol><li>Santander online banking → View transactions → Download transactions</li>
-      <li>Microsoft Excel (XLS), ${wins.length>1?wins.length+' exports:':'from'} ${wins.map(([a,b])=>`<b>${f(a)}</b> to <b>${f(b)}</b>`).join(', then ')}</li>
-      <li>${canP()?'Upload it here: the app adds it, sorts it and pays the top-ups':'Ask Tom to upload it'}</li></ol>
-    ${canP()?`<button class="primary" style="--c:var(--tom)" onclick="pickStatements()">Upload statement</button>`:''}</div>`;
 }
 
 /* Whose money is in the bank: ours vs held for Grandma & Grandad (Parent Savings H2 / F2) */
@@ -3477,7 +3457,7 @@ function pUp(){
   <hr class="sep">
   ${mealsCard()}
   ${homeCal()}
-  ${D ? statementDue() : ''}${H ? eatingWatch() + weighDue() : ''}
+  ${H ? eatingWatch() + weighDue() : ''}
   ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
   ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}`;
 }
