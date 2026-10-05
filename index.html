@@ -846,15 +846,6 @@ async function connectBank(){
   } catch(e){ toast('⚠ ' + (e.message || e)); }
   finally{ if (--pendingN === 0) working(false); }
 }
-/* Money home: the link is about to run out, or the last check stopped */
-function bankDue(){
-  const b = D.bank; if (!b || !b.validUntil) return '';
-  const left = bankLeft(), err = b.auto && b.last && b.last.err;
-  if (left > 10 && !err) return '';
-  return `<div class="due"><b>${left < 0 ? 'The Santander link ran out' : left <= 10 ? `The Santander link runs out in ${left} day${left===1?'':'s'}` : 'The bank check stopped'}</b>
-    <span class="hint" style="margin:0">${err && left > 10 ? esc(b.last.err) : 'Connect again to keep new payments coming in by themselves.'}</span>
-    ${left <= 10 ? `<button class="primary" onclick="connectBank()">Connect Santander</button>` : ''}</div>`;
-}
 async function startSpendCal(){
   if (!canSend()) return toast('Needs a signal');
   toast('Putting our spending on the calendar. This takes a few minutes.');
@@ -1008,7 +999,7 @@ function render(){
 }
 
 function vHome(){
-  return `${winsCard()}${bankDue()}${inOutCard()}`;
+  return `${winsCard()}${inOutCard()}`;
 }
 
 /* Pots: the family pot and the four pots, then their history or the monthly top-ups */
