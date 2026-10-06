@@ -28,12 +28,13 @@
   --hero:#0E0E13; --glow:rgba(124,92,255,.55);
   --pos:#1E8449; --neg:#C0392B; --shadow:none;
   --sugg:#FFF4CC; --sugg-line:#D9A520; --sugg-t:#5C4400;
+  --hol:#E0A800; --hol-t:#7A5A00; --meal-none:#4A4A52;
 }
 @media (prefers-color-scheme: dark){
   :root{ color-scheme:dark; --bg:#08080A; --card:#121216; --card-2:#18181D; --text:#F3F3F5; --muted:#8E8E9A; --line:#24242B;
     --family:#7C5CFF; --family-2:#9B85FF; --hero:#101016; --glow:rgba(124,92,255,.45);
     --tom-t:#3A2A1A; --laura-t:#3A1F1C; --nathan-t:#1A3325; --evy-t:#1A2C3A; --pos:#58D68D; --neg:#F1948A;
-    --sugg:#2B2410; --sugg-line:#8C6D1C; --sugg-t:#F4D77E; }
+    --sugg:#2B2410; --sugg-line:#8C6D1C; --sugg-t:#F4D77E; --hol:#E8B830; --hol-t:#F4D77E; --meal-none:#5A5A64; }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 button,a,[onclick]{touch-action:manipulation}
@@ -157,8 +158,7 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .meal-table .slot .nt{font-size:12px;color:var(--muted);font-style:italic;line-height:1.3;margin-top:2px}
 .meal-table .slot.free .add{margin:auto 0;font-size:12px}
 .meal-table .quick-drink{margin-top:4px;padding:4px 6px;font-size:12px}
-.meal-table .qm small{font-size:10px}.meal-table .qm span{-webkit-line-clamp:1}
-.slot{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:78px;text-align:left;font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-left:3px solid var(--c);border-radius:var(--r-sm);padding:9px 11px;cursor:pointer;min-width:0}
+.slot{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:78px;text-align:left;font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-left:3px solid var(--eat,var(--meal-none));border-radius:var(--r-sm);padding:9px 11px;cursor:pointer;min-width:0}
 .slot .who{display:flex;justify-content:space-between;width:100%;font-size:var(--fs-small);color:var(--muted);font-weight:600}
 .slot .f{font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:100%}
 .slot .k{margin-top:auto;font-size:var(--fs-small);color:var(--muted);font-variant-numeric:tabular-nums}
@@ -171,7 +171,6 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .mini-seg button{border:0;background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--muted);padding:5px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
 .mini-seg button.on{background:var(--text);color:var(--bg)}
 .am-added{background:var(--card-2);border-radius:var(--r-sm);padding:8px 12px;margin:0 0 10px;font-size:var(--fs-small);font-weight:600}
-.quick-drink.qm{white-space:normal;background:var(--sugg);border-color:var(--sugg-line);color:var(--sugg-t)}.qm small{display:block;font-weight:500;color:inherit;opacity:.75;font-size:11px}.qm span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .quick-drink{border:1px dashed var(--line);background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--text);border-radius:var(--r-sm);padding:7px 8px;margin-top:6px;cursor:pointer;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot-wrap{display:flex;flex-direction:column;min-width:0}.slot-wrap .slot{flex:1}
 .part-eat{padding:10px 0;border-bottom:1px solid var(--line)}.part-eat .chips{margin:6px 0 0}.pe-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.pe-h span{font-size:var(--fs-small)}
@@ -248,12 +247,13 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
 .note-row.done .note-t small{text-decoration:none}
-.done-link{border:0;background:none;font:inherit;font-size:var(--fs-small);color:var(--muted);text-decoration:underline;padding:10px 12px 0;cursor:pointer}
-.shop-got>summary{list-style:none;text-align:center;padding-bottom:10px}.shop-got>summary::-webkit-details-marker{display:none}
+.shop-got,.done-list{margin-top:10px}.sub-h{font-size:var(--fs-small);font-weight:700;color:var(--muted);margin:14px 2px 6px}
 .notes .iron{margin:0;padding:12px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}.remind{padding:8px 0;border-bottom:1px solid var(--line)}.remind:last-child{border-bottom:0}
 .remind-t{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;font-weight:600;color:var(--text);text-align:left;padding:4px 0;cursor:pointer}.remind-t .chev{margin-left:auto}
 .cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.cal-top b{font-size:15px}
-.cal-d.has{background:color-mix(in srgb,var(--family-2) 16%,var(--card-2))}.cal-d.has span{color:var(--family-2)}.cal-d.past{opacity:.55}.cal-d.exp{border:1px dashed var(--laura)}
+.cal-d.has{background:color-mix(in srgb,var(--family-2) 16%,var(--card-2))}.cal-d.has span{color:var(--family-2)}
+.cal-d.hol{background:color-mix(in srgb,var(--hol) 22%,var(--card-2));border-color:var(--hol)}.cal-d.hol b{color:var(--hol-t)}.cal-fb{font-size:11px;font-style:normal}
+.item.ev.ev-hol{background:color-mix(in srgb,var(--hol) 16%,transparent);box-shadow:inset 3px 0 0 var(--hol);margin:0 -10px;padding-left:13px;padding-right:10px;border-radius:0 10px 10px 0}.ev-hol .t{font-weight:700}.ev-ic{font-style:normal;margin-right:6px;font-size:13px}.cal-d.past{opacity:.55}.cal-d.exp{border:1px dashed var(--laura)}
 .kind{display:block;width:100%;text-align:left;font:inherit;color:var(--text);margin-top:12px;cursor:pointer}
 .kind-h{display:flex;justify-content:space-between;align-items:center;font-size:16px}
 .kind-next{margin-top:6px;font-weight:600;color:var(--family-2);font-size:var(--fs-small)}
@@ -2386,9 +2386,7 @@ function slotGrid(day){
   return `<div class="meal-table" style="--cols:${EATERS.length}">${head ? '<div class="mt-corner"></div>' + head : ''}` + ALL_SLOTS.map(sl=>{
     const had = n => day.filter(e=>e.person===n && e.meal===sl), empty = EATERS.filter(n=>!had(n).length), drinks = sl==='Drinks';
     const cells = EATERS.map(n=>{ const box = slotBox(n, sl, had(n), drinks);
-      if (!drinks){ const g = had(n).length ? null : quickMeal(n, sl);
-        const [gk, gw] = g ? g.label.split(/: (.*)/s) : [];
-        return g ? `<div class="slot-wrap">${box}<button class="quick-drink qm" onclick="quickMealAdd('${n}','${sl}')"><small>${esc(gk)}</small><span>+ ${esc(gw)}</span></button></div>` : box; }
+      if (!drinks) return box;
       const q = quickDrink(n);
       return q ? `<div class="slot-wrap">${box}<button class="quick-drink" onclick="quickAdd('${n}')">+ ${COFFEE.test(q.name)?'&#x2615;':'&#x1F964;'} ${esc(q.name)}</button></div>` : box; }).join('');
     return `<div class="slot-row"><div class="slot-h"><span class="mt-i">${SLOT_ICON[sl]}</span><span>${sl}</span>
@@ -2399,8 +2397,10 @@ function slotBox(n, sl, l, drinks){
   const names = drinks ? Object.entries(l.reduce((m,e)=>(m[e.food]=(m[e.food]||0)+1, m), {})).map(([f,c])=>f+(c>1?' \u00d7'+c:'')) : null;
   const ate = e => e.food==='Skipped' ? '' : e.eaten <= 0.001 ? 'none' : e.eaten < 0.995 ? Math.round(e.eaten*100) + '%' : 'all';
   const notes = drinks ? [] : [...new Set(l.map(e=>(e.note||'').trim()).filter(Boolean))];
+  /* the left edge says how much was eaten: red for skipped or none, through amber, to green for all of it */
+  const pc = drinks ? 1 : l.reduce((a,e)=>a+(e.food==='Skipped' ? 0 : Math.min(1, e.eaten)), 0) / (l.length||1);
   return l.length
-    ? `<button class="slot on ${!drinks && l.every(e=>e.food==='Skipped' || e.eaten<=0.05) ? 'left' : ''}" style="--c:${COLOR[n]}" onclick="${drinks?`openDrinks('${n}')`:`openSlot('${n}','${sl}')`}"><span class="who">${n}</span>
+    ? `<button class="slot on ${!drinks && l.every(e=>e.food==='Skipped' || e.eaten<=0.05) ? 'left' : ''}" style="--c:${COLOR[n]};--eat:hsl(${Math.round(pc*120)} 62% 44%)" onclick="${drinks?`openDrinks('${n}')`:`openSlot('${n}','${sl}')`}"><span class="who">${n}</span>
         ${drinks ? `<span class="f">${esc(names.join(', '))}</span>` : l.map(e=>`<span class="f it"><span>${esc(e.food+qtyTag(e))}</span>${ate(e)?`<span class="ate ${ate(e)==='all'?'':'some'}">${ate(e)}</span>`:''}</span>`).join('')}
         ${notes.map(x=>`<span class="nt">${esc(x)}</span>`).join('')}</button>`
     : `<button class="slot free" style="--c:${COLOR[n]}" onclick="${drinks?`openDrinks('${n}')`:`openSlot('${n}','${sl}')`}"><span class="who">${n}</span><span class="add">+ Add${drinks?' a drink':''}</span></button>`;
@@ -3283,11 +3283,14 @@ function pRender(){
   wordPlace();
 }
 const evCol = e => /^#[0-9a-fA-F]{3,8}$/.test(e.color||'') ? e.color : 'var(--family-2)';
+/* a public holiday (Google's holiday calendars, not the clock change) and a Spurs game stand out */
+const isHol = e => /#holiday@group\.v\.calendar\.google\.com$/.test(e.calId||'') && !/daylight saving/i.test(e.title);
+const isSpurs = e => /tottenham|spurs/i.test(e.calName||'');
 function evRow(e, showDay){
   const k = jsA({id:e.id, start:e.start, cid:e.cid});
-  return `<button class="item tap ev" onclick="openEvent(${k})">
+  return `<button class="item tap ev ${isHol(e)?'ev-hol':''}" onclick="openEvent(${k})">
     <div class="ev-when">${showDay ? `<b>${esc(dayLabel(evDay(e)))}</b>` : ''}<span>${e.allDay ? 'All day' : esc(hhmm(e.start))}</span></div>
-    <div class="mid"><div class="t"><i class="ev-dot" style="background:${evCol(e)}"></i>${esc(e.title)}</div>${e.loc || (!e.allDay && showDay) ? `<div class="d">${esc(e.loc || evWhen(e))}</div>` : ''}</div><span class="chev">&nbsp;&rsaquo;</span></button>`;
+    <div class="mid"><div class="t">${isSpurs(e) ? '<i class="ev-ic">&#x26BD;</i>' : isHol(e) ? '<i class="ev-ic">&#x1F389;</i>' : `<i class="ev-dot" style="background:${evCol(e)}"></i>`}${esc(e.title)}</div>${e.loc || (!e.allDay && showDay) ? `<div class="d">${esc(e.loc || evWhen(e))}</div>` : ''}</div><span class="chev">&nbsp;&rsaquo;</span></button>`;
 }
 function calNote(){
   if (P.cal && P.cal.err) return `<div class="card hint" style="margin-top:0">Calendar not connected: ${esc(P.cal.err)}${REMOTE ? ` <button class="linkish" onclick="signIn(false)">Sign in again</button>` : ''}</div>`;
@@ -3316,17 +3319,19 @@ function addTagged(inp, tag){
 }
 const tagInput = (inp, tag, ph) => `<div class="note-add"><input class="inp" id="${inp}" placeholder="${ph}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addTagged('${inp}','${tag}')}"><button class="chip on" onclick="addTagged('${inp}','${tag}')">Add</button></div>`;
 const byAt = (a,b) => a.at<b.at ? -1 : 1;
-/* the shopping list: what we need; what was bought sits under a folded "Bought (n)", newest first, no repeats; untick to add again */
-let SHOP_OPEN = false;
+/* the shopping list: what we need; "Bought (n)" on the title row opens what was bought under it, newest first, no repeats; untick to add again */
+let SHOP_OPEN = false, DONE_OPEN = false;
+/* a list's title with its Done / Bought switch on the right */
+const foldHead = (title, k, on, label, n) => `<div class="sec-h"><h2>${title}</h2>${n ? `<button class="link fold-btn" aria-expanded="${on}" onclick="homeFold('${k}')">${label} (${n}) ${on ? '&#9652;' : '&#9662;'}</button>` : ''}</div>`;
+function homeFold(k){ const y = scrollY; if (k==='SHOP_OPEN') SHOP_OPEN = !SHOP_OPEN; else DONE_OPEN = !DONE_OPEN; render(); scrollTo(0, y); }
 function shopCard(){
   const l = P.items.filter(n=>noteKind(n)==='shop'), need = l.filter(n=>!n.done).sort(byAt), seen = new Set();
   const got = l.filter(n=>n.done).sort((a,b)=>a.doneAt<b.doneAt?1:-1)
     .filter(n=>{ const k = noteText(n.text).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 30);
-  return `<h2>Shopping list</h2>
+  return `${foldHead('Shopping list', 'SHOP_OPEN', SHOP_OPEN, 'Bought', got.length)}
   ${tagInput('shopIn', 'shop', 'e.g. Dishwasher tabs')}
   ${need.length ? `<div class="card notes">${need.map(noteRow).join('')}</div>` : ''}
-  ${got.length ? `<details class="shop-got" ${SHOP_OPEN?'open':''} ontoggle="SHOP_OPEN=this.open"><summary class="done-link">Bought (${got.length})</summary>
-    <div class="card notes">${got.map(noteRow).join('')}</div><div class="hint">Untick one to put it back on the list.</div></details>` : ''}`;
+  ${got.length && SHOP_OPEN ? `<div class="shop-got"><div class="card notes">${got.map(noteRow).join('')}</div><div class="hint">Untick one to put it back on the list.</div></div>` : ''}`;
 }
 /* ---- the holiday ---- */
 const HOL_RE = /#holiday (\d{4}-\d{2}-\d{2})(?: (\d{4}-\d{2}-\d{2}))?/i;
@@ -3401,18 +3406,18 @@ function pUp(){
   const nDone = P.items.filter(doneNote).length + (D && canP() ? checks().filter(isChecked).length : 0);
   const todo = choresOn(today()), missed = choresMissed();
   return `${wordCard()}${holHome()}
-  <h2>${NOTE_APP ? 'App ideas' : 'To do'}</h2>
+  ${NOTE_APP ? '<h2>App ideas</h2>' : foldHead('To do', 'DONE_OPEN', DONE_OPEN, 'Done', nDone)}
   <div class="note-add"><input class="inp" id="noteIn" placeholder="${NOTE_APP?'An idea for the app':'Add a note or reminder'}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addNoteNow()}"><button class="chip on" onclick="addNoteNow()">Add</button></div>
   <div class="chips note-tag"><button class="chip ${NOTE_APP?'':'on'}" onclick="noteTag(false)">To do</button><button class="chip ${NOTE_APP?'on':''}" onclick="noteTag(true)">&#x1F4A1; App ideas</button><button class="chip" onclick="openChores()">&#x1F501; Chores</button></div>
   <div class="card notes">${NOTE_APP ? app.map(noteRow).join('') || '<div class="hint" style="text-align:center;padding:8px">No app ideas. Add one above.</div>' : missed.map(x=>choreRow(x[0], x[1])).join('') + todo.map(c=>choreRow(c, today())).join('') + open.map(noteRow).join('')}
     ${!NOTE_APP && !open.length && !todo.length && !missed.length ? '<div class="hint" style="text-align:center;padding:8px">Nothing to do. Add a note above.</div>' : ''}</div>
+  ${!NOTE_APP && nDone && DONE_OPEN ? doneList() : ''}
   ${shopCard()}
   <hr class="sep">
   ${mealsCard()}
   ${homeCal()}
   ${H ? eatingWatch() + weighDue() : ''}
-  ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}
-  ${nDone ? `<div style="text-align:center"><button class="done-link" onclick="openDone()">Done (${nDone})</button></div>` : ''}`;
+  ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}`;
 }
 /* a meal counts as missing from this hour of the day */
 const MEAL_DUE = [['Breakfast', 10], ['Lunch', 14], ['Dinner', 19]];
@@ -3438,18 +3443,17 @@ function checkTask(f){
   return `<div class="note-row"><button class="tick" aria-label="Tick" onclick="tickCheck(${jsA(f.key)}, true)"></button>
     <button class="note-t" onclick="openCheck(${jsA(f.key)})">${CHK_ICON[f.kind]} ${esc(f.title)}<small>Worth checking &middot; ${esc(f.sub)} &middot; ${gbp(f.amt)}</small></button></div>`;
 }
-const inDone = () => sheetShown() && !!document.getElementById('doneSheet');
-function tickCheck(key, on){ const d = inDone();
-  run('setChecked', [key, on], d ? null : on ? 'Checked, off the list' : 'Back on the list', on && !d ? ()=>run('setChecked', [key, false], 'Back on the list') : null);
-  if (d) openDone(); }
-function openDone(){
+function tickCheck(key, on){
+  run('setChecked', [key, on], on ? 'Checked, off the list' : 'Back on the list', on ? ()=>run('setChecked', [key, false], 'Back on the list') : null); }
+/* what was done, under the To do list once "Done (n)" on its title row is tapped */
+function doneList(){
   const notes = P.items.filter(doneNote).sort((a,b)=>a.doneAt<b.doneAt?1:-1), ch = D && canP() ? checks().filter(isChecked) : [];
-  showSheet(`<h3 id="doneSheet" style="margin:0 0 8px">Done</h3>
+  return `<div class="done-list">
     ${notes.length ? `<div class="card notes">${notes.map(noteRow).join('')}</div>` : ''}
-    ${ch.length ? `<h3 style="margin:16px 0 8px">Payments checked</h3><div class="card notes">${ch.map(f=>`<div class="note-row done"><button class="tick" aria-label="Untick" onclick="tickCheck(${jsA(f.key)}, false)">${TICK_SVG}</button>
+    ${ch.length ? `<div class="sub-h">Payments checked</div><div class="card notes">${ch.map(f=>`<div class="note-row done"><button class="tick" aria-label="Untick" onclick="tickCheck(${jsA(f.key)}, false)">${TICK_SVG}</button>
       <button class="note-t" onclick="openCheck(${jsA(f.key)})">${esc(f.title)}<small>${esc(f.sub)}</small></button></div>`).join('')}</div>` : ''}
-    ${!notes.length && !ch.length ? '<div class="empty">Nothing done yet.</div>' : '<div class="hint">Untick one to put it back on the list.</div>'}
-    ${notes.length ? `<button class="secondary" onclick="clearTicked()">Clear the ticked notes (${notes.length})</button>` : ''}`);
+    <div class="hint">Untick one to put it back on the list.</div>
+    ${notes.length ? `<button class="secondary" onclick="clearTicked()">Clear the ticked notes (${notes.length})</button>` : ''}</div>`;
 }
 /* the shared calendar as a month: a dot for each thing on, tap a day to see it or add to it */
 let HCM = today().slice(0, 7);
@@ -3459,8 +3463,8 @@ const dayEvents = d => (P.events||[]).filter(e=>evOn(e, d)).sort((a,b)=>a.allDay
 function calMonth(due){
   const t = today(), first = dOf(HCM + '-01'), lead = (first.getDay() + 6) % 7, n = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   const days = Array.from({length:n}, (_, i)=>HCM + '-' + String(i + 1).padStart(2, '0'));
-  const cells = Array(lead).fill('<span></span>').concat(days.map(d=>{ const k = dayEvents(d);
-    return `<button class="cal-d ${d===t?'now':''} ${k.length?'has':''} ${d<t?'past':''} ${due.some(x=>x.next===d)?'exp':''}" onclick="openCalDay('${d}')"><b>${+d.slice(8)}</b>${spendByDay()[d] ? `<em class="cal-s">&pound;</em>` : ''}<span>${k.length ? '<i>&bull;</i>' : ''}</span></button>`; })).join('');
+  const cells = Array(lead).fill('<span></span>').concat(days.map(d=>{ const k = dayEvents(d), hol = k.some(isHol), fb = k.some(isSpurs);
+    return `<button class="cal-d ${d===t?'now':''} ${k.length?'has':''} ${hol?'hol':''} ${d<t?'past':''} ${due.some(x=>x.next===d)?'exp':''}" onclick="openCalDay('${d}')"><b>${+d.slice(8)}</b>${spendByDay()[d] ? `<em class="cal-s">&pound;</em>` : ''}<span>${fb ? '<i class="cal-fb">&#x26BD;</i>' : k.length ? '<i>&bull;</i>' : ''}</span></button>`; })).join('');
   return `<div class="card cal"><div class="cal-top"><button class="icon-btn" onclick="HCM=shiftMonth(HCM,-1);render()" ${HCM<=calMin()?'disabled':''} aria-label="Month before">&lsaquo;</button>
       <button class="cal-mon" onclick="openMonthPick()">${esc(monthName(HCM))} &#9662;</button><button class="icon-btn" onclick="HCM=shiftMonth(HCM,1);render()" ${HCM>=shiftMonth(t.slice(0,7),3)?'disabled':''} aria-label="Month after">&rsaquo;</button></div>
     <div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div></div>`;
@@ -3478,8 +3482,7 @@ function homeCal(){
     ${ev.slice(0,10).map(e=>{ const d = evDay(e), f = d!==last; last = d; return evRow(e, f); }).join('')}
     ${!ev.length && !due.length ? `<div class="empty">Nothing on in the next 60 days.</div>` : ''}
     <button class="link-btn" onclick="openAddEvent()">+ Add to the calendar</button>
-  </div>
-  ${calMonth(due)}`;
+  </div>`;
 }
 function openCalDay(d){
   const l = dayEvents(d), sp = (spendByDay()[d]||[]).slice().sort((a,b)=>a.amount-b.amount), tot = sp.reduce((a,t)=>a-t.amount, 0);
@@ -3545,7 +3548,7 @@ function addNoteNow(){
 function noteTag(on){ const v = ($('#noteIn')||{}).value || ''; NOTE_APP = on; render(); const i = $('#noteIn'); if (i) i.value = v; }
 function noteSetApp(id, on){ const n = P.items.find(x=>x.id===id); if (!n) return;
   const t = noteText(n.text); pRun('editNote', [id, on ? t + ' #app' : t], on ? 'Moved to App ideas' : 'Moved to To do'); }
-function tickNote(id, on){ const d = inDone(); pRun('setNoteDone', [id, on], null, null, true); if (d) openDone(); }
+function tickNote(id, on){ pRun('setNoteDone', [id, on], null, null, true); }
 function clearTicked(){ const keep = P.items.filter(doneNote), ids = keep.map(n=>n.id);
   pRun('clearDone', [ids], `Cleared ${ids.length} ticked`, ()=>keep.forEach(n=>{ pRun('addNote', [{id:newId(), text:n.text}], null, null, true); })); }
 function openNote(id){
@@ -3869,6 +3872,16 @@ SH.addEventListener('touchend', ()=>{ if (sY0 == null) return; SH.style.transiti
 let eX0 = null, eY0 = 0;
 document.addEventListener('touchstart', e=>{ const t = e.touches[0]; eX0 = t.clientX < 28 && !sheetShown() ? t.clientX : null; eY0 = t.clientY; }, {passive:true});
 document.addEventListener('touchend', e=>{ if (eX0 == null) return; const t = e.changedTouches[0]; if (t.clientX - eX0 > 80 && Math.abs(t.clientY - eY0) < 60) goBack(); eX0 = null; }, {passive:true});
+/* swipe left or right across the page: the next or previous of Home, Money, Health. Not from the left edge (that is
+   back), a pop-up, a chart, a slider or box, or a row that scrolls sideways */
+let wX0 = null, wY0 = 0, wT0 = 0;
+const sideScroll = el => { for (; el && el !== document.body; el = el.parentElement) if (el.scrollWidth > el.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return true; return false; };
+document.addEventListener('touchstart', e=>{ const t = e.touches[0], g = e.target;
+  wX0 = e.touches.length===1 && t.clientX >= 28 && !sheetShown() && !g.closest('svg,input,textarea,select,.sheet') && !sideScroll(g) ? t.clientX : null; wY0 = t.clientY; wT0 = Date.now(); }, {passive:true});
+document.addEventListener('touchend', e=>{ if (wX0 == null) return; const t = e.changedTouches[0], dx = t.clientX - wX0, dy = t.clientY - wY0; wX0 = null;
+  if (Math.abs(dx) < 70 || Math.abs(dy) > 50 || Math.abs(dx) < 2 * Math.abs(dy) || Date.now() - wT0 > 700) return;
+  const tabs = ['plans','money','health'], m = tabs[tabs.indexOf(MODE) + (dx < 0 ? 1 : -1)];
+  if (m === 'plans') pgo('up'); else if (m) setMode(m); }, {passive:true});
 
 
 let toastT;
