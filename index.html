@@ -133,8 +133,6 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .ff-total{padding:8px 2px;font-size:18px}.ff-total .muted{font-size:var(--fs-small)}
 .opt{text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)}
 .link-btn{display:block;width:100%;border:1px dashed var(--line);background:none;color:var(--text);font:inherit;font-weight:600;padding:12px;border-radius:var(--r-sm);margin:10px 0 0;cursor:pointer}
-.take-add{display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left}
-.due.take .secondary,.due.take .primary{margin-top:8px}
 .stepper{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px}
 .stepper b{text-align:center;font-size:20px}
 .slot-row{margin-top:14px}
@@ -2210,7 +2208,6 @@ function hToday(){
     <button class="icon-btn" onclick="HD=addDays(HD,1);render()" ${isToday?'disabled':''} aria-label="Day after">›</button></div>
   ${ironCard(HD)}
   ${isToday?eatingWatch():''}
-  ${takeawayCard(HD)}
   <h2>${isToday?"Today's":dayLabel+"'s"} meals</h2>
   ${slotGrid(day)}
   ${dayNoteHTML()}
@@ -2407,7 +2404,9 @@ function slotBox(n, sl, l, drinks){
 }
 /* one tap for the drink they have most: a coffee for an adult unless something else is their usual */
 const COFFEE = /coffee|latte|cappuccino|flat white|americano|espresso|mocha/i;
+const NO_USUAL = ['Nathan'];   // no single usual meal or drink, so no one-tap shortcuts
 function quickDrink(n){
+  if (NO_USUAL.includes(n)) return null;
   const t = topFoods(e=>e.person===n && e.meal==='Drinks' && e.date>=addDays(today(),-60), 5), adult = (ageYears(n)??99) >= 16;
   const pick = (adult && t.find(f=>COFFEE.test(f.name))) || t[0];
   if (pick) return {name:pick.name, kcal:Math.round(pick.one), veg:pick.veg||0};
@@ -2415,6 +2414,7 @@ function quickDrink(n){
 }
 /* the meal to offer in one tap: what they had for it the day before, else what they have most for it lately */
 function quickMeal(n, sl){
+  if (NO_USUAL.includes(n)) return null;
   const prev = addDays(HD, -1), y = H.meals.filter(e=>e.person===n && e.meal===sl && e.date===prev && e.food!=='Skipped');
   if (y.length) return {label:'Same as yesterday: ' + y.map(e=>e.food).join(', '), rows:y.map(e=>({food:e.food, one:(e.served||e.kcal)/(e.portion||1), portion:e.portion||1, veg:e.veg||0, group:e.group||'Meal'}))};
   const t = topFoods(e=>e.person===n && e.meal===sl && e.food!=='Skipped' && e.date>=addDays(HD,-30) && e.date<HD, 1)[0];
@@ -2876,7 +2876,6 @@ const foodRow = f => `<button class="item food" onclick="foodDetail(${jsA(f.name
   <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">Had ${f.n} time${f.n>1?'s':''} &middot; last ${esc(agoF(f.last))}</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`;
 /* ---- takeaway days from the bank. A card payment posts the day after, so the meal was the day before
    (147 of 152 takeaway payments checked); PayPal rows carry their own day. ---- */
-const normPlace = s => String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const niceName = s => String(s||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
 const jsA = v => esc(JSON.stringify(v));
 function bankTakeaways(from, to){
@@ -2885,37 +2884,9 @@ function bankTakeaways(from, to){
     .map(t=>({date: /^PayPal/.test(t.note||'') ? t.date : addDays(t.date,-1), merchant:t.merchant, amount:-t.amount}))
     .filter(t=>t.date>=from && t.date<=to);
 }
-function placeMatch(f, merchant){ const a = normPlace(f.place), b = normPlace(merchant); return !!a && !!b && (b.includes(a) || a.includes(b)); }
 function recentPlaces(){
   const c = {}; bankTakeaways(addDays(today(),-540), today()).forEach(t=>{ const k = niceName(t.merchant); c[k] = (c[k]||0)+1; });
   return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>x[0]);
-}
-const orderPortion = (f, n) => f.person ? 1 : usualPortion(n);
-const orderKcal = (f, n) => Math.round(f.kcal*orderPortion(f, n));
-function takeawayCard(d){
-  const pays = bankTakeaways(d, d); if (!pays.length) return '';
-  const had = H.meals.filter(e=>e.date===d && e.group==='Takeaway');
-  return pays.map(p=>{
-    const place = niceName(p.merchant), todo = EATERS.filter(n=>!had.some(e=>e.person===n));
-    const picks = todo.map(n=>{ const o = lastOrder(n, p.merchant, d); return o ? [n, o] : null; }).filter(Boolean);
-    return `<div class="due take" style="--due:var(--laura)"><b>&#x1F35F; Takeaway day: ${esc(place)} <span class="muted" style="font-weight:500">${gbp(p.amount)}</span></b>
-      <span class="hint" style="margin:0">From the bank statement${had.length?'. Logged: '+esc(had.map(e=>e.person+', '+e.food).join(' · ')):''}.</span>
-      ${picks.map(pk=>`<button class="secondary take-add" onclick="addOrders('${d}',${jsA([pk])})"><span>Add ${esc(pk[0])}'s last order: <b>${esc(pk[1].food)}</b></span></button>`).join('')}
-      ${picks.length>1?`<button class="primary" onclick="addOrders('${d}',${jsA(picks)})">Add both</button>`:''}
-      ${todo.length?`<button class="secondary" onclick="HD='${d}';openAddMeal(null,'Dinner')">Pick what we had</button>`:''}
-    </div>`; }).join('');
-}
-/* what n had the last time we paid that place, else an order saved for it before */
-function lastOrder(n, merchant, d){
-  const k = normPlace(merchant), days = new Set(bankTakeaways(addDays(d,-730), addDays(d,-1)).filter(p=>normPlace(p.merchant).slice(0,10)===k.slice(0,10)).map(p=>p.date));
-  const l = H.meals.filter(e=>e.person===n && e.group==='Takeaway' && days.has(e.date)).sort((a,b)=>a.date<b.date?1:-1), e = l[0];
-  if (e){ const same = l.filter(x=>x.date===e.date && x.meal===e.meal); return {food:same.map(x=>x.food).join(', '), rows:same.map(x=>({food:x.food, kcal:Math.round(x.served||x.kcal), portion:x.portion||1, veg:x.veg||0, meal:x.meal}))}; }
-  const f = H.foods.find(f=>placeMatch(f, merchant) && f.person===n) || H.foods.find(f=>placeMatch(f, merchant) && !f.person);
-  return f ? {food:f.name, rows:[{food:f.name, kcal:orderKcal(f,n), portion:orderPortion(f,n), veg:f.veg||0, meal:f.slot||'Dinner'}]} : null;
-}
-function addOrders(d, pairs){   // pairs = [[person, lastOrder()]]
-  const list = [].concat(...pairs.map(([n,o])=>o.rows.map(r=>({date:d, person:n, meal:r.meal, food:r.food, kcal:r.kcal, served:r.kcal, portion:r.portion, veg:r.veg, group:'Takeaway'}))));
-  hRun('addMeals', [list, null], list.length>1 ? 'Added for both' : `Added ${list[0].person}'s ${list[0].food}`, raw=>hRun('deleteMeal',[raw.batch],'Undone'));
 }
 
 /* ---- health settings ---- */
