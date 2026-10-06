@@ -3261,7 +3261,7 @@ function evRow(e, showDay){
   const k = jsA({id:e.id, start:e.start, cid:e.cid});
   return `<button class="item tap ev ${isHol(e)?'ev-hol':''}" onclick="openEvent(${k})">
     <div class="ev-when">${showDay ? `<b>${esc(dayLabel(evDay(e)))}</b>` : ''}<span>${e.allDay ? 'All day' : esc(hhmm(e.start))}</span></div>
-    <div class="mid"><div class="t">${isHol(e) ? '<i class="ev-ic">&#x1F389;</i>' : `<i class="ev-dot" style="background:${evCol(e)}"></i>`}${esc(e.title)}</div>${e.loc || (!e.allDay && showDay) ? `<div class="d">${esc(e.loc || evWhen(e))}</div>` : ''}</div><span class="chev">&nbsp;&rsaquo;</span></button>`;
+    <div class="mid"><div class="t">${isSpurs(e) ? '<i class="ev-ic">&#x26BD;</i>' : isHol(e) ? '<i class="ev-ic">&#x1F389;</i>' : `<i class="ev-dot" style="background:${evCol(e)}"></i>`}${esc(isSpurs(e) ? e.title.replace(/\s*\u26BD\uFE0F?\s*/g,' ').trim() : e.title)}</div>${e.loc || (!e.allDay && showDay) ? `<div class="d">${esc(e.loc || evWhen(e))}</div>` : ''}</div><span class="chev">&nbsp;&rsaquo;</span></button>`;
 }
 function calNote(){
   if (P.cal && P.cal.err) return `<div class="card hint" style="margin-top:0">Calendar not connected: ${esc(P.cal.err)}${REMOTE ? ` <button class="linkish" onclick="signIn(false)">Sign in again</button>` : ''}</div>`;
