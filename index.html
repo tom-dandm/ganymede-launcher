@@ -392,7 +392,7 @@ details.nums summary{font-size:12px;font-weight:700;color:var(--family-2);cursor
 .wins li{display:flex;gap:10px;align-items:baseline;margin:6px 0}
 .wins .wi{flex:0 0 22px;text-align:center}
 .wins b{color:var(--pos)}
-.wotd-s{display:flex;flex-direction:row-reverse;gap:10px;margin-top:14px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}.wotd-s::-webkit-scrollbar{display:none}
+.wotd-s{display:flex;flex-direction:row-reverse;align-items:flex-start;transition:height .25s ease;gap:10px;margin-top:14px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}.wotd-s::-webkit-scrollbar{display:none}
 .wotd-s .wotd{flex:0 0 100%;margin:0;scroll-snap-align:center}.wotd small i{float:right;font-style:normal}
 .hol-line{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;text-align:left;font:inherit;color:inherit;cursor:pointer}.hol-line em{font-style:normal;color:var(--muted);margin-left:auto}
 .hol-hero{display:block;width:100%;text-align:center;font:inherit;color:inherit;cursor:pointer;padding:20px 16px}.hol-hero small{display:block;font-size:var(--fs-small);color:var(--muted)}
@@ -659,7 +659,7 @@ const Mock = (() => {
     heldBase:30000, current:18500, savingsAcc:15000, ver:1
   };
   const pctOf = n => { const a=s.ages[n]; return (typeof a==='number'? Math.min(a/18,1):1)*s.adultPct; };
-  const rows = () => s.tx.map(t => s.asLaura && t.type==='parents' ? ['', '', '', '', 0, '', null] : [t.date, t.merchant, t.category, t.type, t.amount, t.note||'', t.balance==null?null:t.balance, t.pot||'', t.potAmt==null?null:t.potAmt, t.potId||'']);
+  const rows = () => s.tx.map(t => s.asLaura && t.type==='parents' ? ['', '', '', '', 0, '', null] : [t.date, t.merchant, t.category, t.type, t.amount, t.note||'', t.balance==null?null:t.balance, t.pot||'', t.potAmt==null?null:t.potAmt, t.potId||'', t.used||'']);
   const data = withTx => {
     const contrib = s.contrib.slice().sort((a,b)=>a.month<b.month?-1:1).map((c,i)=>{const total=c.base!=null?c.base:(c.tom||0)+(c.laura||0);return {row:14+i,...c,total,pots:PEOPLE.map(n=>Math.round(total*pctOf(n)*100)/100)}});
     const pots = PEOPLE.map((n,i)=>{const paidIn=contrib.reduce((a,c)=>a+c.pots[i],0), logged=s.log.filter(e=>e.person===n).reduce((a,e)=>a+e.amount,0);
@@ -719,12 +719,12 @@ const Mock = (() => {
 })();
 
 /* ============ state ============ */
-let D = null, view = 'home', histFilter = 'All', heroOpen = false, busy = false;
+let D = null, view = 'spending', histFilter = 'All', heroOpen = false, busy = false;
 
 /* The server sends transactions as arrays (see getData); rebuild the objects the views use. */
 function expand(d){
   if (d && d.txRows){ d.transactions = [];
-    d.txRows.forEach((r,i)=>{ if (r[0] && r[4]) d.transactions.push({row:i+2, date:r[0], merchant:r[1], category:r[2], type:r[3], amount:r[4], note:r[5], balance:r[6], pot:r[7]||'', potAmt:r[8]??null, potId:r[9]||''}); }); }
+    d.txRows.forEach((r,i)=>{ if (r[0] && r[4]) d.transactions.push({row:i+2, date:r[10]||r[0], posted:r[0], used:r[10]||'', merchant:r[1], category:r[2], type:r[3], amount:r[4], note:r[5], balance:r[6], pot:r[7]||'', potAmt:r[8]??null, potId:r[9]||''}); }); }
   return d;
 }
 /* A saved copy of the last load, so the app opens at once and works with no signal. It lives only on
@@ -893,8 +893,7 @@ const canP = () => !D || D.canSeeParents !== false;   // only Tom sees the paren
 
 /* ============ master switch: Money / Health ============ */
 let MODE = 'plans';   // the app always opens on Home
-const NAV = {money:`<button data-view="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg>Overview</button>
-  <button data-view="spending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>In &amp; out</button>
+const NAV = {money:`<button data-view="spending" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>In &amp; out</button>
   <button data-view="pots"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9h14l-1.2 10.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/></svg>Pots</button>
   <button data-view="parents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 20c0-2 1-4 3-4.5 2 .5 3 2.5 3 4.5"/></svg>Parents</button>`,
   health:`<button data-view="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3v8a2 2 0 0 0 2 2v8M7 3v5M11 3v5M17 3c-2 0-3 3-3 6s1 4 3 4v8"/></svg>Today</button>
@@ -953,19 +952,15 @@ function render(){
   if (MODE==='health') return hRender();
   if (MODE==='plans') return pRender();
   if (view==='history' || view==='topups'){ POTSUB=view; view='pots'; }
-  if (!canP() && view==='parents') view='home';
+  if (view==='home' || (!canP() && view==='parents')) view='spending';
   setNav();
   const synced = new Date(D.syncedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const head = masterHTML(setBtn("go('settings')"), synced) + `<h1 class="sr">${{home:'Money',payments:'Payments',spending:'Money in &amp; out',pots:'Pots',parents:'Parent Savings',settings:'Settings'}[view]}</h1>
+  const head = masterHTML(setBtn("go('settings')"), synced) + `<h1 class="sr">${{payments:'Payments',spending:'Money in &amp; out',pots:'Pots',parents:'Parent Savings',settings:'Settings'}[view]}</h1>
       ${DEMO?'<div class="demo">Preview mode – changes are not saved. Deploy from Apps Script to connect your sheet.</div>':''}`;
   const y = placeY('m:'+view);
-  if (!paint('m:'+view, head, ({home:vHome,payments:vPayments,spending:vSpending,pots:vPots,parents:vParents,settings:vSettings}[view])(), synced)) return;
+  if (!paint('m:'+view, head, ({payments:vPayments,spending:vSpending,pots:vPots,parents:vParents,settings:vSettings}[view])(), synced)) return;
   window.scrollTo(0,y);
   if(view==='spending') setTimeout(()=>{ drawCharts(); if (y) window.scrollTo(0,y); },0);
-}
-
-function vHome(){
-  return `${winsCard()}${inOutCard()}`;
 }
 
 /* Pots: the family pot and the four pots, then their history or the monthly top-ups */
@@ -1067,7 +1062,7 @@ let wordsAsked = 0, WORD_X = 0;
 function wordCard(){
   wordsTopUp(); const t = today(), l = wordsSaved().filter(x=>x.date<=t && x.date>=addDays(t, -WORDS_BACK)).sort((a,b)=>a.date<b.date?1:-1);
   if (!l.length || l[0].date!==t) return '';
-  return `<div class="wotd-s" onscroll="WORD_X=this.scrollLeft">${l.map((w, i)=>`<div class="card wotd"><small>${i ? esc(dayLabel(w.date)) : 'Word of the day'}${l.length > 1 ? `<i>${i ? i + 1 + ' of ' + l.length : '&lsaquo; swipe for earlier'}</i>` : ''}</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span>${w.cn ? cnWord(w.cn) : ''}</div>`).join('')}</div>`;
+  return `<div class="wotd-s" onscroll="WORD_X=this.scrollLeft;wotdFit(this)">${l.map((w, i)=>`<div class="card wotd"><small>${i ? esc(dayLabel(w.date)) : 'Word of the day'}${l.length > 1 ? `<i>${i ? i + 1 + ' of ' + l.length : '&lsaquo; swipe for earlier'}</i>` : ''}</small><b>${esc(w.word)}</b><span>${esc(w.fact)}</span>${w.cn ? cnWord(w.cn) : ''}</div>`).join('')}</div>`;
 }
 /* the Cantonese word: characters, Jyutping, how to say each syllable and its tone, then how the characters are built */
 const TONES = ['', 'high', 'rising', 'middle', 'low falling', 'low rising', 'low'];
@@ -1076,7 +1071,11 @@ function cnWord(c){
   return `<div class="wotd-cn"><small>Cantonese</small><div class="cn-w"><b lang="zh-HK">${esc(c.w)}</b><em>${esc(c.jp)}</em></div>
     <span class="cn-mean">${esc(c.mean)}</span><span class="cn-say">Say it: ${say}</span><span>${esc(c.why)}</span></div>`;
 }
-function wordPlace(){ const el = $('.wotd-s'); if (el && WORD_X) el.scrollLeft = WORD_X; }
+function wordPlace(){ const el = $('.wotd-s'); if (!el) return; if (WORD_X) el.scrollLeft = WORD_X; wotdFit(el); }
+/* the strip is as tall as the card in view, not the longest word in the month */
+function wotdFit(el){ const x = el.getBoundingClientRect().left; let c = null, d = 1e9;
+  for (const k of el.children){ const e = Math.abs(k.getBoundingClientRect().left - x); if (e < d){ d = e; c = k; } }
+  if (c) el.style.height = c.offsetHeight + 'px'; }
 function wordsTopUp(){
   const t = today(), l = wordsSaved();
   let asked = ''; try { asked = localStorage.getItem(WORDS_KEY + '-day') || ''; } catch(e) {}
@@ -1280,10 +1279,12 @@ function txIndex(){
   const dates = tx.map(t=>t.date).sort();
   const bal = [];   // per day, in date order: v = current account at close, s = moved into Savings & ISA so far
   let sav = 0;
-  tx.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.row-b.row).forEach(t=>{
+  const pd = t => t.posted||t.date;   // balances run on the bank's own dates
+  tx.slice().sort((a,b)=>pd(a)<pd(b)?-1:pd(a)>pd(b)?1:a.row-b.row).forEach(t=>{
     if (t.category==='Savings & ISA') sav = Math.max(0, sav - t.amount);
     if (t.balance==null) return;
-    if (bal.length && bal[bal.length-1].x===t.date){ bal[bal.length-1].v=t.balance; bal[bal.length-1].s=sav; } else bal.push({x:t.date,v:t.balance,s:sav});
+    const x = pd(t);
+    if (bal.length && bal[bal.length-1].x===x){ bal[bal.length-1].v=t.balance; bal[bal.length-1].s=sav; } else bal.push({x,v:t.balance,s:sav});
   });
   const months = [...new Set(dates.map(d=>d.slice(0,7)))].sort();
   const years = [...new Set(months.map(m=>m.slice(0,4)))].sort();
@@ -1404,7 +1405,7 @@ function vSpending(){
   const found = hits.slice(0, isPP?300:40);
   const hitIn = hits.filter(t=>t.amount>0&&t.type!=='transfer').reduce((a,t)=>a+t.amount,0), hitOut = -hits.filter(t=>t.amount<0&&t.type!=='transfer').reduce((a,t)=>a+t.amount,0);
   const mainTitle = r.kind==='all' ? 'Average month, year by year' : r.kind==='month' ? 'The 12 months to '+monthName(r.p) : 'Month by month';
-  return `
+  return `${winsCard()}${inOutCard()}
   <div class="chips" id="periodChips">${periods.map(([k,l])=>`<button class="chip ${SP.period===k?'on':''}" onclick="SP.period='${k}';go('spending')">${esc(l)}</button>`).join('')}</div>
   <div class="hint" style="margin:4px 2px 10px">${esc(r.label)} · ${r.days.toLocaleString('en-GB')} days${r.single?'':' · monthly averages'}</div>
   <input class="inp search" placeholder="Find a payment, e.g. Lidl, Netflix, Kids" value="${esc(SP.q)}" oninput="SP.q=this.value;clearTimeout(window._sq);window._sq=setTimeout(()=>{const y=scrollY;render();scrollTo(0,y);const i=document.querySelector('.search');i.focus();i.setSelectionRange(i.value.length,i.value.length);drawCharts()},350)">
@@ -1833,7 +1834,7 @@ function importTexts(texts){
 const EXT_KEY = 'ganymede-ext';
 const extSay = m => window.postMessage({to:'ganymede-ext', ...m}, location.origin);
 function lastBankDate(){
-  if (D && D.transactions) return D.transactions.reduce((a,t)=>t.balance!=null && t.balance!=='' && t.date>a ? t.date : a, '');
+  if (D && D.transactions) return D.transactions.reduce((a,t)=>t.balance!=null && t.balance!=='' && (t.posted||t.date)>a ? (t.posted||t.date) : a, '');
   const raw = lastRaw || readCache(), rows = raw && raw.txRows || [];
   return rows.reduce((a,r)=>r[0] && r[6]!=='' && r[6]!=null && r[0]>a ? r[0] : a, '');
 }
@@ -1917,7 +1918,7 @@ function editTx(row){
   const opts = t.amount>0 ? INCOME_CATS.concat(['Savings & ISA']) : spendCats.concat(['Own account transfers','Savings & ISA']);
   const same = D.transactions.filter(x=>x.merchant===t.merchant).length;
   showSheet(`<div class="grab"></div><h3 style="margin:0 0 4px">${esc(t.merchant)}</h3>
-    <div class="hint" style="margin:0 0 8px">${niceDate(t.date)} · <b class="${t.amount<0?'neg':'pos'}">${gbpS(t.amount)}</b>${t.note&&!/parent|please check/i.test(t.note)?' · '+esc(t.note):''}</div>
+    <div class="hint" style="margin:0 0 8px">${niceDate(t.date)}${t.used&&t.posted!==t.used?' (reached the bank '+niceDate(t.posted)+')':''} · <b class="${t.amount<0?'neg':'pos'}">${gbpS(t.amount)}</b>${t.note&&!/parent|please check/i.test(t.note)?' · '+esc(t.note):''}</div>
     <label class="f" style="margin-top:4px">Category</label>
     <div class="chips wrap">${(()=>{ const n = {}, since = addDays(today(),-365); D.transactions.forEach(x=>{ if (x.date>=since && (x.amount<0)===(t.amount<0) && opts.includes(x.category)) n[x.category]=(n[x.category]||0)+1; });
       return Object.keys(n).sort((a,b)=>n[b]-n[a]).slice(0,8).concat(opts.includes(t.category)?[t.category]:[]).filter((c,i,a)=>a.indexOf(c)===i)
@@ -2876,14 +2877,14 @@ function hFoods(){
 }
 const foodRow = f => `<button class="item food" onclick="foodDetail(${jsA(f.name)})"><div class="dot" style="background:var(--card-2);font-size:16px">${GROUP_ICON[f.group]||'&#x1F37D;&#xFE0F;'}</div>
   <div class="mid"><div class="t">${esc(f.name)}</div><div class="d">Had ${f.n} time${f.n>1?'s':''} &middot; last ${esc(agoF(f.last))}</div></div><span class="chev">&nbsp;&rsaquo;</span></button>`;
-/* ---- takeaway days from the bank. A card payment posts the day after, so the meal was the day before
-   (147 of 152 takeaway payments checked); PayPal rows carry their own day. ---- */
+/* ---- takeaway days from the bank: the day the card was used (Transactions!J). Rows without one: a card payment
+   posts the day after, so the meal was the day before (147 of 152 checked); PayPal rows carry their own day. ---- */
 const niceName = s => String(s||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
 const jsA = v => esc(JSON.stringify(v));
 function bankTakeaways(from, to){
   if (!D || !D.transactions) return [];
   return D.transactions.filter(t=>t.category==='Eating out & takeaway' && t.type==='spend' && t.amount <= -10)
-    .map(t=>({date: /^PayPal/.test(t.note||'') ? t.date : addDays(t.date,-1), merchant:t.merchant, amount:-t.amount}))
+    .map(t=>({date: t.used || /^PayPal/.test(t.note||'') ? t.date : addDays(t.date,-1), merchant:t.merchant, amount:-t.amount}))
     .filter(t=>t.date>=from && t.date<=to);
 }
 function recentPlaces(){
@@ -3863,7 +3864,7 @@ function toast(msg, undo, label){
 }
 function go(v){ if (v!==view || MODE!=='money') navPush(); if (MODE!=='money'){ MODE='money'; try{ localStorage.setItem('ganymede-mode','money'); }catch(e){} } if (!D) { view=v; return; }   // still loading: open this screen once the data arrives
   if (v==='history' || v==='topups'){ POTSUB=v; v='pots'; }
-  if (v==='parents' && !canP()) v='home'; view=v; render(); if(v==='settings') settingsPreview(); if(v==='spending') drawCharts(); }
+  if (v==='home' || (v==='parents' && !canP())) v='spending'; view=v; render(); if(v==='settings') settingsPreview(); if(v==='spending') drawCharts(); }
 document.querySelector('nav').onclick = e => { const b = e.target.closest('button'); if (b && b.classList.contains('nav-back')) return goBack(); if (b) MODE==='health' ? hgo(b.dataset.view) : MODE==='plans' ? pgo(b.dataset.view) : go(b.dataset.view); };
 document.addEventListener('visibilitychange',()=>{ if (!document.hidden) syncNow(); });
 
