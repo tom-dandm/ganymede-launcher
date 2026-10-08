@@ -2362,18 +2362,18 @@ function hMonth(){
   days.forEach(d=>{ info[d] = takeInfo(d); });
   const cells = Array(lead).fill('<span></span>').concat(days.map(d=>{ const ti = info[d], ate = H.meals.some(e=>e.date===d && SLOTS.includes(e.meal));
     return `<button class="cal-d ${ti.on?'take':''} ${d===t?'now':''}" ${d>t?'disabled':''} onclick="HD='${d}';hgo('today')" aria-label="${dOf(d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}${ti.on?', takeaway day':''}">
-      <b>${+d.slice(8)}</b><span>${ti.on?'&#x1F35F;':ate?'&#x2022;':''}</span></button>`; })).join('');
+      <b>${+d.slice(8)}</b><span>${ate?'&#x2022;':''}</span></button>`; })).join('');
   const takeDays = days.filter(d=>info[d].on).length, spent = bankTakeaways(days[0], days[days.length-1]).reduce((a,x)=>a+x.amount,0);
   const list = days.filter(d=>d<=t).reverse().map(d=>{ const day = H.meals.filter(e=>e.date===d), ti = info[d]; if (!day.some(e=>SLOTS.includes(e.meal)) && !ti.on) return '';
     const lines = ['Breakfast','Lunch','Dinner','Snack'].map(sl=>{ const x = mealLine(day, sl); return x ? `<div class="cal-m"><span>${SLOT_ICON[sl]} ${sl}</span><span>${esc(x)}</span></div>` : ''; }).join('');
     const where = ti.bank.map(b=>esc(niceName(b.merchant)) + ' ' + gbp(b.amount)).join(', ') || esc([...new Set(ti.logged.map(e=>e.food))].join(', '));
-    return `<button class="cal-row ${ti.on?'take':''}" onclick="HD='${d}';hgo('today')"><div class="cal-rh"><b>${dOf(d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</b>${ti.on?`<span class="tag">&#x1F35F; ${where}</span>`:''}</div>
+    return `<button class="cal-row ${ti.on?'take':''}" onclick="HD='${d}';hgo('today')"><div class="cal-rh"><b>${dOf(d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</b>${ti.on?`<span class="tag">${where}</span>`:''}</div>
       ${lines || '<div class="cal-m"><span></span><span class="muted">Only the bank payment. Tap to add what you had.</span></div>'}</button>`; }).join('');
   return `<div class="daybar"><button class="icon-btn" onclick="HM=shiftMonth(HM,-1);render()" aria-label="Month before">&lsaquo;</button>
       <div><b>${dOf(HM+'-01').toLocaleDateString('en-GB',{month:'long', year:'numeric'})}</b><span>${takeDays} takeaway or eating-out day${takeDays===1?'':'s'}</span></div>
       <button class="icon-btn" onclick="HM=shiftMonth(HM,1);render()" ${HM>=t.slice(0,7)?'disabled':''} aria-label="Month after">&rsaquo;</button></div>
     <div class="card cal"><div class="cal-w">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div>
-      <div class="hint">&#x1F35F; takeaway or eating out, logged or on the bank statement &middot; &#x2022; meals logged. Tap a day to open it.</div></div>
+      <div class="hint">Shaded: takeaway or eating out, logged or on the bank statement &middot; &#x2022; meals logged. Tap a day to open it.</div></div>
     ${spent ? `<div class="hint" style="margin:0 2px 4px">Spent on eating out and takeaways: <b>${gbp(spent)}</b>, from the bank statement.</div>` : ''}
     <h2>What we ate</h2>${list || '<div class="card empty">Nothing logged this month.</div>'}`;
 }
@@ -2753,7 +2753,7 @@ function statsAll(from, to){
   </tbody></table><div class="hint" style="margin:6px 2px 4px">Eaten = how much of what was on the plate, on average. F&amp;V = fruit and veg portions a day, 5 is the aim. Tap a name for more.</div></div>
   <h2>Food at home and out</h2>
   <div class="card">
-    <button class="stat-row" onclick="HM=today().slice(0,7);hgo('month')"><span class="k">🍟 Takeaway or eating-out days</span><span class="v">${takeDays} <small class="muted">${(takeDays/daysBetween(from,to)*7).toFixed(1)} a week</small>&nbsp;›</span></button>
+    <button class="stat-row" onclick="HM=today().slice(0,7);hgo('month')"><span class="k">Takeaway or eating-out days</span><span class="v">${takeDays} <small class="muted">${(takeDays/daysBetween(from,to)*7).toFixed(1)} a week</small>&nbsp;›</span></button>
     ${eat.length?`<button class="stat-row" onclick="txListSheet('Eating out & takeaways', D.transactions.filter(t=>t.category==='Eating out & takeaway' && t.type==='spend' && t.date>='${from}' && t.date<='${to}'), 'From the bank statement')"><span class="k">💷 Spent on eating out &amp; takeaways</span><span class="v">${gbp(-eat.reduce((a,t)=>a+t.amount,0))}&nbsp;›</span></button>`:''}
     ${S.map(x=>`<button class="stat-row" onclick="foodsSheet('${x.n}: snacks', e=>e.person==='${x.n}' && e.group==='Snack' && e.date>='${from}' && e.date<='${to}')"><span class="k"><span class="mini" style="--c:${COLOR[x.n]}"></span> ${x.n}: snacks</span><span class="v">${x.s.treatsWk.toFixed(1)} a week&nbsp;›</span></button>`).join('')}
     ${eat.length&&bankTo<to?`<div class="hint">Spending comes from the bank statement, which runs to ${dateY(bankTo)}.</div>`:''}
@@ -3389,7 +3389,7 @@ function pUp(){
   ${mealsCard()}
   ${homeCal()}
   ${H ? eatingWatch() + weighDue() : ''}
-  ${chk.length ? `<h2>Other to do</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}`;
+  ${chk.length ? `<h2>Worth a look</h2><div class="card notes">${chk.map(checkTask).join('')}</div>` : ''}`;
 }
 /* a meal counts as missing from this hour of the day */
 const MEAL_DUE = [['Breakfast', 10], ['Lunch', 14], ['Dinner', 19]];
