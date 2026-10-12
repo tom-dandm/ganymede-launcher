@@ -66,7 +66,7 @@ button.tile{position:relative;border:1px solid var(--line);font:inherit;color:in
 .sec-h{display:flex;justify-content:space-between;align-items:center;gap:8px}.sec-h h2{flex:1}
 .sec-h .link{border:0;background:none;font:inherit;font-weight:600;font-size:var(--fs-small);color:var(--family-2);cursor:pointer;padding:12px 2px 0;white-space:nowrap}
 .io-row{display:grid;grid-template-columns:1fr 1.15fr 1.15fr 1.15fr 12px;gap:6px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;color:inherit;text-align:right;padding:11px 0;cursor:pointer;font-variant-numeric:tabular-nums;font-weight:600}
-.io-row .k{text-align:left;font-weight:700}.io-row .k small{display:block;font-weight:500;color:var(--muted);font-size:var(--fs-small)}
+.io-row .k{text-align:left;font-weight:700}.io-row .k small,.io-row .pos small{display:block;font-weight:500;color:var(--muted);font-size:var(--fs-small)}
 .io-row.io-h{cursor:default;font-size:var(--fs-label);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:0 0 4px;font-weight:600}
 button.io-row:active{background:var(--card-2)}
 .gov[role=button]{cursor:pointer}
@@ -186,7 +186,7 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .iron .tick{flex:none}.iron.on .tick{background:var(--nathan);border-color:var(--nathan);color:#fff}
 .iron-t{flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0;cursor:pointer}
 .iron-t small{display:block;color:var(--muted);font-size:var(--fs-small)}
-.iron-week{display:flex;gap:3px;flex:none}.iron-week i{width:7px;height:7px;border-radius:50%;background:var(--line)}.iron-week i.on{background:var(--nathan)}.am-more{display:flex;justify-content:space-between;gap:12px}.am-typed{margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:2px}.am-typed small{font-weight:400;opacity:.85;font-size:var(--fs-small)}
+.iron-week{display:flex;gap:3px;flex:none}.iron-week i{width:7px;height:7px;border-radius:50%;background:var(--line)}.iron-week i.on{background:var(--nathan)}.am-more{display:flex;justify-content:space-between;gap:12px}.am-q{display:flex;gap:8px;align-items:stretch}.am-q .inp{flex:1;min-width:0}.am-q .am-typed{width:auto;flex:none;margin:0;padding:0 20px}.am-will{margin:6px 2px 0}.am-added .link-btn{display:inline;width:auto;border:0;padding:0;margin:0;font:inherit;text-decoration:underline}
 .am-opts{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;margin:10px 0 4px}
 .am-opts summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer;font-size:var(--fs-small);color:var(--muted);font-weight:600;list-style:none}
 .am-opts summary::-webkit-details-marker{display:none}
@@ -993,13 +993,16 @@ function vPots(){
 function inOutCard(){
   const cm = currentMonth(); if (!cm) return '';
   const r0 = n => (n<0?'−':'') + '£' + Math.abs(Math.round(n)).toLocaleString('en-GB');
-  const rows = [0,-1,-2].map(i=>shiftMonth(cm.m,i)).map((m,i)=>({m, f:monthFlows(m), part: i===0 && !cm.complete})).filter(x=>x.f.inc||x.f.out);
+  const due = payDue(cm.m);
+  const rows = [0,-1,-2].map(i=>shiftMonth(cm.m,i)).map((m,i)=>{ const f = monthFlows(m), d = i===0 ? due.total : 0;
+    return {m, f:{inc:f.inc+d, out:f.out, profit:f.profit+d}, part: i===0 && !cm.complete, due:d}; }).filter(x=>x.f.inc||x.f.out);
   if (!rows.length) return '';
   return `<h2>Money in and out</h2>
   <div class="card io">
     <div class="io-row io-h"><span></span><span>In</span><span>Out</span><span>Kept</span><span></span></div>
     ${rows.map(x=>`<button class="io-row" onclick="SP.period='${x.m}';SP.q='';go('spending')"><span class="k">${esc(shortMonth(x.m))}${x.part?'<small>so far</small>':''}</span>
-      <span class="pos">${r0(x.f.inc)}</span><span>${r0(x.f.out)}</span><span class="${x.f.profit<0?'neg':'pos'}">${x.f.profit>0?'+':''}${r0(x.f.profit)}</span><span class="chev">›</span></button>`).join('')}
+      <span class="pos">${r0(x.f.inc)}${x.due?'<small>pay due</small>':''}</span><span>${r0(x.f.out)}</span><span class="${x.f.profit<0?'neg':'pos'}">${x.f.profit>0?'+':''}${r0(x.f.profit)}</span><span class="chev">›</span></button>`).join('')}
+    ${due.total ? `<div class="hint io-due">${esc(shortMonth(cm.m))} counts ${due.items.map(x=>`${esc(x.who)}'s pay (${r0(x.amount)})`).join(' and ')} as coming in, at last month's amount, until it arrives.</div>` : ''}
     <button class="secondary" style="margin-top:10px" onclick="SP.period='12m';SP.q='';go('spending')">Everything coming in and going out ›</button>
   </div>`;
 }
@@ -1146,17 +1149,18 @@ function monthProfit(m){
 }
 function vTopups(){
   const X = txIndex(), cur = X.months[X.months.length-1];
-  const now = cur ? monthProfit(cur) : {inc:0,out:0,profit:0}, would = Math.max(0, now.profit);
+  const now = cur ? monthProfit(cur) : {inc:0,out:0,profit:0}, due = cur ? payDue(cur) : {total:0, items:[]}, left = now.profit + due.total, would = Math.max(0, left);
   const rows = D.contrib.slice().sort((a,b)=>a.month<b.month?1:-1);
   const owner = canP();
   return `
   <div class="card">
-    <div class="split-total"><span>${cur?monthName(cur)+' so far':'This month'}</span><b class="${now.profit<0?'neg':''}">${gbpS(now.profit)}</b></div>
+    <div class="split-total"><span>${cur?monthName(cur)+' so far':'This month'}</span><b class="${left<0?'neg':''}">${gbpS(left)}</b></div>
     <div class="stat-row" style="margin-top:6px"><span class="k">Money in</span><span class="v pos">${gbp(now.inc)}</span></div>
+    ${due.items.map(x=>`<div class="stat-row pay-due"><span class="k">${esc(x.who)}'s pay, still to come</span><span class="v pos">${gbp(x.amount)}</span></div>`).join('')}
     <div class="stat-row"><span class="k">Spent</span><span class="v neg">${gbp(-now.out)}</span></div>
     <label class="f">Would top up the pots by</label>
     ${D.pots.map(p=>`<div class="stat-row"><span class="k"><span class="mini" style="--c:${COLOR[p.name]}"></span>${p.name} <small>(${pct(p.pct)})</small></span><span class="v pos">+${gbp(Math.round(would*p.pct*100)/100)}</span></div>`).join('')}
-    <div class="hint">${now.profit<0?'A month that spends more than comes in tops up nothing. ':''}Paid once next month's transactions start coming in, so the whole month counts.</div>
+    <div class="hint">${due.total?'Pay still to come is last month\'s amount, counted until it arrives. ':''}${left<0?'A month that spends more than comes in tops up nothing. ':''}Paid once next month's transactions start coming in, so the whole month counts.</div>
     ${owner?`<button class="secondary" onclick="run('applyProfitTopUps',[],'Top-ups updated from profit')">Redo top-ups from profit</button><div class="hint">Statement uploads do this. Only needed after editing the sheet by hand.</div>`:''}
   </div>
   <h2>Past months</h2>
@@ -1618,6 +1622,17 @@ const dayOf = s => +s.slice(8,10);
 function currentMonth(){ const X=txIndex(); if(!X.last) return null; const m=X.last.slice(0,7); return {m, day:dayOf(X.last), days:dayOf(monthEnd(m)), complete: X.last===monthEnd(m)}; }
 /* a month, or the same days of it if the month is still coming in, so comparisons are like for like */
 function monthFlows(m, uptoDay){ const end = uptoDay ? m+'-'+String(Math.min(uptoDay, dayOf(monthEnd(m)))).padStart(2,'0') : monthEnd(m); return flows(m+'-01', end); }
+/* salaries not in yet this month: each one paid last month and not since, at its last amount, so a part month is not shown in the red before payday */
+function payDue(m){
+  const cm = currentMonth(); if (!cm || m!==cm.m || cm.complete) return {total:0, items:[]};
+  const tx = D.transactions||[], items = [];
+  [['Tom salary','Tom'],['Laura salary','Laura']].forEach(([cat, who])=>{
+    const paid = tx.filter(t=>t.category===cat && t.type==='income' && t.amount>0).sort((a,b)=>a.date<b.date?-1:1), last = paid[paid.length-1];
+    if (!last || last.date.slice(0,7)!==shiftMonth(m,-1)) return;
+    items.push({who, amount:last.amount});
+  });
+  return {total:items.reduce((a,x)=>a+x.amount,0), items};
+}
 function lastFullMonths(n){ const X=txIndex(), cm=currentMonth(); const ms=X.months.filter(m=>m!==X.months[0] && (!cm || m<cm.m || cm.complete)); return ms.slice(-n); }
 
 /* ---- comparisons: this month against last month and the same month last year ---- */
@@ -2518,7 +2533,7 @@ function drawAddMeal(){
   const dayName = HD===today() ? 'today' : HD===addDays(today(),-1) ? 'yesterday' : dOf(HD).toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'short'});
   const added = !AM.slot && !AM.swap && AM.added && AM.added.length;
   $('#sheet').innerHTML = `<div class="grab" id="addMealSheet"></div>
-    ${added ? `<div class="am-added">&#x2713; Added ${esc(AM.added.join(', '))}</div>` : ''}
+    ${added ? `<div class="am-added">&#x2713; Added ${AM.added.map(a=>`<button class="link-btn" onclick="amEditAdded(${jsA(a.id)})">${esc(a.label)}</button>`).join(', ')} <span class="muted">(tap one to change it)</span></div>` : ''}
     ${AM.slot && !AM.swap ? `<h3 style="margin:0 0 2px">${esc(AM.who[0])}'s ${AM.meal.toLowerCase()}, ${esc(dayName)}</h3>
       ${inSlot.length ? `<label class="f">What ${esc(AM.who[0])} had</label><div class="list slot-list">${inSlot.map(e=>`<div class="item">
           <button class="mid plain" onclick="editMeal('${e.id}')"><div class="t">${esc(e.food)}${esc(eatTag(e))}</div><div class="d">${esc(portionWord(e))}${e.diary?' · Food diary':''} · tap to adjust</div>${e.note?`<div class="d note">&ldquo;${esc(e.note)}&rdquo;</div>`:''}</button>
@@ -2530,10 +2545,11 @@ function drawAddMeal(){
     <div class="chips">${EATERS.map(n=>`<button class="chip ${AM.who.length===1&&AM.who[0]===n?'on':''}" style="--c:${COLOR[n]}" onclick="AM.who=['${n}'];drawAddMeal()">${n}</button>`).join('')}
       <button class="chip ${AM.who.length===EATERS.length?'on':''}" onclick="AM.who=EATERS.slice();drawAddMeal()">Both</button></div>`}
     ${AM.slot && !AM.swap ? '' : `<div class="seg four" style="margin-top:12px">${SLOTS.map(s=>`<button class="${AM.meal===s?'on':''}" onclick="AM.meal='${s}';drawAddMeal()"><span>${SLOT_ICON[s]}</span>${s}</button>`).join('')}</div>`}
-    <input class="inp" id="amQ" placeholder="Type what they had" value="${esc(AM.q)}" autocomplete="off" oninput="AM.q=this.value;AM.est=null;AM.online=null;clearTimeout(window._aq);window._aq=setTimeout(()=>{drawAddMeal();const i=$('#amQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)},150)" onkeydown="if(event.key==='Enter'){AM.q=this.value;amTyped()}">
+    <div class="am-q"><input class="inp" id="amQ" placeholder="Type what they had" value="${esc(AM.q)}" autocomplete="off" enterkeyhint="done" oninput="AM.q=this.value;AM.est=null;AM.online=null;$('#amGo').disabled=!this.value.trim();clearTimeout(window._aq);window._aq=setTimeout(amRedrawTyping,150)" onkeydown="if(event.key==='Enter'){AM.q=this.value;amTyped()}">
+      <button class="primary am-typed" id="amGo" ${q?'':'disabled'} onclick="amTyped()">${AM.swap?'Use':'Add'}</button></div>
+    ${q && !AMLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<div class="hint am-will">${AM.swap?'Uses':'Adds'} &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}&rdquo;${amVegOn()&&!/veg|salad/i.test(q)?' + veg':''} when you tap ${AM.swap?'Use':'Add'}. Keep typing to change it.</div>` : ''}
     ${!AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner') ? `<button class="veg-switch ${amVegOn()?'on':''}" onclick="amVegT()" aria-pressed="${amVegOn()}"><span class="vs-box">${amVegOn()?'&#x2713;':''}</span><span>&#x1F966; <b>+ veg</b><small>${amVegOn()?'A portion of mixed veg goes in with it':'Tap to add a portion of mixed veg with it'}</small></span></button>` : ''}
     ${!q && !AM.swap && AM.meal==='Dinner' ? `<label class="f">Meat and veg</label><div class="chips wrap">${meatChips().map(([m])=>`<button class="chip" onclick="amMeat(${jsA(m)})">${esc(m)}</button>`).join('')}</div>` : ''}
-    ${q && !AMLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<button class="primary am-typed" onclick="amTyped()">${AM.swap?'Use':'Add'} &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}&rdquo;${amVegOn()&&!/veg|salad/i.test(q)?' + veg':''}</button>` : ''}
     ${q?`<label class="f">${AMLIST.length?'Or one we have had':''}</label>`:''}
     ${q?sect('','usual')+sect('','base'):''}
     <details class="am-opts" ${AM.optsOpen || AM.eaten<1 || AM.note ? 'open' : ''} ontoggle="AM.optsOpen=this.open">
@@ -2575,10 +2591,17 @@ function amAdd(f){
   const list = eaters.map(n=>({date:HD, person:n, meal:AM.meal, food:f.name, kcal:Math.round(f.kcal*mult(n)*ate), served:Math.round(f.kcal*mult(n)), eaten:ate, note, portion:mult(n), veg:f.veg||0, group:f.group||'Meal'}))
     .concat(veg ? eaters.map(n=>vegRow(n, HD, AM.meal, mult(n), ate)) : []);
   const who = eaters.length===EATERS.length && EATERS.length>1 ? 'both' : eaters.join(' & '), label = f.name + (veg ? ' + veg' : '');
-  const stay = {keep:true, redraw:drawAddMeal, mark:'addMealSheet'};
-  AM.added = (AM.added||[]).concat(label); AM.q = ''; AM.est = null; AM.online = null;
-  hRun('addMeals', [list, null], `${label} for ${who}${ate<1?' ('+eatLabel(ate).toLowerCase()+')':''}`, raw=>{ const i = AM.added.lastIndexOf(label); if (i > -1) AM.added.splice(i,1); return hRun('deleteMeal',[raw.batch],'Undone',null,stay); }, stay);
+  const stay = {keep:true, redraw:drawAddMeal, mark:'addMealSheet'}, batch = newId(), entry = {label, id:mealIds(batch, list)[0]};
+  AM.added = (AM.added||[]).concat(entry); AM.q = ''; AM.est = null; AM.online = null;
+  hRun('addMeals', [list, null, batch], `${label} for ${who}${ate<1?' ('+eatLabel(ate).toLowerCase()+')':''}`, raw=>{ const i = AM.added.indexOf(entry); if (i > -1) AM.added.splice(i,1); return hRun('deleteMeal',[raw.batch],'Undone',null,stay); }, stay);
 }
+/* the redraw while typing gives focus back only if the box still has it, so tapping away closes the keyboard and adds nothing */
+function amRedrawTyping(){
+  const had = document.activeElement && document.activeElement.id==='amQ';
+  drawAddMeal();
+  if (had){ const i = $('#amQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+}
+function amEditAdded(id){ if (!H.meals.some(e=>e.id===id)) return toast('That entry has gone, tap refresh'); editMeal(id); }
 
 /* the meats for the dinner chips; kcal are one adult portion */
 const MEATS = [['Chicken',200],['Chicken thighs',230],['Beef mince',250],['Steak',300],['Pork',250],['Sausages',280],['Bacon',130],['Ham',60],['Meatballs',300],['Chicken nuggets',280],
