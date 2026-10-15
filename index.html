@@ -3790,16 +3790,16 @@ function dots(s){
   return `<div class="dots">${h}</div>`;
 }
 /* flare-ups (a kind named "... flare up"): estimated recovery, morning and evening, from the first flare-up to today.
-   Each flare-up drops to a floor 10 points above the last one's (0%, 10%, 20%...). Recovery is about 1 point a day for
-   3 days, then speeds up to RATE; evenings sit BOUNCE above the morning. RATE fits Tom's anchor: 10% on 27 Sep, 70% on
+   Each flare-up drops to a floor 20 points above the last one's (0%, 20%, 40%...). Recovery is about 1 point a day for
+   3 days, then speeds up to RATE; evenings sit BOUNCE above the morning. RATE fits Tom's anchor: 20% on 27 Sep, 70% on
    the evening of 14 Oct. */
-const FLARE = /flare.?up/i, RATE = 3.96, BOUNCE = 6;
+const FLARE = /flare.?up/i, RATE = 3.16, BOUNCE = 6, STEP = 20;
 function flareGain(k){ let f = 0; for (let i = 1; i <= k; i++) f += i <= 3 ? 1 : Math.min(RATE, 1 + (RATE-1)*(i-3)/4); return f; }
 function flarePts(s){
   const starts = s.runs.map(r=>r.start), last = new Date().getHours() >= 18 ? 2 : 1, pts = [];
   for (let d = starts[0]; d <= today(); d = addDays(d, 1)){
     let n = 0; while (n+1 < starts.length && starts[n+1] <= d) n++;
-    const m = Math.min(100, n*10 + flareGain(dayN(d) - dayN(starts[n])));
+    const m = Math.min(100, n*STEP + flareGain(dayN(d) - dayN(starts[n])));
     pts.push({d, pm:false, v:Math.round(m), flare:d===starts[n]});
     if (d < today() || last === 2) pts.push({d, pm:true, v:Math.round(Math.min(100, m + BOUNCE))});
   }
