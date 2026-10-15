@@ -3781,13 +3781,46 @@ function pTrack(){
     <div class="kind-h"><b>${esc(s.what)}</b>${s.list.some(m=>m.date===today()) ? '<span class="chip on">Today &#10003;</span>' : `<span class="chip" role="button" onclick="event.stopPropagation();markToday(${jsA(s.what)})">Mark today</span>`}</div>
     <div class="hint" style="margin-top:4px">Last time ${esc(agoText(s.since))} (${esc(niceDate(s.list[s.list.length-1].date))}) &middot; ${s.runs.length} time${s.runs.length>1?'s':''}${s.gap ? ` &middot; about every ${s.gap} days` : ''}${s.len ? `, lasting about ${s.len} days` : ''}</div>
     ${s.next ? `<div class="kind-next">Next expected ${esc(niceDate(s.next))}, ${esc(inText(dayN(s.next)-dayN(today())))}</div>` : ''}
-    ${dots(s)}</button>`).join('') || '<div class="card empty" style="margin-top:12px">Nothing marked yet. Pick what happened and the day, then Mark.</div>'}`;
+    ${FLARE.test(s.what) ? flareChart(s) : dots(s)}</button>`).join('') || '<div class="card empty" style="margin-top:12px">Nothing marked yet. Pick what happened and the day, then Mark.</div>'}`;
 }
 /* the last 8 weeks as a strip of days, marked days filled */
 function dots(s){
   const have = new Set(s.list.map(m=>m.date)), start = addDays(today(), -55);
   let h = ''; for (let i = 0; i < 56; i++){ const d = addDays(start, i); h += `<i class="${have.has(d)?'on':''} ${d===today()?'now':''} ${s.next===d?'next':''}"></i>`; }
   return `<div class="dots">${h}</div>`;
+}
+/* flare-ups (a kind named "... flare up"): estimated recovery, morning and evening, from the first flare-up to today.
+   Each flare-up drops to a floor 10 points above the last one's (0%, 10%, 20%...). Recovery is about 1 point a day for
+   3 days, then speeds up to RATE; evenings sit BOUNCE above the morning. RATE fits Tom's anchor: 10% on 27 Sep, 70% on
+   the evening of 14 Oct. */
+const FLARE = /flare.?up/i, RATE = 3.96, BOUNCE = 6;
+function flareGain(k){ let f = 0; for (let i = 1; i <= k; i++) f += i <= 3 ? 1 : Math.min(RATE, 1 + (RATE-1)*(i-3)/4); return f; }
+function flarePts(s){
+  const starts = s.runs.map(r=>r.start), last = new Date().getHours() >= 18 ? 2 : 1, pts = [];
+  for (let d = starts[0]; d <= today(); d = addDays(d, 1)){
+    let n = 0; while (n+1 < starts.length && starts[n+1] <= d) n++;
+    const m = Math.min(100, n*10 + flareGain(dayN(d) - dayN(starts[n])));
+    pts.push({d, pm:false, v:Math.round(m), flare:d===starts[n]});
+    if (d < today() || last === 2) pts.push({d, pm:true, v:Math.round(Math.min(100, m + BOUNCE))});
+  }
+  return pts;
+}
+function flareChart(s){
+  const pts = flarePts(s), W = 340, H = 160, L = 34, R = 8, T = 10, B = 22, n = Math.max(1, pts.length-1);
+  const x = i => L + (W-L-R)*i/n, y = v => T + (H-T-B)*(1 - v/100);
+  let g = '';
+  [0, 25, 50, 75, 100].forEach(v=>{ g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+3}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`; });
+  let lastX = -1e9;
+  pts.forEach((p,i)=>{ if (p.pm) return;
+    if (p.flare) g += `<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H-B}" stroke="var(--neg)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+    if ((p.flare || (dayN(p.d) - dayN(pts[0].d)) % 7 === 0) && x(i) - lastX > 34){ lastX = x(i);
+      g += `<text x="${x(i)}" y="${H-6}" text-anchor="${x(i) > W-R-24 ? 'end' : 'middle'}" font-size="11" fill="var(--muted)">${esc(niceDate(p.d))}</text>`; } });
+  g += `<path d="${pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(p.v).toFixed(1)).join('')}" fill="none" stroke="var(--family-2)" stroke-width="1.6" stroke-linejoin="round"/>`;
+  pts.forEach((p,i)=>{ g += `<circle cx="${x(i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.2" fill="${p.pm ? 'var(--family-2)' : 'var(--card)'}" stroke="var(--family-2)" stroke-width="1.2"><title>${esc(niceDate(p.d))} ${p.pm ? 'evening' : 'morning'}: ${p.v}%</title></circle>`; });
+  const now = pts[pts.length-1];
+  return `<div class="kind-next">About ${now.v}% better ${now.pm ? 'this evening' : 'this morning'} (estimate)</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;margin-top:8px" role="img" aria-label="Recovery since the first flare-up">${g}</svg>
+    <div class="hint" style="margin-top:2px">&#9675; morning &nbsp;&#9679; evening &nbsp;<span style="color:var(--neg)">- - flare-up</span></div>`;
 }
 function markNow(){
   const what = ($('#tkW').value || TK.what).trim(), date = $('#tkD').value || today(), note = $('#tkN').value.trim();
@@ -3802,6 +3835,7 @@ function openKind(what){
   const s = markStats().find(x=>x.what===what); if (!s) return;
   showSheet(`<h3>${esc(what)}</h3>
     <div class="hint" style="margin-top:0">${s.runs.length} time${s.runs.length>1?'s':''}${s.gap ? `, about every ${s.gap} days` : ''}${s.len ? `, lasting about ${s.len} days` : ''}.${s.next ? ` Next expected ${esc(niceDate(s.next))}.` : ''}</div>
+    ${FLARE.test(what) ? flareChart(s) : ''}
     <button class="primary" onclick="pRun('addMark', [{id:newId(), what:${jsA(what)}, date:today(), note:''}], 'Marked today')">Mark today</button>
     <div class="card list" style="margin-top:14px">${s.list.slice().reverse().slice(0, 60).map(m=>`<div class="item"><div class="mid"><div class="t">${esc(niceDate(m.date))} ${esc(m.date.slice(0,4))}</div><div class="d">${esc(dayLabel(m.date))}${m.note ? ' &middot; ' + esc(m.note) : ''}${m.by ? ' &middot; ' + esc(m.by) : ''}</div></div>
       <button class="del" aria-label="Remove" onclick="pRun('deleteMark', ['${m.id}'], 'Removed', ()=>pRun('addMark', [${jsA({id:newId(), what:m.what, date:m.date, note:m.note})}], 'Put back', null, true), true); openKind(${jsA(what)})">&times;</button></div>`).join('')}</div>`);
