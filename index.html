@@ -3790,10 +3790,10 @@ function dots(s){
   return `<div class="dots">${h}</div>`;
 }
 /* flare-ups (a kind named "... flare up"): estimated recovery, morning and evening, from the first flare-up to today.
-   Each flare-up drops to a floor 20 points above the last one's (0%, 20%, 40%...). Recovery is about 1 point a day for
-   3 days, then speeds up to RATE; evenings sit BOUNCE above the morning. RATE fits Tom's anchor: 20% on 27 Sep, 70% on
+   Each flare-up drops to a floor 15 points above the last one's (0%, 15%, 30%...). Recovery is about 1 point a day for
+   3 days, then speeds up to RATE; evenings sit BOUNCE above the morning. RATE fits Tom's anchor: 15% on 27 Sep, 70% on
    the evening of 14 Oct. */
-const FLARE = /flare.?up/i, RATE = 3.16, BOUNCE = 6, STEP = 20;
+const FLARE = /flare.?up/i, RATE = 3.56, BOUNCE = 6, STEP = 15;
 function flareGain(k){ let f = 0; for (let i = 1; i <= k; i++) f += i <= 3 ? 1 : Math.min(RATE, 1 + (RATE-1)*(i-3)/4); return f; }
 function flarePts(s){
   const starts = s.runs.map(r=>r.start), last = new Date().getHours() >= 18 ? 2 : 1, pts = [];
