@@ -634,7 +634,7 @@ const newId = () => Math.random().toString(36).slice(2, 10) + Date.now().toStrin
 /* Demo backend: mirrors Code.js with made-up figures (this page is public, so no real numbers) */
 const Mock = (() => {
   const s = {
-    adultPct:0.05, ages:{Tom:'Adult',Laura:'Adult',Nathan:6,Evy:1}, opening:{Tom:300,Laura:300,Nathan:80,Evy:40},
+    adultPct:0.05, ages:{Tom:'Adult',Laura:'Adult',Nathan:6,Evy:1}, dob:{Evy:'2025-03-02'}, opening:{Tom:300,Laura:300,Nathan:80,Evy:40},
     contrib:[{month:'2026-09',tom:2100,laura:1500}],
     log:[
       {date:'2026-09-20',person:'Nathan',desc:'Lego set',amount:-12.99,id:'a1'},
@@ -658,12 +658,13 @@ const Mock = (() => {
     cats:Object.entries({Essentials:['Mortgage','Groceries','Household bills','Insurance','Phone & internet','Fuel','Car & parking','Public transport','Pets','Bank fees'],Kids:['Childcare','Kids'],Lifestyle:['Eating out & takeaway','Naughty snacks','Days out & entertainment','Shopping','Subscriptions','Personal care','Health & fitness','Gifts & charity','Home & DIY','Holidays & travel','Family payments','Cash','Misc']}).flatMap(([g,l])=>l.map(n=>({name:n,group:g}))),
     heldBase:30000, current:18500, savingsAcc:15000, ver:1
   };
-  const pctOf = n => { const a=s.ages[n]; return (typeof a==='number'? Math.min(a/18,1):1)*s.adultPct; };
+  const ageOf = n => { const d=s.dob[n]; if (!d) return s.ages[n]; const t=new Date(), b=new Date(d); return t.getFullYear()-b.getFullYear()-(t.getMonth()*100+t.getDate()<b.getMonth()*100+b.getDate()?1:0); };
+  const pctOf = n => { const a=ageOf(n); return (typeof a==='number'? Math.min(a/18,1):1)*s.adultPct; };
   const rows = () => s.tx.map(t => s.asLaura && t.type==='parents' ? ['', '', '', '', 0, '', null] : [t.date, t.merchant, t.category, t.type, t.amount, t.note||'', t.balance==null?null:t.balance, t.pot||'', t.potAmt==null?null:t.potAmt, t.potId||'', t.used||'']);
   const data = withTx => {
     const contrib = s.contrib.slice().sort((a,b)=>a.month<b.month?-1:1).map((c,i)=>{const total=c.base!=null?c.base:(c.tom||0)+(c.laura||0);return {row:14+i,...c,total,pots:PEOPLE.map(n=>Math.round(total*pctOf(n)*100)/100)}});
     const pots = PEOPLE.map((n,i)=>{const paidIn=contrib.reduce((a,c)=>a+c.pots[i],0), logged=s.log.filter(e=>e.person===n).reduce((a,e)=>a+e.amount,0);
-      return {name:n,age:s.ages[n],pct:pctOf(n),opening:s.opening[n],paidIn,logged,balance:s.opening[n]+paidIn+logged}});
+      return {name:n,age:ageOf(n),dob:s.dob[n]||'',pct:pctOf(n),opening:s.opening[n],paidIn,logged,balance:s.opening[n]+paidIn+logged}});
     const held = s.heldBase + s.parentRows.reduce((a,r)=>a+r.paidIn-r.out,0);
     const bankTotal = s.current+s.savingsAcc, ourSavings = bankTotal-held, inPots = pots.reduce((a,p)=>a+p.balance,0), owner = !s.asLaura;
     return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null, spendCal:owner?(s.spendCal||null):null,
@@ -943,9 +944,22 @@ function paint(key, head, body, synced){
   const app = $('#app'), pre = head.split('class="sync"')[0];
   if (SOFT && PAINTED && PAINTED.key===key && PAINTED.pre===pre && PAINTED.body===body && PAINTED.node===app.firstElementChild){
     app.querySelectorAll('.sync[data-at]').forEach(el=>{ el.dataset.at = synced; }); drawSync(); return false; }
+  const typed = keepTyped(app);
   app.innerHTML = head + body;
+  typed();
   PAINTED = {key, pre, body, node:app.firstElementChild};
   return true;
+}
+/* a redraw (the sheet replying, a sync, coming back to the app) rebuilds every box from the page's own value, so what was
+   typed and not yet sent would go. A box the redraw gives the same starting value gets the typed text back, with the caret
+   if it had it; a submit empties its box itself. Text boxes only (Tom's #app note, 16 Oct 2026). */
+function keepTyped(root){
+  const act = document.activeElement, keep = [...root.querySelectorAll('input[id],textarea[id]')]
+    .filter(el=>(el.tagName==='TEXTAREA' || /^(text|search)$/.test(el.type)) && el.value!==el.defaultValue)
+    .map(el=>({id:el.id, v:el.value, d:el.defaultValue, focus:el===act, a:el.selectionStart, b:el.selectionEnd}));
+  return ()=>keep.forEach(k=>{ const el = document.getElementById(k.id);
+    if (!el || !root.contains(el) || el.defaultValue!==k.d || el.value!==k.d) return;
+    el.value = k.v; if (k.focus){ el.focus(); try { el.setSelectionRange(k.a, k.b); } catch(e){} } });
 }
 function placeY(key){ const same = key===LAST_SCREEN; LAST_SCREEN = key; return same ? window.scrollY : 0; }
 function render(){
@@ -1216,8 +1230,9 @@ function vSettings(){
     <input class="inp" id="setPct" inputmode="decimal" value="${(D.adultPct*100).toFixed(2).replace(/\.00$/,'')}" oninput="settingsPreview()" onchange="saveSettings()">
     <div class="hint">Kids get this × (age ÷ 18), so they reach the full adult share at 18.</div>
     <div class="two">
-      ${D.pots.filter(p=>p.age!=='Adult').map(p=>`<div><label class="f">${p.name}'s age</label><input class="inp kid-age" data-name="${p.name}" type="number" min="0" max="18" value="${p.age}" oninput="settingsPreview()" onchange="saveSettings()"></div>`).join('')}
+      ${D.pots.filter(p=>p.age!=='Adult').map(p=>`<div><label class="f">${p.name}'s age</label><input class="inp kid-age" data-name="${p.name}" type="number" min="0" max="18" value="${p.age}"${p.dob?' disabled':''} oninput="settingsPreview()" onchange="saveSettings()"></div>`).join('')}
     </div>
+    ${D.pots.some(p=>p.age!=='Adult'&&p.dob)?`<div class="hint">Ages from a date of birth in Health settings go up by themselves on each birthday.</div>`:''}
     <div id="setPreview" style="margin-top:14px"></div>
     <div class="hint" style="margin-bottom:0">Saved as you change it.</div>
   </div>
@@ -1247,7 +1262,7 @@ function settingsPreview(){
 }
 function saveSettings(){
   const a=parseFloat($('#setPct').value); if(!(a>=0&&a<=100)) return toast('Enter a % between 0 and 100');
-  const ages={}; document.querySelectorAll('.kid-age').forEach(i=>ages[i.dataset.name]=parseFloat(i.value)||0);
+  const ages={}; document.querySelectorAll('.kid-age:not([disabled])').forEach(i=>ages[i.dataset.name]=parseFloat(i.value)||0);
   run('saveSettings',[{adultPct:a/100,ages}],'Settings saved');
 }
 
@@ -3539,6 +3554,7 @@ function openMonthPick(){
 function addNoteNow(){
   const el = $('#noteIn'), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return el.focus();
+  el.value = '';
   lines.forEach(t=>pRun('addNote', [{id:newId(), text:NOTE_APP && !APP_TAG.test(t) ? t + ' #app' : t}], null, null, true));
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#noteIn'); if (i){ i.value = ''; i.focus(); } }));
 }
@@ -3825,6 +3841,7 @@ function flareChart(s){
 function markNow(){
   const what = ($('#tkW').value || TK.what).trim(), date = $('#tkD').value || today(), note = $('#tkN').value.trim();
   if (!what) return toast('Pick or type what happened');
+  $('#tkN').value = '';
   const m = {id:newId(), what, date, note};
   TK.what = what;
   pRun('addMark', [m], `Marked ${what}, ${dayLabel(date).toLowerCase()}`, ()=>pRun('deleteMark', [m.id], 'Taken off'));
