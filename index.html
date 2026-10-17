@@ -667,7 +667,7 @@ const Mock = (() => {
       return {name:n,age:ageOf(n),dob:s.dob[n]||'',pct:pctOf(n),opening:s.opening[n],paidIn,logged,balance:s.opening[n]+paidIn+logged}});
     const held = s.heldBase + s.parentRows.reduce((a,r)=>a+r.paidIn-r.out,0);
     const bankTotal = s.current+s.savingsAcc, ourSavings = bankTotal-held, inPots = pots.reduce((a,p)=>a+p.balance,0), owner = !s.asLaura;
-    return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null, spendCal:owner?(s.spendCal||null):null,
+    return {adultPct:s.adultPct,pots,contrib,log:s.log.map((e,i)=>({row:14+i,...e})),txRows:withTx===false?null:rows(),txAppend:false,txVersion:s.ver,transactions:null,categories:s.cats,canSeeParents:owner, goals:s.goals||{}, checked:owner?(s.checked||[]):[], paypal:owner?(s.paypal||null):null,
       overview:owner?{bankTotal,held,ourSavings,inPots,familyPot:ourSavings-inPots}:{bankTotal:null,held:null,ourSavings,inPots,familyPot:ourSavings-inPots},
       parent:owner?{held,bankTotal,ourSavings,current:s.current,savingsAcc:s.savingsAcc,recent:s.parentRows.map((r,i)=>({row:800+i,note:'',...r})).reverse(), ledger:mockLedger(held)}:{ourSavings,ledger:mockLedger(held),recent:[]},
       syncedAt:new Date().toISOString()};
@@ -699,13 +699,8 @@ const Mock = (() => {
       s.log.push({date:t.date||today(),person:t.from,desc:'Moved to '+t.to+x,amount:-a,id},{date:t.date||today(),person:t.to,desc:'Moved from '+t.from+x,amount:a,id}); return data(false); },
     deleteEntry(id){ const gone=s.log.filter(e=>e.id===id); if(!/^tx-/.test(id)&&gone.length===1&&gone[0].amount<0) s.current-=gone[0].amount;
       s.log=s.log.filter(e=>e.id!==id); s.tx.forEach(t=>{ if(t.potId===id){ t.pot=''; t.potId=''; t.potAmt=null; } }); return data(false); },
-    saveSalary(v){ const c=s.contrib.find(c=>c.month===v.month); if(c){c.tom=v.tom;c.laura=v.laura}else s.contrib.push({month:v.month,tom:v.tom,laura:v.laura}); return data(false); },
-    deleteSalary(m){ s.contrib=s.contrib.filter(c=>c.month!==m); return data(false); },
     saveSettings(v){ if(v.adultPct!==undefined) s.adultPct=Number(v.adultPct); Object.assign(s.ages,v.ages||{}); return data(false); },
     setBankBalances(b){ s.current=Number(b.current); s.savingsAcc=Number(b.savings||0); return data(false); },
-    startSpendCal(){ if (s.asLaura) throw new Error('Only Tom can do this'); s.spendCal={id:'spend@example.com',name:'Ganymede spending',done:3,months:3,at:new Date().toISOString(),err:''}; return data(false); },
-    spendCalTick(){ return s.spendCal||null; },
-    syncPayPalNow(){ s.paypal={at:new Date().toISOString(),added:0,matched:0,fetched:0,waiting:0}; return data(false); },
     setTxPot(row,person,amount,nid){ const t=tx(row); if(t.type==='parents') throw new Error("That one is the parents'");
       const id='tx-'+(nid||uid()); if (person && t.potId===id) return ch([t],1);
       const a = amount==null ? t.amount : Math.sign(t.amount)*Math.abs(amount); if(Math.abs(a)>Math.abs(t.amount)+0.005) throw new Error('That is more than the payment');
@@ -794,34 +789,7 @@ function takeM(raw, o){
   if (!raw || !Array.isArray(raw.pots)) return;
   if (raw.changed) takeChanged(raw.changed);
   remember(raw);
-  spendTick();
   if (o && o.fn==='importStatements') IMPORTED.push(raw.summary || {});
-}
-
-/* Spending on Google Calendar (Tom): a calendar of its own, one entry a day. The server fills it a few minutes at a
-   time, so the app nudges it in the background once a session while months are left or it is 6 hours old. */
-let SPEND_TICKED = false;
-function spendTick(){
-  const c = D && D.spendCal;
-  if (SPEND_TICKED || DEMO || !c || !canP() || !canSend()) return;
-  if (c.done >= c.months && c.months && c.at && Date.now() - new Date(c.at) < 6*3600e3) return;
-  SPEND_TICKED = true;
-  api('spendCalTick').then(st=>{ if (st && D) D.spendCal = st; }).catch(()=>{});
-}
-function spendCalText(){
-  const c = D.spendCal;
-  if (!c) return 'A calendar of its own, "Ganymede spending", with an entry for each day we spent: the total and where. Seven years takes a few goes to fill; the app carries on by itself.';
-  const at = c.at ? new Date(c.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-  return `"${esc(c.name)}": ${c.done} of ${c.months} months on it${at ? ', updated ' + esc(at) : ''}.${c.err ? ' Stopped: ' + esc(c.err) + '.' : ''} ${c.done < c.months ? 'The rest goes on a bit at a time while the app is open.' : 'New statements follow by themselves.'}`;
-}
-async function startSpendCal(){
-  if (!canSend()) return toast('Needs a signal');
-  toast('Putting our spending on the calendar. This takes a few minutes.');
-  pendingN++; working(true);
-  try{ const r = await api('startSpendCal'); takeM(r); showM(); const c = D.spendCal;
-    toast(c && c.err ? '\u26a0 ' + c.err : c ? `${c.done} of ${c.months} months on the calendar` : 'Done'); }
-  catch(e){ toast('\u26a0 ' + (e.message||e)); }
-  finally{ if (--pendingN === 0) working(false); }
 }
 
 /* the same change made to our copy (as Code.js makes it), so it shows at once, with or without signal */
@@ -1175,7 +1143,6 @@ function vTopups(){
     <label class="f">Would top up the pots by</label>
     ${D.pots.map(p=>`<div class="stat-row"><span class="k"><span class="mini" style="--c:${COLOR[p.name]}"></span>${p.name} <small>(${pct(p.pct)})</small></span><span class="v pos">+${gbp(Math.round(would*p.pct*100)/100)}</span></div>`).join('')}
     <div class="hint">${due.total?'Pay still to come is last month\'s amount, counted until it arrives. ':''}${left<0?'A month that spends more than comes in tops up nothing. ':''}Paid once next month's transactions start coming in, so the whole month counts.</div>
-    ${owner?`<button class="secondary" onclick="run('applyProfitTopUps',[],'Top-ups updated from profit')">Redo top-ups from profit</button><div class="hint">Statement uploads do this. Only needed after editing the sheet by hand.</div>`:''}
   </div>
   <h2>Past months</h2>
   <div class="card list">${rows.map(c=>{ const p = monthProfit(c.month), paid = c.pots.reduce((a,b)=>a+b,0), base = Math.max(0, Math.round(p.profit*100)/100);
@@ -1208,19 +1175,10 @@ function vParents(){
     <div class="stat-row"><span class="k">Current account</span><span class="v">${gbp(p.current)}</span></div>
     <div class="stat-row"><span class="k">Savings account</span><span class="v">${gbp(p.savingsAcc)}</span></div>
     <div class="stat-row"><span class="k">Yours</span><span class="v ${p.ourSavings<0?'neg':'pos'}">${gbp(p.ourSavings)}</span></div>
-    <button class="secondary" onclick="openBank()">Update bank balances</button>
   </div>
   <h2>Their latest payments</h2>
   <div class="card list">${tx.filter(t=>t.type==='parents').slice().sort((a,b)=>a.date<b.date?1:-1).slice(0,12).map(txItem).join('') || '<div class="empty">None yet.</div>'}</div>
   <div class="hint">Tap any payment in the app to mark it as theirs, or back as yours. Their bills, the money they pay in and payments to Ken or Tony are marked automatically.</div>`;
-}
-function openBank(){
-  const p=D.parent;
-  showSheet(`<div class="grab"></div><h3 style="margin:0 0 4px">Bank balances</h3><div class="hint" style="margin:0">From your latest statement. Our savings = total − held for parents.</div>
-    <label class="f">Current account</label><input class="inp" id="bCur" inputmode="decimal" value="${p.current}">
-    <label class="f">Savings account</label><input class="inp" id="bSav" inputmode="decimal" value="${p.savingsAcc}">
-    <button class="primary" onclick="run('setBankBalances',[{current:parseFloat($('#bCur').value),savings:parseFloat($('#bSav').value)||0}],'Bank balances updated')">Save</button>
-    <button class="secondary" onclick="closeSheet()">Cancel</button>`);
 }
 
 function vSettings(){
@@ -1237,11 +1195,7 @@ function vSettings(){
     <div class="hint" style="margin-bottom:0">Saved as you change it.</div>
   </div>
   ${canP()?`<h2>PayPal</h2>
-  <div class="card"><div class="hint" style="margin-top:0">${D.paypal?`Checked ${esc(new Date(D.paypal.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))} · ${D.paypal.added} added, ${D.paypal.matched} matched to the bank`:'Not checked yet'}. It checks by itself every morning.</div>
-    <button class="secondary" onclick="run('syncPayPalNow',[],'PayPal checked')">Check PayPal now</button></div>
-  <h2>Spending on Google Calendar</h2>
-  <div class="card"><div class="hint" style="margin-top:0">${spendCalText()}</div>
-    <button class="secondary" onclick="startSpendCal()">${D.spendCal ? 'Update it now' : 'Put our spending on Google Calendar'}</button></div>`:''}
+  <div class="card"><div class="hint" style="margin-top:0">${D.paypal?`Checked ${esc(new Date(D.paypal.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))} · ${D.paypal.added} added, ${D.paypal.matched} matched to the bank`:'Not checked yet'}. It checks by itself every morning.</div></div>`:''}
   <h2>Bank statement and data</h2>
   <div class="card"><div class="hint" style="margin-top:0">The app keeps a copy of your transactions on this phone and only fetches new ones. If you edit old rows in the sheet by hand, reload them all.</div>
     <button class="secondary" onclick="load(true).then(()=>toast('All transactions reloaded'))">Reload everything from the sheet</button>
@@ -3514,7 +3468,7 @@ function spendByDay(){
   const m = {}; D.transactions.forEach(t=>{ if (t.type==='spend' && t.amount<0) (m[t.date] = m[t.date] || []).push(t); });
   SPD_SRC = D.transactions; return SPD = m;
 }
-/* what kind of spending (Tom): out and about first, then online, then bills. Same rule as spendKind_ in SpendCal.js */
+/* what kind of spending (Tom): out and about first, then online, then bills. */
 const PAY_KINDS = [['out','Out and about'],['online','Online'],['bill','Bills and regular payments']];
 const BILL_CATS = ['Mortgage','Household bills','Insurance','Phone & internet','Subscriptions','Childcare','Bank fees','Family payments'];
 const ONLINE_RE = /AMAZON|AMZN|AMZ\b|EBAY|ETSY|HUEL|\.COM\b|\.CO\.UK|WWW\.|ONLINE|ITUNES|APPLE\b|GOOGLE|STEAM|PLAYSTATION|NINTENDO|XBOX|MICROSOFT|DELIVEROO|JUST ?EAT|UBER ?\*? ?EATS|SHEIN|TEMU|ASOS|BOOHOO|VINTED|ZOOPLUS|WAYFAIR|PAYPAL|KLARNA|CLEARPAY|NETFLIX|SPOTIFY|DISNEY PLUS|PATREON|OCADO|MOONPIG|FUNKY PIGEON|NOTONTHEHIGH|^SP /i;
@@ -3806,16 +3760,18 @@ function dots(s){
   return `<div class="dots">${h}</div>`;
 }
 /* flare-ups (a kind named "... flare up"): estimated recovery, morning and evening, from the first flare-up to today.
-   Each flare-up drops to a floor 15 points above the last one's (0%, 15%, 30%...). Recovery is about 1 point a day for
-   3 days, then speeds up to RATE; evenings sit BOUNCE above the morning. RATE fits Tom's anchor: 15% on 27 Sep, 70% on
-   the evening of 14 Oct. */
-const FLARE = /flare.?up/i, RATE = 3.56, BOUNCE = 6, STEP = 15;
-function flareGain(k){ let f = 0; for (let i = 1; i <= k; i++) f += i <= 3 ? 1 : Math.min(RATE, 1 + (RATE-1)*(i-3)/4); return f; }
+   Each flare-up drops to a floor STEP points above the last one's (0%, 15%, 30%...). Recovery speeds up day by day: day i
+   after a flare-up gains i x the flare-up's rate, so the next day barely moves and later days move faster and faster.
+   Each flare-up's rate is SPEEDUP x the one before (Tom, 17 Oct 2026: it gets better faster each time). Evenings sit
+   BOUNCE above the morning. RATE (the second flare-up's) fits Tom's anchor: 15% on 27 Sep, at best 70% on the evening
+   of 14 Oct, 17 days on (15 + RATE x 17 x 18 / 2 = 64 in the morning). */
+const FLARE = /flare.?up/i, RATE = 49/153, SPEEDUP = 1.25, BOUNCE = 6, STEP = 15;
+const flareGain = (k, n) => RATE * Math.pow(SPEEDUP, n - 1) * k * (k + 1) / 2;
 function flarePts(s){
   const starts = s.runs.map(r=>r.start), last = new Date().getHours() >= 18 ? 2 : 1, pts = [];
   for (let d = starts[0]; d <= today(); d = addDays(d, 1)){
     let n = 0; while (n+1 < starts.length && starts[n+1] <= d) n++;
-    const m = Math.min(100, n*STEP + flareGain(dayN(d) - dayN(starts[n])));
+    const m = Math.min(100, n*STEP + flareGain(dayN(d) - dayN(starts[n]), n));
     pts.push({d, pm:false, v:Math.round(m), flare:d===starts[n]});
     if (d < today() || last === 2) pts.push({d, pm:true, v:Math.round(Math.min(100, m + BOUNCE))});
   }
