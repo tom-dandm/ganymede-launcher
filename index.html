@@ -247,7 +247,7 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .tick svg{width:15px;height:15px}
 .note-row.done .tick{background:var(--family-2);border-color:var(--family-2)}
 .note-t{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--text);text-align:left;padding:13px 0;cursor:pointer;overflow-wrap:anywhere}
-.gift-cols{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);gap:8px;align-items:start;margin-bottom:8px}
+.gift-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:start;margin-bottom:8px}
 .gift-col{display:flex;flex-direction:column;gap:6px;min-width:0}
 .gift-h{font-size:var(--fs-small);font-weight:700;color:var(--muted);margin:2px 2px 0}
 .gift-add{display:flex;gap:4px}.gift-add .inp{padding:9px 10px;min-width:0}.gift-add .icon-btn{flex:none;font-size:20px;font-weight:600;color:var(--text);height:auto}
@@ -258,9 +258,8 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .gift-star{flex:none;border:0;background:none;color:var(--muted);opacity:.45;padding:9px 8px;cursor:pointer}.gift-star svg{width:18px;height:18px;display:block}
 .gift-star.on{color:#F59E0B;opacity:1}
 .gift-sum{font-weight:700;margin:-4px 2px 0}.gift-p{color:var(--text)}
-.gift-ed{flex-basis:100%;padding:0 8px 9px 9px;display:flex;flex-direction:column;gap:6px}.gift-ed .inp{padding:8px 10px}
+.gift-ed{flex-basis:100%;padding:0 8px 9px 9px;display:flex;flex-direction:column;gap:6px}.gift-row{display:flex;gap:4px}.gift-row .inp{padding:8px 10px;min-width:0;flex:1}.gift-row .icon-btn{flex:none;width:34px;height:auto;color:var(--text)}
 .gift-kinds{display:flex;flex-wrap:wrap;gap:4px}.gift-kinds .chip{padding:5px 8px;font-size:11px}.gift-kinds .ev-dot{margin-right:4px}
-.gift-mid{display:flex;flex-direction:column;gap:8px;padding-top:70px}.gift-mid .icon-btn{color:var(--text)}.gift-mid .icon-btn:disabled{opacity:.3;cursor:default}
 .note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
 .note-row.done .note-t small{text-decoration:none}
@@ -3409,7 +3408,7 @@ const giftMoney = v => '\u00a3' + v.toLocaleString('en-GB', {minimumFractionDigi
 function giftPrice(id, v){ const p = String(v||'').replace(/[^\d.]/g, ''); giftSet(id, {price:+p > 0 ? p : ''}); }
 /* the tag a note keeps when it is edited: "#gift Nathan birthday fun star", "#pack", or none */
 const noteTagOf = n => { const k = noteKind(n); return k==='gift' ? giftTag(giftOf(n)) : k ? '#' + k : ''; };
-let GIFT_SEL = '';   // the highlighted item: the arrow between the two columns moves it across, the pencil edits it, the colours set its kind
+let GIFT_SEL = '';   // the highlighted item, which opens its own price, move, edit and kind controls
 function giftPick(id){ GIFT_SEL = GIFT_SEL===id ? '' : id; render(); }
 function addGift(kid, list){
   const inp = 'gift' + kid + list, el = $('#' + inp), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
@@ -3430,22 +3429,19 @@ function giftItem(n){
   const g = giftOf(n), t = GIFT_TYPES.find(x=>x[0]===g.type), on = GIFT_SEL===n.id;
   return `<div class="gift-i ${on?'on':''}"${t ? ` style="border-left-color:${t[2]}"` : ''}><button class="gift-t" aria-pressed="${on}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${+g.price ? `<b class="gift-p">${giftMoney(+g.price)}</b> &middot; ` : ''}${t ? `<b style="color:${t[2]}">${t[1]}</b> &middot; ` : ''}${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button><button class="gift-star ${g.star?'on':''}" aria-label="${g.star ? 'Not the main present' : 'Main present'}" aria-pressed="${g.star}" onclick="giftStar('${n.id}')">${STAR(g.star)}</button>${on ? giftEd(n, g) : ''}</div>`;
 }
-/* under the highlighted item, in place: its price and its kind (Tom, 18 Oct 2026: no scrolling down to a bar) */
-const giftEd = (n, g) => `<div class="gift-ed"><input class="inp" id="giftPr" inputmode="decimal" placeholder="\u00a3 price" aria-label="Price" value="${esc(g.price)}" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onchange="giftPrice('${n.id}', this.value)">
+/* inside the highlighted item: its price, the arrow to the other list, edit, and its kind (Tom, 18 Oct 2026: all where you tapped) */
+const giftEd = (n, g) => `<div class="gift-ed"><div class="gift-row"><input class="inp" id="giftPr" inputmode="decimal" placeholder="\u00a3 price" aria-label="Price" value="${esc(g.price)}" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onchange="giftPrice('${n.id}', this.value)"><button class="icon-btn" aria-label="${g.list==='christmas' ? 'Move to Birthday' : 'Move to Christmas'}" onclick="giftSwap('${n.id}')">${ARROW(g.list==='christmas' ? 'r' : 'l')}</button><button class="icon-btn" aria-label="Edit" onclick="openNote('${n.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg></button></div>
   <div class="gift-kinds">${GIFT_TYPES.map(([k, name, c])=>`<button class="chip ${g.type===k?'on':''}" aria-pressed="${g.type===k}" onclick="giftType('${n.id}','${k}')"><i class="ev-dot" style="background:${c}"></i>${name}</button>`).join('')}</div></div>`;
 const ARROW = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="${d==='r' ? 'M5 12h14M13 6l6 6-6 6' : 'M19 12H5M11 6l-6 6 6 6'}"/></svg>`;
 function pGifts(){
   return GIFT_KIDS.map(([kid, col])=>{
     const all = P.items.filter(n=>noteKind(n)==='gift' && giftKid(n).toLowerCase()===kid.toLowerCase()).sort((a,b)=>giftOf(b).star - giftOf(a).star || (a.at<b.at?1:-1));
-    const sel = all.find(n=>n.id===GIFT_SEL), dir = sel ? (giftList(sel)==='christmas' ? 'r' : 'l') : 'r', st = sel && giftOf(sel).type;
-    const colHTML = ([k, name, ic]) => { const l = all.filter(n=>giftList(n)===k), sum = l.reduce((a,n)=>a + (+giftOf(n).price || 0), 0);
+        const colHTML = ([k, name, ic]) => { const l = all.filter(n=>giftList(n)===k), sum = l.reduce((a,n)=>a + (+giftOf(n).price || 0), 0);
       return `<div class="gift-col"><div class="gift-h">${ic} ${name}${l.length ? ` <span class="h2-n">${l.length}</span>` : ''}</div><div class="gift-sum">${giftMoney(Math.round(sum * 100) / 100)} spent</div>
       <div class="gift-add"><input class="inp" id="gift${kid}${k}" placeholder="Add (and \u00a3)" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addGift('${kid}','${k}')}"><button class="icon-btn" aria-label="Add to ${name}" onclick="addGift('${kid}','${k}')">+</button></div>
       ${l.map(giftItem).join('')}</div>`; };
     return `<h2><i class="ev-dot" style="background:${col}"></i>${kid}${all.length ? ` <span class="h2-n">${all.length}</span>` : ''}</h2>
     <div class="gift-cols">${colHTML(GIFT_LISTS[0])}
-      <div class="gift-mid">${all.length ? `<button class="icon-btn" ${sel ? '' : 'disabled'} aria-label="${sel ? (dir==='r' ? 'Move to Birthday' : 'Move to Christmas') : 'Pick an item to move'}" onclick="giftSwap('${sel ? sel.id : ''}')">${ARROW(dir)}</button>` : ''}
-      ${sel ? `<button class="icon-btn" aria-label="Edit" onclick="openNote('${sel.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg></button>` : ''}</div>
       ${colHTML(GIFT_LISTS[1])}</div>
     `; }).join('');
 }
