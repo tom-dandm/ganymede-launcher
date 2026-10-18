@@ -318,6 +318,8 @@ label.f{display:block;font-size:var(--fs-label);font-weight:700;color:var(--mute
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:#0E0E13;color:#fff;border:1px solid rgba(255,255,255,.1);padding:12px 14px 12px 16px;border-radius:var(--r-sm);display:flex;gap:14px;align-items:center;opacity:0;pointer-events:none;transition:.2s;z-index:50;max-width:calc(100% - 32px);font-size:13px}
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .toast button{border:0;background:none;color:#B7A6FF;font-weight:700;cursor:pointer;padding:4px}
+.sync-bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;background:color-mix(in srgb,#E0A800 16%,var(--card));border:1px solid color-mix(in srgb,#E0A800 40%,transparent);border-radius:var(--r-sm);padding:10px 12px;margin:0 0 10px;font-size:var(--fs-small)}
+.sync-bar[hidden]{display:none}.sync-bar span{flex:1 1 160px}.sync-bar .primary{width:auto;margin:0;padding:8px 16px}
 .demo{background:color-mix(in srgb,#E0A800 16%,var(--card));border:1px solid color-mix(in srgb,#E0A800 40%,transparent);color:var(--text);border-radius:var(--r-sm);padding:8px 12px;font-size:var(--fs-small);margin-bottom:10px}
 .hint{font-size:var(--fs-small);color:var(--muted);margin-top:6px}
 .preview{margin-top:14px}
@@ -620,7 +622,15 @@ function syncText(at){
   if (n) return 'Sending' + w.replace(' to send','') + (syncErr ? ' · retrying' : '…');
   return 'Synced';
 }
-function drawSync(){ document.querySelectorAll('.sync[data-at]').forEach(el=>{ const t = syncText(el.dataset.at), ok = /^(Synced|Demo data)/.test(t); el.innerHTML = t; el.classList.toggle('quiet', ok);
+/* signed out with a signal: nothing is syncing, so it says so on every screen with the button to fix it (a phone sat on
+   51 unsent changes for hours behind a small grey line, 18 Oct 2026) */
+function syncBar(){
+  if (!REMOTE || DEMO || authed() || !navigator.onLine) return '';
+  const n = OUTBOX.length;
+  return `<b>Not syncing</b><span>${n ? n + ' change' + (n>1?'s':'') + ' waiting on this phone. ' : ''}Sign in to send and get the other phone's changes.</span><button class="primary" onclick="signIn(false)">Sign in</button>`;
+}
+function drawSync(){ const sb = syncBar(); document.querySelectorAll('.sync-bar').forEach(el=>{ el.hidden = !sb; el.innerHTML = sb; });
+  document.querySelectorAll('.sync[data-at]').forEach(el=>{ const t = syncText(el.dataset.at), ok = /^(Synced|Demo data)/.test(t); el.innerHTML = t; el.classList.toggle('quiet', ok);
   const b = el.parentNode.querySelector('#refresh'); if (b){ b.classList.toggle('warn', !ok); b.title = ok ? 'Refresh' : el.textContent; } }); }
 window.addEventListener('online', syncNow);
 window.addEventListener('offline', drawSync);
@@ -892,7 +902,7 @@ function masterHTML(right, at){
   at = at || ''; const st = syncText(at), ok = /^(Synced|Demo data)/.test(st);
   return `<div class="topbar"><div class="master" role="tablist"><button class="${MODE==='plans'?'on':''}" onclick="pgo('up')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
     <button class="${MODE==='money'?'on':''}" onclick="setMode('money')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>Money</button>
-    <button class="${MODE==='health'?'on':''}" onclick="setMode('health')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Health</button></div>${right||''}<button class="icon-btn${ok?'':' warn'}" id="refresh" onclick="refreshNow()" aria-label="Refresh" title="${ok?'Refresh':esc(st.replace(/<[^>]*>/g,''))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button><div class="sync${ok?' quiet':''}" data-at="${at}">${st}</div></div>`;
+    <button class="${MODE==='health'?'on':''}" onclick="setMode('health')" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Health</button></div>${right||''}<button class="icon-btn${ok?'':' warn'}" id="refresh" onclick="refreshNow()" aria-label="Refresh" title="${ok?'Refresh':esc(st.replace(/<[^>]*>/g,''))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button><div class="sync${ok?' quiet':''}" data-at="${at}">${st}</div></div><div class="sync-bar" role="alert"${syncBar() ? '' : ' hidden'}>${syncBar()}</div>`;
 }
 function setNav(){
   const n = document.querySelector('nav .in');
