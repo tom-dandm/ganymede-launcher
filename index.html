@@ -251,9 +251,13 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .gift-col{display:flex;flex-direction:column;gap:6px;min-width:0}
 .gift-h{font-size:var(--fs-small);font-weight:700;color:var(--muted);margin:2px 2px 0}
 .gift-add{display:flex;gap:4px}.gift-add .inp{padding:9px 10px;min-width:0}.gift-add .icon-btn{flex:none;font-size:20px;font-weight:600;color:var(--text);height:auto}
-.gift-i{text-align:left;border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:9px 10px;font:inherit;color:var(--text);cursor:pointer;overflow-wrap:anywhere}
-.gift-i small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
-.gift-i.on{border-color:var(--family-2);box-shadow:inset 0 0 0 1px var(--family-2)}
+.gift-i{display:flex;align-items:flex-start;border:1px solid var(--line);border-left:4px solid var(--line);background:var(--card);border-radius:var(--r-sm)}
+.gift-t{flex:1;min-width:0;text-align:left;border:0;background:none;padding:9px 4px 9px 9px;font:inherit;color:var(--text);cursor:pointer;overflow-wrap:anywhere}
+.gift-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
+.gift-i.on{border-top-color:var(--family-2);border-right-color:var(--family-2);border-bottom-color:var(--family-2);box-shadow:0 0 0 1px var(--family-2)}
+.gift-star{flex:none;border:0;background:none;color:var(--muted);opacity:.45;padding:9px 8px;cursor:pointer}.gift-star svg{width:18px;height:18px;display:block}
+.gift-star.on{color:#F59E0B;opacity:1}
+.gift-types{margin:0 0 12px}.gift-types .ev-dot{margin-right:6px}
 .gift-mid{display:flex;flex-direction:column;gap:8px;padding-top:70px}.gift-mid .icon-btn{color:var(--text)}.gift-mid .icon-btn:disabled{opacity:.3;cursor:default}
 .note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
@@ -2973,7 +2977,7 @@ const PMock = (() => {
     items:[['n1','Milk #shop',false,'Laura',st(T,'08:10'),'',''],['n2','Bread #shop',false,'Tom',st(T,'08:12'),'',''],['n3','Book the dentist for Nathan',false,'Laura',st(addDays(T,-2),'19:40'),'',''],
       ['n4','Bin bags #shop',true,'Tom',st(addDays(T,-1),'12:00'),'Laura',st(addDays(T,-1),'09:30')],
       ['n5','Majorca #holiday '+addDays(T,40)+' '+addDays(T,47),false,'Tom',st(addDays(T,-20),'20:00'),'',''],['n6','Book the airport parking #hol',false,'Laura',st(addDays(T,-3),'21:00'),'',''],
-      ['n7','Passports #pack',false,'Tom',st(addDays(T,-3),'21:05'),'',''],['n7g','Lego fire station #gift Nathan christmas',false,'Laura',st(addDays(T,-6),'19:00'),'',''],['n7h','Scooter #gift Nathan birthday',false,'Laura',st(addDays(T,-5),'19:00'),'',''],['n8','Sun cream #pack',true,'Laura',st(addDays(T,-3),'21:06'),'Laura',st(addDays(T,-1),'10:00'),''],
+      ['n7','Passports #pack',false,'Tom',st(addDays(T,-3),'21:05'),'',''],['n7g','Lego fire station #gift Nathan christmas creative star',false,'Laura',st(addDays(T,-6),'19:00'),'',''],['n7h','Scooter #gift Nathan birthday',false,'Laura',st(addDays(T,-5),'19:00'),'',''],['n8','Sun cream #pack',true,'Laura',st(addDays(T,-3),'21:06'),'Laura',st(addDays(T,-1),'10:00'),''],
       ['c1','Bins out: black #chore 2018-06-01 w2:5',false,'Tom',st('2026-10-03','12:00'),'',''],['c2','Bins out: blue #chore 2018-06-08 w4:5',false,'Tom',st('2026-10-03','12:00'),'',''],
       ['c3','Bins out: brown #chore 2018-05-25 w4:5',false,'Tom',st('2026-10-03','12:00'),'',''],['c4','Nail reminder #chore 2026-10-03 w1:2,6',false,'Tom',st('2026-10-03','12:00'),'',''],
       ['c5','Water the plants #chore 2026-10-03 w1:6',false,'Tom',st('2026-10-03','12:00'),'',''],['c6','Water Spotty #chore 2026-10-07 w1:3',false,'Tom',st('2026-10-03','12:00'),'',''],
@@ -3276,7 +3280,7 @@ function calNote(){
 /* a note tagged #app is an idea for the app: the App ideas tab of the list on Home, the tag hidden */
 const APP_TAG = /(^|\s)#app\b/i;
 const isAppNote = n => noteKind(n)==='app';
-const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/#gift \S+( (christmas|birthday)\b)?/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore|gift)\b/ig, ' ').replace(/\s+/g, ' ').trim();
+const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/#gift \S+(?: (?:christmas|birthday|clothes|learning|creative|digital|fun|star)\b)*/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore|gift)\b/ig, ' ').replace(/\s+/g, ' ').trim();
 let NOTE_APP = false;
 /* other tags on notes, each its own list: #shop the shopping list (Home), #pack and #hol the holiday packing list and
    things to do, #holiday the trip itself ("Majorca #holiday 2027-07-14 2027-07-21"), #gift and the child's name a present
@@ -3375,30 +3379,45 @@ function holidayOver(){
 /* ---- gifts: per child, a Christmas list and a Birthday list of what we have bought them; added to, never ticked, and an item
    moves between the two lists with one tap (Tom, 18 Oct 2026). Text: "Lego set #gift Nathan christmas" (no list = Christmas). */
 const GIFT_KIDS = [['Nathan', '#27AE60'], ['Evy', '#2E86C1']], GIFT_LISTS = [['christmas', 'Christmas', '&#x1F384;'], ['birthday', 'Birthday', '&#x1F382;']];
-const GIFT_RE = /#gift (\S+)(?: (christmas|birthday)\b)?/i;
-const giftKid = n => (String(n.text).match(GIFT_RE) || [])[1] || '';
-const giftList = n => ((String(n.text).match(GIFT_RE) || [])[2] || 'christmas').toLowerCase();
-/* the tag a note keeps when it is edited: "#gift Nathan birthday", "#pack", or none */
-const noteTagOf = n => { const k = noteKind(n); return k==='gift' ? '#gift ' + (giftKid(n) || GIFT_KIDS[0][0]) + ' ' + giftList(n) : k ? '#' + k : ''; };
-let GIFT_SEL = '';   // the highlighted item: the arrow between the two columns moves it across, the pencil edits it (Tom, 18 Oct 2026)
+/* after the child: the list, the kind of toy (colour-coded, set by hand) and "star" for the main present, e.g.
+   "Lego set #gift Nathan christmas creative star" (Tom, 18 Oct 2026) */
+const GIFT_TYPES = [['clothes', 'Clothes', '#D946EF'], ['learning', 'Learning', '#14B8A6'], ['creative', 'Creative', '#F97316'], ['digital', 'Digital', '#6366F1'], ['fun', 'Fun', '#EF4444']];
+const GIFT_RE = /#gift (\S+)((?: (?:christmas|birthday|clothes|learning|creative|digital|fun|star)\b)*)/i;
+function giftOf(n){
+  const m = String(n.text).match(GIFT_RE) || [], w = String(m[2] || '').toLowerCase().split(' ');
+  return {kid:m[1] || '', list:w.includes('birthday') ? 'birthday' : 'christmas', type:(GIFT_TYPES.find(t=>w.includes(t[0])) || [''])[0], star:w.includes('star')};
+}
+const giftKid = n => giftOf(n).kid;
+const giftList = n => giftOf(n).list;
+const giftTag = g => ['#gift', g.kid || GIFT_KIDS[0][0], g.list || 'christmas', g.type, g.star ? 'star' : ''].filter(Boolean).join(' ');
+/* the tag a note keeps when it is edited: "#gift Nathan birthday fun star", "#pack", or none */
+const noteTagOf = n => { const k = noteKind(n); return k==='gift' ? giftTag(giftOf(n)) : k ? '#' + k : ''; };
+let GIFT_SEL = '';   // the highlighted item: the arrow between the two columns moves it across, the pencil edits it, the colours set its kind
 function giftPick(id){ GIFT_SEL = GIFT_SEL===id ? '' : id; render(); }
 function addGift(kid, list){
   const inp = 'gift' + kid + list, el = $('#' + inp), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return el.focus();
-  lines.forEach(t=>pRun('addNote', [{id:newId(), text:t + ' #gift ' + kid + ' ' + list}], null, null, true));
+  lines.forEach(t=>pRun('addNote', [{id:newId(), text:t + ' ' + giftTag({kid, list})}], null, null, true));
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#' + inp); if (i){ i.value = ''; i.focus(); } }));
 }
-function giftSwap(id){
+function giftSet(id, ch, msg){
   const n = P.items.find(x=>x.id===id); if (!n) return;
-  const to = giftList(n)==='christmas' ? 'birthday' : 'christmas';
-  pRun('editNote', [id, noteText(n.text) + ' #gift ' + giftKid(n) + ' ' + to], 'Moved to ' + (to==='christmas' ? 'Christmas' : 'Birthday'));
+  pRun('editNote', [id, noteText(n.text) + ' ' + giftTag(Object.assign(giftOf(n), ch))], msg || null, null, !msg);
 }
-const giftItem = n => `<button class="gift-i ${GIFT_SEL===n.id?'on':''}" aria-pressed="${GIFT_SEL===n.id}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button>`;
+function giftSwap(id){ const n = P.items.find(x=>x.id===id); if (!n) return;
+  const to = giftList(n)==='christmas' ? 'birthday' : 'christmas'; giftSet(id, {list:to}, 'Moved to ' + (to==='christmas' ? 'Christmas' : 'Birthday')); }
+function giftType(id, t){ const n = P.items.find(x=>x.id===id); if (n) giftSet(id, {type:giftOf(n).type===t ? '' : t}); }
+function giftStar(id){ const n = P.items.find(x=>x.id===id); if (n) giftSet(id, {star:!giftOf(n).star}); }
+const STAR = on => `<svg viewBox="0 0 24 24" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.3L12 17.4l-5.6 3 1.1-6.3L3 9.7l6.2-.9z"/></svg>`;
+function giftItem(n){
+  const g = giftOf(n), t = GIFT_TYPES.find(x=>x[0]===g.type), on = GIFT_SEL===n.id;
+  return `<div class="gift-i ${on?'on':''}"${t ? ` style="border-left-color:${t[2]}"` : ''}><button class="gift-t" aria-pressed="${on}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${t ? `<b style="color:${t[2]}">${t[1]}</b> &middot; ` : ''}${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button><button class="gift-star ${g.star?'on':''}" aria-label="${g.star ? 'Not the main present' : 'Main present'}" aria-pressed="${g.star}" onclick="giftStar('${n.id}')">${STAR(g.star)}</button></div>`;
+}
 const ARROW = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="${d==='r' ? 'M5 12h14M13 6l6 6-6 6' : 'M19 12H5M11 6l-6 6 6 6'}"/></svg>`;
 function pGifts(){
   return GIFT_KIDS.map(([kid, col])=>{
-    const all = P.items.filter(n=>noteKind(n)==='gift' && giftKid(n).toLowerCase()===kid.toLowerCase()).sort((a,b)=>a.at<b.at?1:-1);
-    const sel = all.find(n=>n.id===GIFT_SEL), dir = sel ? (giftList(sel)==='christmas' ? 'r' : 'l') : 'r';
+    const all = P.items.filter(n=>noteKind(n)==='gift' && giftKid(n).toLowerCase()===kid.toLowerCase()).sort((a,b)=>giftOf(b).star - giftOf(a).star || (a.at<b.at?1:-1));
+    const sel = all.find(n=>n.id===GIFT_SEL), dir = sel ? (giftList(sel)==='christmas' ? 'r' : 'l') : 'r', st = sel && giftOf(sel).type;
     const colHTML = ([k, name, ic]) => { const l = all.filter(n=>giftList(n)===k);
       return `<div class="gift-col"><div class="gift-h">${ic} ${name}${l.length ? ` <span class="h2-n">${l.length}</span>` : ''}</div>
       <div class="gift-add"><input class="inp" id="gift${kid}${k}" placeholder="Add" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addGift('${kid}','${k}')}"><button class="icon-btn" aria-label="Add to ${name}" onclick="addGift('${kid}','${k}')">+</button></div>
@@ -3407,7 +3426,8 @@ function pGifts(){
     <div class="gift-cols">${colHTML(GIFT_LISTS[0])}
       <div class="gift-mid">${all.length ? `<button class="icon-btn" ${sel ? '' : 'disabled'} aria-label="${sel ? (dir==='r' ? 'Move to Birthday' : 'Move to Christmas') : 'Pick an item to move'}" onclick="giftSwap('${sel ? sel.id : ''}')">${ARROW(dir)}</button>` : ''}
       ${sel ? `<button class="icon-btn" aria-label="Edit" onclick="openNote('${sel.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg></button>` : ''}</div>
-      ${colHTML(GIFT_LISTS[1])}</div>`; }).join('');
+      ${colHTML(GIFT_LISTS[1])}</div>
+    ${sel ? `<div class="chips wrap gift-types">${GIFT_TYPES.map(([k, name, c])=>`<button class="chip ${st===k?'on':''}" aria-pressed="${st===k}" onclick="giftType('${sel.id}','${k}')"><i class="ev-dot" style="background:${c}"></i>${name}</button>`).join('')}</div>` : ''}`; }).join('');
 }
 function noteRow(n){
   return `<div class="note-row ${n.done?'done':''}"><button class="tick" aria-label="${n.done?'Untick':'Tick'}" onclick="tickNote('${n.id}', ${!n.done})">${n.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
