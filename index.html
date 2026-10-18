@@ -251,14 +251,15 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .gift-col{display:flex;flex-direction:column;gap:6px;min-width:0}
 .gift-h{font-size:var(--fs-small);font-weight:700;color:var(--muted);margin:2px 2px 0}
 .gift-add{display:flex;gap:4px}.gift-add .inp{padding:9px 10px;min-width:0}.gift-add .icon-btn{flex:none;font-size:20px;font-weight:600;color:var(--text);height:auto}
-.gift-i{display:flex;align-items:flex-start;border:1px solid var(--line);border-left:4px solid var(--line);background:var(--card);border-radius:var(--r-sm)}
+.gift-i{display:flex;flex-wrap:wrap;align-items:flex-start;border:1px solid var(--line);border-left:4px solid var(--line);background:var(--card);border-radius:var(--r-sm)}
 .gift-t{flex:1;min-width:0;text-align:left;border:0;background:none;padding:9px 4px 9px 9px;font:inherit;color:var(--text);cursor:pointer;overflow-wrap:anywhere}
 .gift-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
 .gift-i.on{border-top-color:var(--family-2);border-right-color:var(--family-2);border-bottom-color:var(--family-2);box-shadow:0 0 0 1px var(--family-2)}
 .gift-star{flex:none;border:0;background:none;color:var(--muted);opacity:.45;padding:9px 8px;cursor:pointer}.gift-star svg{width:18px;height:18px;display:block}
 .gift-star.on{color:#F59E0B;opacity:1}
-.gift-types{margin:0 0 12px}.gift-sum{font-weight:700;margin:-4px 2px 0}.gift-p{color:var(--text)}
-.gift-pr{display:flex;align-items:center;gap:10px;margin:0 0 8px}.gift-pr .f{margin:0}.gift-pr .inp{width:110px;padding:9px 10px}.gift-types .ev-dot{margin-right:6px}
+.gift-sum{font-weight:700;margin:-4px 2px 0}.gift-p{color:var(--text)}
+.gift-ed{flex-basis:100%;padding:0 8px 9px 9px;display:flex;flex-direction:column;gap:6px}.gift-ed .inp{padding:8px 10px}
+.gift-kinds{display:flex;flex-wrap:wrap;gap:4px}.gift-kinds .chip{padding:5px 8px;font-size:11px}.gift-kinds .ev-dot{margin-right:4px}
 .gift-mid{display:flex;flex-direction:column;gap:8px;padding-top:70px}.gift-mid .icon-btn{color:var(--text)}.gift-mid .icon-btn:disabled{opacity:.3;cursor:default}
 .note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
@@ -3427,8 +3428,11 @@ function giftStar(id){ const n = P.items.find(x=>x.id===id); if (n) giftSet(id, 
 const STAR = on => `<svg viewBox="0 0 24 24" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.3L12 17.4l-5.6 3 1.1-6.3L3 9.7l6.2-.9z"/></svg>`;
 function giftItem(n){
   const g = giftOf(n), t = GIFT_TYPES.find(x=>x[0]===g.type), on = GIFT_SEL===n.id;
-  return `<div class="gift-i ${on?'on':''}"${t ? ` style="border-left-color:${t[2]}"` : ''}><button class="gift-t" aria-pressed="${on}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${+g.price ? `<b class="gift-p">${giftMoney(+g.price)}</b> &middot; ` : ''}${t ? `<b style="color:${t[2]}">${t[1]}</b> &middot; ` : ''}${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button><button class="gift-star ${g.star?'on':''}" aria-label="${g.star ? 'Not the main present' : 'Main present'}" aria-pressed="${g.star}" onclick="giftStar('${n.id}')">${STAR(g.star)}</button></div>`;
+  return `<div class="gift-i ${on?'on':''}"${t ? ` style="border-left-color:${t[2]}"` : ''}><button class="gift-t" aria-pressed="${on}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${+g.price ? `<b class="gift-p">${giftMoney(+g.price)}</b> &middot; ` : ''}${t ? `<b style="color:${t[2]}">${t[1]}</b> &middot; ` : ''}${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button><button class="gift-star ${g.star?'on':''}" aria-label="${g.star ? 'Not the main present' : 'Main present'}" aria-pressed="${g.star}" onclick="giftStar('${n.id}')">${STAR(g.star)}</button>${on ? giftEd(n, g) : ''}</div>`;
 }
+/* under the highlighted item, in place: its price and its kind (Tom, 18 Oct 2026: no scrolling down to a bar) */
+const giftEd = (n, g) => `<div class="gift-ed"><input class="inp" id="giftPr" inputmode="decimal" placeholder="\u00a3 price" aria-label="Price" value="${esc(g.price)}" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onchange="giftPrice('${n.id}', this.value)">
+  <div class="gift-kinds">${GIFT_TYPES.map(([k, name, c])=>`<button class="chip ${g.type===k?'on':''}" aria-pressed="${g.type===k}" onclick="giftType('${n.id}','${k}')"><i class="ev-dot" style="background:${c}"></i>${name}</button>`).join('')}</div></div>`;
 const ARROW = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="${d==='r' ? 'M5 12h14M13 6l6 6-6 6' : 'M19 12H5M11 6l-6 6 6 6'}"/></svg>`;
 function pGifts(){
   return GIFT_KIDS.map(([kid, col])=>{
@@ -3443,7 +3447,7 @@ function pGifts(){
       <div class="gift-mid">${all.length ? `<button class="icon-btn" ${sel ? '' : 'disabled'} aria-label="${sel ? (dir==='r' ? 'Move to Birthday' : 'Move to Christmas') : 'Pick an item to move'}" onclick="giftSwap('${sel ? sel.id : ''}')">${ARROW(dir)}</button>` : ''}
       ${sel ? `<button class="icon-btn" aria-label="Edit" onclick="openNote('${sel.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg></button>` : ''}</div>
       ${colHTML(GIFT_LISTS[1])}</div>
-    ${sel ? `<div class="gift-pr"><label class="f" for="giftPr">Price</label><input class="inp" id="giftPr" inputmode="decimal" placeholder="\u00a3" value="${esc(giftOf(sel).price)}" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onchange="giftPrice('${sel.id}', this.value)"></div><div class="chips wrap gift-types">${GIFT_TYPES.map(([k, name, c])=>`<button class="chip ${st===k?'on':''}" aria-pressed="${st===k}" onclick="giftType('${sel.id}','${k}')"><i class="ev-dot" style="background:${c}"></i>${name}</button>`).join('')}</div>` : ''}`; }).join('');
+    `; }).join('');
 }
 function noteRow(n){
   return `<div class="note-row ${n.done?'done':''}"><button class="tick" aria-label="${n.done?'Untick':'Tick'}" onclick="tickNote('${n.id}', ${!n.done})">${n.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
