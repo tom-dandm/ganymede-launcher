@@ -247,6 +247,8 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .tick svg{width:15px;height:15px}
 .note-row.done .tick{background:var(--family-2);border-color:var(--family-2)}
 .note-t{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--text);text-align:left;padding:13px 0;cursor:pointer;overflow-wrap:anywhere}
+.gift-sw{flex:none;align-self:center;font-size:var(--fs-small)}
+.gift-h{font-size:var(--fs-small);font-weight:700;color:var(--muted);margin:12px 2px 6px}
 .note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
 .note-row.done .note-t small{text-decoration:none}
@@ -872,6 +874,7 @@ const NAV = {money:`<button data-view="spending" class="on"><svg viewBox="0 0 24
   plans:`<button data-view="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
   <button data-view="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</button>
   <button data-view="hol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9M12 9C9 5 5 5 3 7M12 9c3-4 7-4 9-2M12 9c-2-3-1-6 2-7M5 21h14"/></svg>Holiday</button>
+  <button data-view="gifts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7M12 8v13M12 8c-1.5-3-5-4-5-1.5S10 8 12 8zM12 8c1.5-3 5-4 5-1.5S14 8 12 8z"/></svg>Gifts</button>
   <button data-view="track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Track</button>`};
 const setBtn = go => `<button class="icon-btn" onclick="${go}" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>`;
 function masterHTML(right, at){
@@ -2964,7 +2967,7 @@ const PMock = (() => {
     items:[['n1','Milk #shop',false,'Laura',st(T,'08:10'),'',''],['n2','Bread #shop',false,'Tom',st(T,'08:12'),'',''],['n3','Book the dentist for Nathan',false,'Laura',st(addDays(T,-2),'19:40'),'',''],
       ['n4','Bin bags #shop',true,'Tom',st(addDays(T,-1),'12:00'),'Laura',st(addDays(T,-1),'09:30')],
       ['n5','Majorca #holiday '+addDays(T,40)+' '+addDays(T,47),false,'Tom',st(addDays(T,-20),'20:00'),'',''],['n6','Book the airport parking #hol',false,'Laura',st(addDays(T,-3),'21:00'),'',''],
-      ['n7','Passports #pack',false,'Tom',st(addDays(T,-3),'21:05'),'',''],['n8','Sun cream #pack',true,'Laura',st(addDays(T,-3),'21:06'),'Laura',st(addDays(T,-1),'10:00'),''],
+      ['n7','Passports #pack',false,'Tom',st(addDays(T,-3),'21:05'),'',''],['n7g','Lego fire station #gift Nathan christmas',false,'Laura',st(addDays(T,-6),'19:00'),'',''],['n7h','Scooter #gift Nathan birthday',false,'Laura',st(addDays(T,-5),'19:00'),'',''],['n8','Sun cream #pack',true,'Laura',st(addDays(T,-3),'21:06'),'Laura',st(addDays(T,-1),'10:00'),''],
       ['c1','Bins out: black #chore 2018-06-01 w2:5',false,'Tom',st('2026-10-03','12:00'),'',''],['c2','Bins out: blue #chore 2018-06-08 w4:5',false,'Tom',st('2026-10-03','12:00'),'',''],
       ['c3','Bins out: brown #chore 2018-05-25 w4:5',false,'Tom',st('2026-10-03','12:00'),'',''],['c4','Nail reminder #chore 2026-10-03 w1:2,6',false,'Tom',st('2026-10-03','12:00'),'',''],
       ['c5','Water the plants #chore 2026-10-03 w1:6',false,'Tom',st('2026-10-03','12:00'),'',''],['c6','Water Spotty #chore 2026-10-07 w1:3',false,'Tom',st('2026-10-03','12:00'),'',''],
@@ -3238,14 +3241,14 @@ const inText = n => n===0 ? 'today' : n===1 ? 'tomorrow' : n < 0 ? (-n===1 ? '1 
 
 /* ---- screens ---- */
 function pRender(){
-  const titles = {up:'Home', cal:'Calendar', hol:'Holiday', track:'Track'};
+  const titles = {up:'Home', cal:'Calendar', hol:'Holiday', gifts:'Gifts', track:'Track'};
   const synced = P ? new Date(P.syncedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
   setNav();
   const head = masterHTML('', synced) + `<h1 class="sr">${titles[pview]}</h1>
       ${DEMO?'<div class="demo">Preview mode &ndash; changes are not saved.</div>':''}`;
   if (!P){ $('#app').innerHTML = head + '<div class="loading">Loading&hellip;</div>'; pLoad(); return; }
   const y = placeY('p:'+pview);
-  if (!paint('p:'+pview, head, ({up:pUp, cal:pCal, hol:pHol, track:pTrack}[pview] || pUp)(), synced)) return;
+  if (!paint('p:'+pview, head, ({up:pUp, cal:pCal, hol:pHol, gifts:pGifts, track:pTrack}[pview] || pUp)(), synced)) return;
   window.scrollTo(0,y);
   wordPlace();
 }
@@ -3267,11 +3270,12 @@ function calNote(){
 /* a note tagged #app is an idea for the app: the App ideas tab of the list on Home, the tag hidden */
 const APP_TAG = /(^|\s)#app\b/i;
 const isAppNote = n => noteKind(n)==='app';
-const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore)\b/ig, ' ').replace(/\s+/g, ' ').trim();
+const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/#gift \S+( (christmas|birthday)\b)?/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore|gift)\b/ig, ' ').replace(/\s+/g, ' ').trim();
 let NOTE_APP = false;
 /* other tags on notes, each its own list: #shop the shopping list (Home), #pack and #hol the holiday packing list and
-   things to do, #holiday the trip itself ("Majorca #holiday 2027-07-14 2027-07-21"). The tag (and the trip dates) are hidden. */
-const TAG_RE = /(^|\s)#(app|shop|pack|hol|holiday|chore)\b/i;
+   things to do, #holiday the trip itself ("Majorca #holiday 2027-07-14 2027-07-21"), #gift and the child's name a present
+   on the Gifts tab ("Lego set #gift Nathan"). The tag (and the trip dates, the child) are hidden. */
+const TAG_RE = /(^|\s)#(app|shop|pack|hol|holiday|chore|gift)\b/i;
 const noteKind = n => { const m = String(n.text).match(TAG_RE); return m ? m[2].toLowerCase() : ''; };
 const plainNote = n => { const k = noteKind(n); return !k || k==='app'; };
 const doneNote = n => n.done && !noteKind(n);
@@ -3361,6 +3365,37 @@ function holidayOver(){
   const h = holiday(); if (h) pRun('setNoteDone', [h.id, true], null, null, true);
   const ids = P.items.filter(n=>noteKind(n)==='hol' && n.done).map(n=>n.id); if (ids.length) pRun('clearDone', [ids], null, null, true);
   unpackAll();
+}
+/* ---- gifts: per child, a Christmas list and a Birthday list of what we have bought them; added to, never ticked, and an item
+   moves between the two lists with one tap (Tom, 18 Oct 2026). Text: "Lego set #gift Nathan christmas" (no list = Christmas). */
+const GIFT_KIDS = [['Nathan', '#27AE60'], ['Evy', '#2E86C1']], GIFT_LISTS = [['christmas', 'Christmas', '&#x1F384;'], ['birthday', 'Birthday', '&#x1F382;']];
+const GIFT_RE = /#gift (\S+)(?: (christmas|birthday)\b)?/i;
+const giftKid = n => (String(n.text).match(GIFT_RE) || [])[1] || '';
+const giftList = n => ((String(n.text).match(GIFT_RE) || [])[2] || 'christmas').toLowerCase();
+/* the tag a note keeps when it is edited: "#gift Nathan birthday", "#pack", or none */
+const noteTagOf = n => { const k = noteKind(n); return k==='gift' ? '#gift ' + (giftKid(n) || GIFT_KIDS[0][0]) + ' ' + giftList(n) : k ? '#' + k : ''; };
+const GIFT_TO = {};   // which list each child's Add box adds to
+function giftTo(kid, l){ const v = ($('#gift' + kid)||{}).value || ''; GIFT_TO[kid] = l; render(); const i = $('#gift' + kid); if (i) i.value = v; }
+function addGift(kid){
+  const inp = 'gift' + kid, el = $('#' + inp), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
+  if (!lines.length) return el.focus();
+  lines.forEach(t=>pRun('addNote', [{id:newId(), text:t + ' #gift ' + kid + ' ' + (GIFT_TO[kid] || 'christmas')}], null, null, true));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#' + inp); if (i){ i.value = ''; i.focus(); } }));
+}
+function giftSwap(id){
+  const n = P.items.find(x=>x.id===id); if (!n) return;
+  const to = giftList(n)==='christmas' ? 'birthday' : 'christmas';
+  pRun('editNote', [id, noteText(n.text) + ' #gift ' + giftKid(n) + ' ' + to], 'Moved to ' + (to==='christmas' ? 'Christmas' : 'Birthday'));
+}
+const giftRow = n => `<div class="note-row"><button class="note-t" onclick="openNote('${n.id}')">${esc(noteText(n.text))}<small>${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button><button class="chip gift-sw" onclick="giftSwap('${n.id}')">${giftList(n)==='christmas' ? 'To birthday' : 'To Christmas'}</button></div>`;
+function pGifts(){
+  return GIFT_KIDS.map(([kid, col])=>{
+    const all = P.items.filter(n=>noteKind(n)==='gift' && giftKid(n).toLowerCase()===kid.toLowerCase()).sort((a,b)=>a.at<b.at?1:-1), to = GIFT_TO[kid] || 'christmas';
+    return `<h2><i class="ev-dot" style="background:${col}"></i>${kid}${all.length ? ` <span class="h2-n">${all.length}</span>` : ''}</h2>
+    <div class="note-add"><input class="inp" id="gift${kid}" placeholder="What we bought ${kid}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addGift('${kid}')}"><button class="chip on" onclick="addGift('${kid}')">Add</button></div>
+    <div class="chips note-tag">${GIFT_LISTS.map(([k, name, ic])=>`<button class="chip ${to===k?'on':''}" onclick="giftTo('${kid}','${k}')">${ic} ${name}</button>`).join('')}</div>
+    ${GIFT_LISTS.map(([k, name, ic])=>{ const l = all.filter(n=>giftList(n)===k);
+      return l.length ? `<div class="gift-h">${ic} ${name} <span class="h2-n">${l.length}</span></div><div class="card notes">${l.map(giftRow).join('')}</div>` : ''; }).join('')}`; }).join('');
 }
 function noteRow(n){
   return `<div class="note-row ${n.done?'done':''}"><button class="tick" aria-label="${n.done?'Untick':'Tick'}" onclick="tickNote('${n.id}', ${!n.done})">${n.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
@@ -3525,8 +3560,8 @@ function openNote(id){
     <textarea class="inp" id="noteEd" rows="3">${esc(noteText(n.text))}</textarea>
     ${plainNote(n) ? `<div class="chips"><button class="chip ${isAppNote(n)?'':'on'}" onclick="noteSetApp('${id}', false)">To do</button><button class="chip ${isAppNote(n)?'on':''}" onclick="noteSetApp('${id}', true)">&#x1F4A1; App idea</button></div>` : ''}
     <div class="hint">Added by ${esc(n.by||'?')}${n.at ? ', ' + esc(dayLabel(n.at.slice(0,10))) : ''}${n.done && n.doneBy ? '. Ticked by ' + esc(n.doneBy) : ''}</div>
-    <button class="primary" onclick="const t=$('#noteEd').value; pRun('editNote', ['${id}', ${jsA(noteKind(n))} && !TAG_RE.test(t) ? t + ' #' + ${jsA(noteKind(n))} : t], 'Saved')">Save</button>
-    <button class="secondary" onclick="pRun('setNoteDone', ['${id}', ${!n.done}])">${n.done ? 'Untick it' : 'Tick it off'}</button>
+    <button class="primary" onclick="const t=$('#noteEd').value; pRun('editNote', ['${id}', ${jsA(noteTagOf(n))} && !TAG_RE.test(t) ? t + ' ' + ${jsA(noteTagOf(n))} : t], 'Saved')">Save</button>
+    ${noteKind(n)==='gift' ? '' : `<button class="secondary" onclick="pRun('setNoteDone', ['${id}', ${!n.done}])">${n.done ? 'Untick it' : 'Tick it off'}</button>`}
     <button class="secondary neg" onclick="pRun('deleteNote', ['${id}'], 'Note removed', ()=>pRun('addNote', [{id:newId(), text:${jsA(n.text)}}], null, null, true))">Remove</button>`);
 }
 function pCal(){
