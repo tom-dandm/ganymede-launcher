@@ -257,7 +257,8 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .gift-i.on{border-top-color:var(--family-2);border-right-color:var(--family-2);border-bottom-color:var(--family-2);box-shadow:0 0 0 1px var(--family-2)}
 .gift-star{flex:none;border:0;background:none;color:var(--muted);opacity:.45;padding:9px 8px;cursor:pointer}.gift-star svg{width:18px;height:18px;display:block}
 .gift-star.on{color:#F59E0B;opacity:1}
-.gift-types{margin:0 0 12px}.gift-types .ev-dot{margin-right:6px}
+.gift-types{margin:0 0 12px}.gift-sum{font-weight:700;margin:-4px 2px 0}.gift-p{color:var(--text)}
+.gift-pr{display:flex;align-items:center;gap:10px;margin:0 0 8px}.gift-pr .f{margin:0}.gift-pr .inp{width:110px;padding:9px 10px}.gift-types .ev-dot{margin-right:6px}
 .gift-mid{display:flex;flex-direction:column;gap:8px;padding-top:70px}.gift-mid .icon-btn{color:var(--text)}.gift-mid .icon-btn:disabled{opacity:.3;cursor:default}
 .note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
 .note-row.done .note-t{color:var(--muted);text-decoration:line-through}
@@ -3280,7 +3281,7 @@ function calNote(){
 /* a note tagged #app is an idea for the app: the App ideas tab of the list on Home, the tag hidden */
 const APP_TAG = /(^|\s)#app\b/i;
 const isAppNote = n => noteKind(n)==='app';
-const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/#gift \S+(?: (?:christmas|birthday|clothes|learning|creative|digital|fun|star)\b)*/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore|gift)\b/ig, ' ').replace(/\s+/g, ' ').trim();
+const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/#gift \S+(?: (?:christmas|birthday|clothes|learning|creative|digital|fun|star|p\d+(?:\.\d+)?)\b)*/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore|gift)\b/ig, ' ').replace(/\s+/g, ' ').trim();
 let NOTE_APP = false;
 /* other tags on notes, each its own list: #shop the shopping list (Home), #pack and #hol the holiday packing list and
    things to do, #holiday the trip itself ("Majorca #holiday 2027-07-14 2027-07-21"), #gift and the child's name a present
@@ -3379,17 +3380,22 @@ function holidayOver(){
 /* ---- gifts: per child, a Christmas list and a Birthday list of what we have bought them; added to, never ticked, and an item
    moves between the two lists with one tap (Tom, 18 Oct 2026). Text: "Lego set #gift Nathan christmas" (no list = Christmas). */
 const GIFT_KIDS = [['Nathan', '#27AE60'], ['Evy', '#2E86C1']], GIFT_LISTS = [['christmas', 'Christmas', '&#x1F384;'], ['birthday', 'Birthday', '&#x1F382;']];
-/* after the child: the list, the kind of toy (colour-coded, set by hand) and "star" for the main present, e.g.
-   "Lego set #gift Nathan christmas creative star" (Tom, 18 Oct 2026) */
+/* after the child: the list, the kind of toy (colour-coded, set by hand), "star" for the main present and the price in
+   pounds after a p, e.g. "Lego set #gift Nathan christmas creative star p24.99" (Tom, 18 Oct 2026). Column headers total the prices. */
 const GIFT_TYPES = [['clothes', 'Clothes', '#D946EF'], ['learning', 'Learning', '#14B8A6'], ['creative', 'Creative', '#F97316'], ['digital', 'Digital', '#6366F1'], ['fun', 'Fun', '#EF4444']];
-const GIFT_RE = /#gift (\S+)((?: (?:christmas|birthday|clothes|learning|creative|digital|fun|star)\b)*)/i;
+const GIFT_RE = /#gift (\S+)((?: (?:christmas|birthday|clothes|learning|creative|digital|fun|star|p\d+(?:\.\d+)?)\b)*)/i;
 function giftOf(n){
   const m = String(n.text).match(GIFT_RE) || [], w = String(m[2] || '').toLowerCase().split(' ');
-  return {kid:m[1] || '', list:w.includes('birthday') ? 'birthday' : 'christmas', type:(GIFT_TYPES.find(t=>w.includes(t[0])) || [''])[0], star:w.includes('star')};
+  return {kid:m[1] || '', list:w.includes('birthday') ? 'birthday' : 'christmas', type:(GIFT_TYPES.find(t=>w.includes(t[0])) || [''])[0], star:w.includes('star'),
+    price:(w.map(x=>x.match(/^p(\d+(?:\.\d+)?)$/)).find(Boolean) || [])[1] || ''};
 }
 const giftKid = n => giftOf(n).kid;
 const giftList = n => giftOf(n).list;
-const giftTag = g => ['#gift', g.kid || GIFT_KIDS[0][0], g.list || 'christmas', g.type, g.star ? 'star' : ''].filter(Boolean).join(' ');
+const giftTag = g => ['#gift', g.kid || GIFT_KIDS[0][0], g.list || 'christmas', g.type, g.star ? 'star' : '', +g.price > 0 ? 'p' + (+g.price).toFixed(2) : ''].filter(Boolean).join(' ');
+/* "Lego set \u00a324.99" or "Lego set 24.99" typed in an Add box: the price comes off the end */
+const giftSplit = t => { const m = t.match(/^(.*?)\s*(?:\u00a3\s*(\d+(?:\.\d{1,2})?)|\s(\d+\.\d{2}))$/); return m && m[1] ? {text:m[1], price:m[2] || m[3]} : {text:t, price:''}; };
+const giftMoney = v => '\u00a3' + v.toLocaleString('en-GB', {minimumFractionDigits:v % 1 ? 2 : 0, maximumFractionDigits:2});
+function giftPrice(id, v){ const p = String(v||'').replace(/[^\d.]/g, ''); giftSet(id, {price:+p > 0 ? p : ''}); }
 /* the tag a note keeps when it is edited: "#gift Nathan birthday fun star", "#pack", or none */
 const noteTagOf = n => { const k = noteKind(n); return k==='gift' ? giftTag(giftOf(n)) : k ? '#' + k : ''; };
 let GIFT_SEL = '';   // the highlighted item: the arrow between the two columns moves it across, the pencil edits it, the colours set its kind
@@ -3397,7 +3403,7 @@ function giftPick(id){ GIFT_SEL = GIFT_SEL===id ? '' : id; render(); }
 function addGift(kid, list){
   const inp = 'gift' + kid + list, el = $('#' + inp), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return el.focus();
-  lines.forEach(t=>pRun('addNote', [{id:newId(), text:t + ' ' + giftTag({kid, list})}], null, null, true));
+  lines.forEach(t=>{ const g = giftSplit(t); pRun('addNote', [{id:newId(), text:g.text + ' ' + giftTag({kid, list, price:g.price})}], null, null, true); });
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#' + inp); if (i){ i.value = ''; i.focus(); } }));
 }
 function giftSet(id, ch, msg){
@@ -3411,23 +3417,23 @@ function giftStar(id){ const n = P.items.find(x=>x.id===id); if (n) giftSet(id, 
 const STAR = on => `<svg viewBox="0 0 24 24" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.3L12 17.4l-5.6 3 1.1-6.3L3 9.7l6.2-.9z"/></svg>`;
 function giftItem(n){
   const g = giftOf(n), t = GIFT_TYPES.find(x=>x[0]===g.type), on = GIFT_SEL===n.id;
-  return `<div class="gift-i ${on?'on':''}"${t ? ` style="border-left-color:${t[2]}"` : ''}><button class="gift-t" aria-pressed="${on}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${t ? `<b style="color:${t[2]}">${t[1]}</b> &middot; ` : ''}${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button><button class="gift-star ${g.star?'on':''}" aria-label="${g.star ? 'Not the main present' : 'Main present'}" aria-pressed="${g.star}" onclick="giftStar('${n.id}')">${STAR(g.star)}</button></div>`;
+  return `<div class="gift-i ${on?'on':''}"${t ? ` style="border-left-color:${t[2]}"` : ''}><button class="gift-t" aria-pressed="${on}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${+g.price ? `<b class="gift-p">${giftMoney(+g.price)}</b> &middot; ` : ''}${t ? `<b style="color:${t[2]}">${t[1]}</b> &middot; ` : ''}${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button><button class="gift-star ${g.star?'on':''}" aria-label="${g.star ? 'Not the main present' : 'Main present'}" aria-pressed="${g.star}" onclick="giftStar('${n.id}')">${STAR(g.star)}</button></div>`;
 }
 const ARROW = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="${d==='r' ? 'M5 12h14M13 6l6 6-6 6' : 'M19 12H5M11 6l-6 6 6 6'}"/></svg>`;
 function pGifts(){
   return GIFT_KIDS.map(([kid, col])=>{
     const all = P.items.filter(n=>noteKind(n)==='gift' && giftKid(n).toLowerCase()===kid.toLowerCase()).sort((a,b)=>giftOf(b).star - giftOf(a).star || (a.at<b.at?1:-1));
     const sel = all.find(n=>n.id===GIFT_SEL), dir = sel ? (giftList(sel)==='christmas' ? 'r' : 'l') : 'r', st = sel && giftOf(sel).type;
-    const colHTML = ([k, name, ic]) => { const l = all.filter(n=>giftList(n)===k);
-      return `<div class="gift-col"><div class="gift-h">${ic} ${name}${l.length ? ` <span class="h2-n">${l.length}</span>` : ''}</div>
-      <div class="gift-add"><input class="inp" id="gift${kid}${k}" placeholder="Add" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addGift('${kid}','${k}')}"><button class="icon-btn" aria-label="Add to ${name}" onclick="addGift('${kid}','${k}')">+</button></div>
+    const colHTML = ([k, name, ic]) => { const l = all.filter(n=>giftList(n)===k), sum = l.reduce((a,n)=>a + (+giftOf(n).price || 0), 0);
+      return `<div class="gift-col"><div class="gift-h">${ic} ${name}${l.length ? ` <span class="h2-n">${l.length}</span>` : ''}</div><div class="gift-sum">${giftMoney(Math.round(sum * 100) / 100)} spent</div>
+      <div class="gift-add"><input class="inp" id="gift${kid}${k}" placeholder="Add (and \u00a3)" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addGift('${kid}','${k}')}"><button class="icon-btn" aria-label="Add to ${name}" onclick="addGift('${kid}','${k}')">+</button></div>
       ${l.map(giftItem).join('')}</div>`; };
     return `<h2><i class="ev-dot" style="background:${col}"></i>${kid}${all.length ? ` <span class="h2-n">${all.length}</span>` : ''}</h2>
     <div class="gift-cols">${colHTML(GIFT_LISTS[0])}
       <div class="gift-mid">${all.length ? `<button class="icon-btn" ${sel ? '' : 'disabled'} aria-label="${sel ? (dir==='r' ? 'Move to Birthday' : 'Move to Christmas') : 'Pick an item to move'}" onclick="giftSwap('${sel ? sel.id : ''}')">${ARROW(dir)}</button>` : ''}
       ${sel ? `<button class="icon-btn" aria-label="Edit" onclick="openNote('${sel.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg></button>` : ''}</div>
       ${colHTML(GIFT_LISTS[1])}</div>
-    ${sel ? `<div class="chips wrap gift-types">${GIFT_TYPES.map(([k, name, c])=>`<button class="chip ${st===k?'on':''}" aria-pressed="${st===k}" onclick="giftType('${sel.id}','${k}')"><i class="ev-dot" style="background:${c}"></i>${name}</button>`).join('')}</div>` : ''}`; }).join('');
+    ${sel ? `<div class="gift-pr"><label class="f" for="giftPr">Price</label><input class="inp" id="giftPr" inputmode="decimal" placeholder="\u00a3" value="${esc(giftOf(sel).price)}" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onchange="giftPrice('${sel.id}', this.value)"></div><div class="chips wrap gift-types">${GIFT_TYPES.map(([k, name, c])=>`<button class="chip ${st===k?'on':''}" aria-pressed="${st===k}" onclick="giftType('${sel.id}','${k}')"><i class="ev-dot" style="background:${c}"></i>${name}</button>`).join('')}</div>` : ''}`; }).join('');
 }
 function noteRow(n){
   return `<div class="note-row ${n.done?'done':''}"><button class="tick" aria-label="${n.done?'Untick':'Tick'}" onclick="tickNote('${n.id}', ${!n.done})">${n.done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
