@@ -3843,21 +3843,21 @@ function dots(s){
   return `<div class="dots">${h}</div>`;
 }
 /* flare-ups (a kind named "... flare up"): estimated recovery, morning and evening, from the first flare-up to today.
-   Underneath is the healing line flareHeal(t) = 64 x (t/34)^FLARE_Q, t = days since the first flare-up: slow at first and
-   faster towards the end (Tom, 18 Oct 2026), 64% on the morning of 14 Oct (70% evening). Each later flare-up drops to a
-   floor STEP points above the last one's (0%, 15%, 30%...), stays low and climbs back to the line faster and faster
-   ((k/S)^FLARE_P over S days). The 27 Sep flare-up takes FLARE_BACK days (back on 14 Oct); each later one gets back
-   SPEEDUP x sooner, never under 2 days. SPEEDUP fits Tom's 62% on the evening of 18 Oct, three days after 15 Oct
-   (two flare-ups only, so a rough fit). Evenings sit BOUNCE above the morning. */
-const FLARE = /flare.?up/i, FLARE_Q = 1.3, FLARE_P = 2, FLARE_BACK = 17, SPEEDUP = 4.35, BOUNCE = 6, STEP = 15;
-const flareHeal = t => 64 * Math.pow(t / 34, FLARE_Q);
-const flareBack = n => Math.max(2, FLARE_BACK / Math.pow(SPEEDUP, n - 1));
+   flareHeal(t) is the slow trend through the best mornings, t = days since the first flare-up: 54% on 26 Sep (60% evening,
+   Tom 18 Oct 2026) and 64% on 14 Oct (70% evening). Each flare-up drops to a floor STEP points above the last one's
+   (0%, 15%, 30%...), stays low and climbs back to the trend faster and faster ((k/S)^2 over S days, Tom 18 Oct: every arc
+   starts low and speeds up towards the end), then follows it. The first arc takes FLARE_FIRST days, the 27 Sep one
+   FLARE_BACK (back on 14 Oct), each later one SPEEDUP x sooner, never under 2 days. SPEEDUP fits Tom's 62% on the evening
+   of 18 Oct, three days after 15 Oct (two comebacks only, a rough fit). Evenings sit BOUNCE above the morning. */
+const FLARE = /flare.?up/i, FLARE_P = 2, FLARE_FIRST = 16, FLARE_BACK = 17, SPEEDUP = 4.8, BOUNCE = 6, STEP = 15;
+const flareHeal = t => 54 + (64 - 54) * (t - 16) / (34 - 16);
+const flareBack = n => n ? Math.max(2, FLARE_BACK / Math.pow(SPEEDUP, n - 1)) : FLARE_FIRST;
 function flarePts(s){
   const starts = s.runs.map(r=>r.start), t0 = dayN(starts[0]), last = new Date().getHours() >= 18 ? 2 : 1, pts = [];
   for (let d = starts[0]; d <= today(); d = addDays(d, 1)){
     let n = 0; while (n+1 < starts.length && starts[n+1] <= d) n++;
     const t = dayN(d) - t0, k = dayN(d) - dayN(starts[n]), S = flareBack(n), floor = Math.min(n*STEP, flareHeal(t));
-    const m = Math.min(100, n && k < S ? floor + (flareHeal(t) - floor) * Math.pow(k / S, FLARE_P) : flareHeal(t));
+    const m = Math.min(100, k < S ? floor + (flareHeal(t) - floor) * Math.pow(k / S, FLARE_P) : flareHeal(t));
     pts.push({d, pm:false, v:Math.round(m), flare:d===starts[n]});
     if (d < today() || last === 2) pts.push({d, pm:true, v:Math.round(Math.min(100, m + BOUNCE))});
   }
