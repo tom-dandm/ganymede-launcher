@@ -678,7 +678,7 @@ const Mock = (() => {
       {date:'2026-09-07',merchant:'LIDL GB NELSON',category:'Groceries',type:'spend',amount:-101.15},
       {date:'2026-09-14',merchant:'Netflix.com',category:'Subscriptions',type:'spend',amount:-12.99},
       {date:'2026-09-15',merchant:'SANTAS PIZZA ONLINE',category:'Eating out & takeaway',type:'spend',amount:-22.5}]).map((t,i,a)=>({row:i+2,note:'',...t, balance: t.balance!==undefined || window.DEMO_TX ? t.balance : Math.round((18500 - a.slice(i+1).reduce((n,x)=>n+x.amount,0))*100)/100})),
-    cats:Object.entries({Essentials:['Mortgage','Groceries','Household bills','Insurance','Phone & internet','Fuel','Car & parking','Public transport','Pets','Bank fees'],Kids:['Childcare','Kids'],Lifestyle:['Eating out & takeaway','Naughty snacks','Days out & entertainment','Shopping','Subscriptions','Personal care','Health & fitness','Gifts & charity','Home & DIY','Holidays & travel','Family payments','Cash','Misc']}).flatMap(([g,l])=>l.map(n=>({name:n,group:g}))),
+    cats:Object.entries({Essentials:['Mortgage','Groceries','Household bills','Insurance','Phone & internet','Fuel','Car & parking','Public transport','Pets','Bank fees'],Kids:['Childcare','Kids'],Lifestyle:['Eating out & takeaway','Naughty snacks','Days out','Entertainment','Shopping','Subscriptions','Personal care','Health & fitness','Gifts & charity','Home & DIY','Holidays & travel','Family payments','Cash','Misc']}).flatMap(([g,l])=>l.map(n=>({name:n,group:g}))),
     heldBase:30000, current:18500, savingsAcc:15000, ver:1
   };
   const ageOf = n => { const d=s.dob[n]; if (!d) return s.ages[n]; const t=new Date(), b=new Date(d); return t.getFullYear()-b.getFullYear()-(t.getMonth()*100+t.getDate()<b.getMonth()*100+b.getDate()?1:0); };
@@ -995,12 +995,13 @@ function vPots(){
   ${POTSUB==='topups' ? vTopups() : vHistory()}`;
 }
 
-/* the household's money in and out, the latest month and the two before, one tap to the detail */
+/* the household's money in and out, the latest month and the two before (IO_ALL: the last 12), one tap to the detail */
+let IO_ALL = false;
 function inOutCard(){
   const cm = currentMonth(); if (!cm) return '';
   const r0 = n => (n<0?'−':'') + '£' + Math.abs(Math.round(n)).toLocaleString('en-GB');
   const due = payDue(cm.m);
-  const rows = [0,-1,-2].map(i=>shiftMonth(cm.m,i)).map((m,i)=>{ const f = monthFlows(m), d = i===0 ? due.total : 0;
+  const rows = Array.from({length:IO_ALL?12:3},(_,i)=>shiftMonth(cm.m,-i)).map((m,i)=>{ const f = monthFlows(m), d = i===0 ? due.total : 0;
     return {m, f:{inc:f.inc+d, out:f.out, profit:f.profit+d}, part: i===0 && !cm.complete, due:d}; }).filter(x=>x.f.inc||x.f.out);
   if (!rows.length) return '';
   return `<h2>Money in and out</h2>
@@ -1008,6 +1009,7 @@ function inOutCard(){
     <div class="io-row io-h"><span></span><span>In</span><span>Out</span><span>Kept</span><span></span></div>
     ${rows.map(x=>`<button class="io-row" onclick="SP.period='${x.m}';SP.q='';go('spending')"><span class="k">${esc(shortMonth(x.m))}${x.part?'<small>so far</small>':''}</span>
       <span class="pos">${r0(x.f.inc)}${x.due?'<small>pay due</small>':''}</span><span>${r0(x.f.out)}</span><span class="${x.f.profit<0?'neg':'pos'}">${x.f.profit>0?'+':''}${r0(x.f.profit)}</span><span class="chev">›</span></button>`).join('')}
+    <button class="chip" style="margin-top:8px" onclick="IO_ALL=!IO_ALL;const y=scrollY;render();scrollTo(0,y)">${IO_ALL?'Show fewer':'Show more'}</button>
     ${due.total ? `<div class="hint io-due">${esc(shortMonth(cm.m))} counts ${due.items.map(x=>`${esc(x.who)}'s pay (${r0(x.amount)})`).join(' and ')} as coming in, at last month's amount, until it arrives.</div>` : ''}
     <button class="secondary" style="margin-top:10px" onclick="SP.period='12m';SP.q='';go('spending')">Everything coming in and going out ›</button>
   </div>`;
@@ -1247,7 +1249,7 @@ function saveSettings(){
 /* ============ spending ============ */
 const INCOME_CATS = ['Tom salary','Laura salary','Freelance work','Unity Asset Store','Epic Games (Fab)','Sketchfab','Cubebrush','TurboSquid','Yahaha','Child Benefit','Maternity pay (DWP)','Tax refund (HMRC)','Tax-Free Childcare refund','Work expenses repaid','Interest & cashback','Selling (Vinted)','Refunds','Gifts & other income'];
 const GOV_CATS = ['Child Benefit','Maternity pay (DWP)','Tax refund (HMRC)','Tax-Free Childcare refund'];
-const CAT_ICON = {'Savings & ISA':'🐷','Mortgage':'🏡','Groceries':'🛒','Eating out & takeaway':'🍔','Naughty snacks':'☕','Fuel':'⛽','Car & parking':'🚗','Public transport':'🚆','Household bills':'🏠','Insurance':'🛡️','Phone & internet':'📱','Subscriptions':'📺','Childcare':'🧸','Kids':'🎈','Days out & entertainment':'🎟️','Shopping':'🛍️','Home & DIY':'🔨','Health & fitness':'💪','Personal care':'💇','Pets':'🐾','Holidays & travel':'✈️','Gifts & charity':'🎁','Family payments':'👪','Cash':'💷','Bank fees':'🏦','Misc':'❔',
+const CAT_ICON = {'Savings & ISA':'🐷','Mortgage':'🏡','Groceries':'🛒','Eating out & takeaway':'🍔','Naughty snacks':'☕','Fuel':'⛽','Car & parking':'🚗','Public transport':'🚆','Household bills':'🏠','Insurance':'🛡️','Phone & internet':'📱','Subscriptions':'📺','Childcare':'🧸','Kids':'🎈','Days out':'🎟️','Entertainment':'🎮','Shopping':'🛍️','Home & DIY':'🔨','Health & fitness':'💪','Personal care':'💇','Pets':'🐾','Holidays & travel':'✈️','Gifts & charity':'🎁','Family payments':'👪','Cash':'💷','Bank fees':'🏦','Misc':'❔',
   'Tom salary':'💼','Laura salary':'💼','Freelance work':'💻','Unity Asset Store':'🎮','Epic Games (Fab)':'🎮','Sketchfab':'🎨','Cubebrush':'🎨','TurboSquid':'🎨','Yahaha':'🎮','Maternity pay (DWP)':'🏛️','Child Benefit':'🏛️','Tax refund (HMRC)':'🏛️','Tax-Free Childcare refund':'🏛️','Work expenses repaid':'🧾','Interest & cashback':'📈','Selling (Vinted)':'🏷️','Refunds':'↩️','Gifts & other income':'🎁'};
 let SP = { period:'12m', q:'', allCats:false };
 /* folded sections (In & out): which are open, kept on this phone */
