@@ -568,7 +568,7 @@ async function signIn(quiet, early){
   const skip = () => quiet && (!early && (authed() || sheetShown()) || !navigator.onLine || !AUTH.email
     || AUTH.tried && Date.now() - AUTH.tried < (AUTH.err ? 30 : 2) * 60000);   // never loop
   if (skip()) return false;
-  if (!await reach()){ if (!quiet) toast("Can't reach Google. Carrying on with what is saved on this phone."); return false; }
+  if (!await reach()){ if (!quiet) toast('Offline. Sign in when you are back online; everything is saved on this phone.'); return false; }
   if (skip() || leaving) return false;
   leaving = true; AUTH.tried = Date.now(); authSave();
   const p = new URLSearchParams({client_id:GAPI.client, redirect_uri:location.origin + location.pathname, response_type:'token', scope:GAPI.scope, include_granted_scopes:'true'});
@@ -634,7 +634,7 @@ async function flushRun(){
 /* no answer from the sheet: keep showing the phone's copy and ask again in 30 s */
 function retryLater(){ clearTimeout(retryT); retryT = setTimeout(syncNow, 30000); }
 function syncNow(){ drawSync(); if (REMOTE && !authed()) signIn(true); if (!canSend()) return; flush().then(()=>{ load(); hLoad(); pLoad(); }); }
-function refreshNow(){ if (REMOTE && !authed() && navigator.onLine) return signIn(false); if (!canSend()) return toast('No signal. Showing what is saved on this phone.'); pFresh = true; syncNow(); }
+function refreshNow(){ if (REMOTE && !authed() && navigator.onLine) return signIn(false); if (!canSend()) return toast('Offline. Everything is saved on this phone.'); pFresh = true; syncNow(); }
 function syncText(at){
   if (DEMO && !window.DEMO_OFFLINE) return 'Demo data';
   const n = OUTBOX.length, w = n ? ' · ' + n + ' change' + (n>1?'s':'') + ' to send' : '';
@@ -897,7 +897,7 @@ function run(fn, args, msg, undo){
   outPush('m', fn, args, MLOCAL[fn] ? '' : msg);
   showM();
   if (MLOCAL[fn]){ if (msg) toast(msg, undo); }
-  else toast(canSend() ? 'Working on it\u2026' : 'Saved on this phone. It runs when there is signal.');
+  else toast(canSend() ? 'Working on it\u2026' : 'Saved');
   return args;
 }
 
@@ -1858,7 +1858,7 @@ function pickStatements(){
 }
 function importTexts(texts){
   outPush('m', 'importStatements', [texts], '');
-  toast(canSend() ? 'Adding the statement\u2026' : 'Statement saved on this phone. It is added when there is signal.');
+  toast(canSend() ? 'Adding the statement\u2026' : 'Statement saved. It goes in when you are back online.');
 }
 /* The Santander extension (extension/) opens this page in a background tab: it asks for the last bank date,
    hands over the exports it fetched, and waits for the summary. 'ganymede-ext' in sessionStorage survives a sign-in. */
@@ -3831,7 +3831,7 @@ function openEvent(k){
   if (!e.ro && !d && e.id && canSend()) evDetail(key).then(v=>{ const el = $('#evRep'); if (v && el) el.textContent = v.other ? 'Yes' : ruleText(v.rrule, e.start.slice(0,10)); });
 }
 async function pickCalendar(){
-  if (!canSend()) return toast('Needs a signal');
+  if (!canSend()) return toast('Calendars can be picked when you are back online.');
   showSheet(`<h3>Which calendar</h3><div class="hint">Loading&hellip;</div>`);
   try{ const r = await queued('getPlanCalendars', [], false);
     showSheet(`<h3>New events go in</h3><div class="hint" style="margin-top:0">Pick the one shared with Laura, so her phone can add to it too. What the app shows is every calendar you have ticked in Google Calendar.</div>
