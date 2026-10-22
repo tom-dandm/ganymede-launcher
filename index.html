@@ -511,11 +511,16 @@ async function remoteRun(fn, args){
   if (!navigator.onLine) throw netErr('Offline');
   if (!authed()){ const e = netErr('Not signed in'); e.auth = true; throw e; }
   args = args.slice(); while (args.length && args[args.length-1] === undefined) args.pop();
+  /* a weak signal can say "online" and never answer: give up and carry on from the phone's copy. A save cut off this way
+     is sent again, and the server skips an id it already has */
+  const ab = new AbortController(), cut = setTimeout(()=>ab.abort(), /^get/.test(fn) ? 45000 : 120000);
   let r;
-  try{ r = await fetch('https://script.googleapis.com/v1/scripts/' + GAPI.deploy + ':run', {method:'POST',
+  try{ r = await fetch('https://script.googleapis.com/v1/scripts/' + GAPI.deploy + ':run', {method:'POST', signal:ab.signal,
     headers:{Authorization:'Bearer ' + AUTH.token, 'Content-Type':'application/json'},
     body:JSON.stringify({function:fn, parameters:args.map(a=>a===undefined?null:a)})}); }
-  catch(e){ throw netErr('No connection'); }
+  catch(e){ NETFAIL = true; drawSync(); throw netErr('No connection'); }
+  finally{ clearTimeout(cut); }
+  if (NETFAIL){ NETFAIL = false; drawSync(); }
   const j = await r.json().catch(()=>({}));
   if (r.status === 401){ AUTH.exp = 0; authSave(); const e = netErr('Signed out'); e.auth = true; throw e; }
   // only an error thrown by our own code drops a change; anything else (setup, quota, Google down) keeps it for later
@@ -545,21 +550,35 @@ const authed = () => !REMOTE || (!!AUTH.token && AUTH.exp > Date.now() + 60000);
   else return;
   history.replaceState(null, '', location.pathname + location.search);
 })();
-function signIn(quiet, early){
-  if (!REMOTE) return false;
-  if (quiet){
-    if (!early && (authed() || sheetShown()) || !navigator.onLine || !AUTH.email) return false;
-    if (AUTH.tried && Date.now() - AUTH.tried < (AUTH.err ? 30 : 2) * 60000) return false;   // never loop
-  }
-  AUTH.tried = Date.now(); authSave();
+/* NETFAIL = the phone says it is online but the last call got no answer, so the app shows itself offline */
+let NETFAIL = false, leaving = false, reachP = null, reachNo = 0;
+/* Google answers at all (any reply counts). Leaving for the sign-in page with no real signal would swap the app for
+   the browser's "no internet" page, so every sign-in asks this first */
+function reach(){
+  if (!navigator.onLine) return Promise.resolve(false);
+  if (Date.now() - reachNo < 20000) return Promise.resolve(false);
+  return reachP || (reachP = (async()=>{ const ab = new AbortController(), t = setTimeout(()=>ab.abort(), 4000);
+    try{ await fetch('https://accounts.google.com/generate_204?' + Date.now(), {mode:'no-cors', cache:'no-store', signal:ab.signal}); return true; }
+    catch(e){ reachNo = Date.now(); NETFAIL = true; drawSync(); return false; }
+    finally{ clearTimeout(t); reachP = null; } })());
+}
+/* resolves true when the page is on its way to Google */
+async function signIn(quiet, early){
+  if (!REMOTE || leaving) return false;
+  const skip = () => quiet && (!early && (authed() || sheetShown()) || !navigator.onLine || !AUTH.email
+    || AUTH.tried && Date.now() - AUTH.tried < (AUTH.err ? 30 : 2) * 60000);   // never loop
+  if (skip()) return false;
+  if (!await reach()){ if (!quiet) toast("Can't reach Google. Carrying on with what is saved on this phone."); return false; }
+  if (skip() || leaving) return false;
+  leaving = true; AUTH.tried = Date.now(); authSave();
   const p = new URLSearchParams({client_id:GAPI.client, redirect_uri:location.origin + location.pathname, response_type:'token', scope:GAPI.scope, include_granted_scopes:'true'});
   if (quiet){ p.set('prompt', 'none'); p.set('login_hint', AUTH.email); } else p.set('prompt', 'select_account');
   location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + p;
   return true;
 }
-/* opening the app with a sign-in that runs out within 15 minutes renews it now, before anything is drawn,
-   instead of a jump to Google in the middle of using it */
-const RENEW = REMOTE && location.hash.length < 2 && !!AUTH.email && !(AUTH.token && AUTH.exp > Date.now() + 9e5) && signIn(true, true);
+/* a sign-in that runs out within 15 minutes is renewed as the app opens, once the saved copy is on screen and Google
+   answers, instead of a jump to Google in the middle of using it */
+const RENEW = REMOTE && location.hash.length < 2 && !!AUTH.email && !(AUTH.token && AUTH.exp > Date.now() + 9e5);
 
 /* ============ offline: every change is saved on the phone at once and waits in an outbox, in order,
    until the sheet can take it. Each one is an action ("add this spend"), not a copy of the data, so
@@ -612,13 +631,15 @@ async function flushRun(){
   return did;
 }
 /* send what is waiting, then fetch what anyone else has changed */
+/* no answer from the sheet: keep showing the phone's copy and ask again in 30 s */
+function retryLater(){ clearTimeout(retryT); retryT = setTimeout(syncNow, 30000); }
 function syncNow(){ drawSync(); if (REMOTE && !authed()) signIn(true); if (!canSend()) return; flush().then(()=>{ load(); hLoad(); pLoad(); }); }
 function refreshNow(){ if (REMOTE && !authed() && navigator.onLine) return signIn(false); if (!canSend()) return toast('No signal. Showing what is saved on this phone.'); pFresh = true; syncNow(); }
 function syncText(at){
   if (DEMO && !window.DEMO_OFFLINE) return 'Demo data';
   const n = OUTBOX.length, w = n ? ' · ' + n + ' change' + (n>1?'s':'') + ' to send' : '';
   if (REMOTE && !authed() && navigator.onLine) return `<button class="linkish" onclick="signIn(false)">Sign in to sync</button>${w}`;
-  if (!canSend()) return 'Offline' + (w || ' · saved copy' + (at ? ' from ' + at : ''));
+  if (!canSend() || NETFAIL) return 'Offline' + (w || ' · saved copy' + (at ? ' from ' + at : ''));
   if (n) return 'Sending' + w.replace(' to send','') + (syncErr ? ' · retrying' : '…');
   return 'Synced';
 }
@@ -767,9 +788,9 @@ function noData(retry){
 
 /* full = fetch every transaction again (Settings); otherwise only rows added since the saved copy */
 function load(full){ return loadingM || (loadingM = loadRun(full).finally(()=>{ loadingM = null; setSync(false); drawSync(); })); }
+function mCache(){ if (!lastRaw && !DEMO){ const c = readCache(); if (c && c.txRows) lastRaw = c; } if (!D && lastRaw) showM(); }
 async function loadRun(full){
-  if (!lastRaw && !DEMO){ const c = readCache(); if (c && c.txRows) lastRaw = c; }
-  if (!D && lastRaw) showM();
+  mCache();
   if (REMOTE && !authed()) signIn(true);
   if (!canSend()){ if (!D && MODE==='money') $('#app').innerHTML = masterHTML() + noData('load()'); return; }
   setSync(true);
@@ -778,7 +799,7 @@ async function loadRun(full){
     // rowsOwner = whether the rows were loaded by someone who sees the parents' ones (blanked otherwise)
     raw = raw.txAppend && have && lastRaw && lastRaw.txRows ? {...raw, txRows: lastRaw.txRows.concat(raw.txRows), rowsOwner: lastRaw.rowsOwner} : {...raw, rowsOwner: !!raw.canSeeParents};
     saveCache(raw); showM(); }
-  catch(e){ if (e.auth) signIn(true);
+  catch(e){ if (e.auth) signIn(true); else if (e.retry) retryLater();
     if (!D && MODE==='money') $('#app').innerHTML = masterHTML() + (e.retry ? noData('load()') : `<div class="loading">Couldn't load: ${esc(e.message||e)}<br><br><button class="secondary" onclick="load()">Try again</button></div>`); }
 }
 function setSync(on){ const b=$('#refresh'); if(b) b.classList.toggle('spin',on); }
@@ -2036,13 +2057,13 @@ function parseItems(s){ return String(s||'').split(';').map(x=>x.trim()).filter(
 let HRAW = null, hLoading = null;
 function hSave(raw){ HRAW = raw; if (DEMO) return; try{ localStorage.setItem(H_KEY, JSON.stringify(raw)); }catch(e){} }
 function hLoad(){ return hLoading || (hLoading = hLoadRun().finally(()=>{ hLoading = null; setSync(false); drawSync(); })); }
+function hCache(){ if (!HRAW && !DEMO){ try{ const c = JSON.parse(localStorage.getItem(H_KEY)); if (c && Array.isArray(c.meals)) HRAW = c; }catch(e){} } if (!H && HRAW) showH(); }
 async function hLoadRun(){
-  if (!HRAW && !DEMO){ try{ const c = JSON.parse(localStorage.getItem(H_KEY)); if (c && Array.isArray(c.meals)) HRAW = c; }catch(e){} }
-  if (!H && HRAW) showH();
+  hCache();
   if (!canSend()){ if (!H && MODE==='health') $('#app').innerHTML = masterHTML() + noData('hLoad()'); return; }
   setSync(true);
   try{ takeH(await inOrder('getHealth')); showH(); }
-  catch(e){ if (e.auth) signIn(true);
+  catch(e){ if (e.auth) signIn(true); else if (e.retry) retryLater();
     if (!H && MODE==='health') $('#app').innerHTML = masterHTML() + (e.retry ? noData('hLoad()') : `<div class="loading">Couldn't load: ${esc(e.message||e)}<br><br><button class="secondary" onclick="hLoad()">Try again</button></div>`); }
 }
 function takeH(raw){ if (raw && Array.isArray(raw.meals)) hSave(raw); }
@@ -3045,15 +3066,15 @@ function pSave(raw){ PRAW = raw; if (DEMO) return; try{ localStorage.setItem(P_K
 function takeP(raw){ if (!raw || !Array.isArray(raw.items)) return; if (raw.events === undefined && PRAW){ raw.events = PRAW.events; raw.cal = PRAW.cal; } pSave(raw); }
 let pFresh = false;   // the refresh button: skip the server's 2-minute calendar copy
 function pLoad(){ return pLoading || (pLoading = pLoadRun().finally(()=>{ pLoading = null; setSync(false); drawSync(); })); }
+function pCache(){ if (!PRAW && !DEMO){ try{ const c = JSON.parse(localStorage.getItem(P_KEY)); if (c && Array.isArray(c.items)) PRAW = c; }catch(e){} } if (!P && PRAW) showP(); }
 async function pLoadRun(){
-  if (!PRAW && !DEMO){ try{ const c = JSON.parse(localStorage.getItem(P_KEY)); if (c && Array.isArray(c.items)) PRAW = c; }catch(e){} }
-  if (!P && PRAW) showP();
+  pCache();
   if (!canSend()){ if (!P && MODE==='plans') $('#app').innerHTML = masterHTML() + noData('pLoad()'); return; }
   setSync(true);
   const o = pFresh ? {fresh:true} : undefined; pFresh = false;
   try{ const r = await inOrder('getPlans', o); takeP(r); showP();
     if (r && r.calStale && !o) setTimeout(()=>{ pFresh = true; pLoad(); }, 50); }   // an old copy shows now, the live calendar follows
-  catch(e){ if (e.auth) signIn(true);
+  catch(e){ if (e.auth) signIn(true); else if (e.retry) retryLater();
     if (!P && MODE==='plans') $('#app').innerHTML = masterHTML() + (e.retry ? noData('pLoad()') : `<div class="loading">Couldn't load: ${esc(e.message||e)}<br><br><button class="secondary" onclick="pLoad()">Try again</button></div>`); }
 }
 function mineP(){
@@ -4000,8 +4021,11 @@ document.addEventListener('visibilitychange',()=>{ if (!document.hidden) syncNow
 // Any error shows up on screen instead of failing silently
 window.addEventListener('error', e => toast('\u26a0 ' + (e.message || 'Something went wrong')));
 window.addEventListener('unhandledrejection', e => toast('\u26a0 ' + ((e.reason && e.reason.message) || e.reason || 'Something went wrong')));
-if (!RENEW){ if (MODE!=='money'){ setNav(); render(); }
-  flush(); load(); hLoad(); pLoad(); }   // both sides are fetched, so both work offline
+/* the app opens from the phone's saved copy every time, then goes online if it can. A sign-in about to run out is
+   renewed first (if Google answers), so the start-up calls do not go out only to be cut off by the jump to Google */
+if (MODE!=='money'){ setNav(); render(); }
+const goOnline = () => { flush(); load(); hLoad(); pLoad(); };   // every side is fetched, so every side works offline
+if (RENEW){ mCache(); hCache(); pCache(); signIn(true, true).then(went=>{ if (!went) goOnline(); }); } else goOnline();
 /* once the first screen is up, build the other screens once in idle time, so the first tap on each is quick */
 (function warm(){ const idle = window.requestIdleCallback || (f=>setTimeout(f,200));
   const off = html => { const d = document.createElement('div'); d.setAttribute('aria-hidden','true');
@@ -4011,7 +4035,7 @@ if (!RENEW){ if (MODE!=='money'){ setNav(); render(); }
   let n = 0; const next = () => idle(dl=>{ if (!D || !H) { if (n++ < 60) return setTimeout(next, 1000); }
     while (jobs.length && (!dl || dl.timeRemaining() > 8)) try{ jobs.shift()(); }catch(e){}
     if (jobs.length) next(); });
-  if (!RENEW) setTimeout(next, 1500); })();
+  setTimeout(next, 1500); })();
 /* the app opens from the phone's saved copy; the worker says when a newer one has come in behind it */
 if (REMOTE && 'serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{});
   navigator.serviceWorker.onmessage = e => { if (e.data === 'updated') toast('A new version is ready', ()=>location.reload(), 'Reload'); }; }
