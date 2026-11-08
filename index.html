@@ -177,16 +177,12 @@ h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .quick-drink{border:1px dashed var(--line);background:none;font:inherit;font-size:var(--fs-small);font-weight:600;color:var(--text);border-radius:var(--r-sm);padding:7px 8px;margin-top:6px;cursor:pointer;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot-wrap{display:flex;flex-direction:column;min-width:0}.slot-wrap .slot{flex:1}
 .part-eat{padding:10px 0;border-bottom:1px solid var(--line)}.part-eat .chips{margin:6px 0 0}.pe-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.pe-h span{font-size:var(--fs-small)}
-.veg-switch{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);color:inherit;font:inherit;text-align:left;cursor:pointer}
-.veg-switch small{display:block;color:var(--muted);font-size:var(--fs-small)}
-.veg-switch .vs-box{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-weight:700}
-.veg-switch.on{border-color:var(--nathan)}.veg-switch.on .vs-box{background:var(--nathan);border-color:var(--nathan);color:#fff}
 .iron{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
 .iron.on{border-color:var(--nathan)}
 .iron .tick{flex:none}.iron.on .tick{background:var(--nathan);border-color:var(--nathan);color:#fff}
 .iron-t{flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0;cursor:pointer}
 .iron-t small{display:block;color:var(--muted);font-size:var(--fs-small)}
-.iron-week{display:flex;gap:3px;flex:none}.iron-week i{width:7px;height:7px;border-radius:50%;background:var(--line)}.iron-week i.on{background:var(--nathan)}.am-more{display:flex;justify-content:space-between;gap:12px}.am-q{display:flex;gap:8px;align-items:stretch}.am-q .inp{flex:1;min-width:0}.am-q .am-typed{width:auto;flex:none;margin:0;padding:0 20px}.am-will{margin:6px 2px 0}.am-added .link-btn{display:inline;width:auto;border:0;padding:0;margin:0;font:inherit;text-decoration:underline}
+.iron-week{display:flex;gap:3px;flex:none}.iron-week i{width:7px;height:7px;border-radius:50%;background:var(--line)}.iron-week i.on{background:var(--nathan)}.am-more{display:flex;justify-content:space-between;gap:12px}.am-q{display:flex;gap:8px;align-items:stretch}.am-q .inp{flex:1;min-width:0}.am-q .am-typed{width:auto;flex:none;margin:0;padding:0 20px}.am-added .link-btn{display:inline;width:auto;border:0;padding:0;margin:0;font:inherit;text-decoration:underline}
 .am-opts{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;margin:10px 0 4px}
 .am-opts summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer;font-size:var(--fs-small);color:var(--muted);font-weight:600;list-style:none}
 .am-opts summary::-webkit-details-marker{display:none}
@@ -258,6 +254,7 @@ nav .in{pointer-events:auto;display:flex;max-width:496px;width:100%;justify-cont
 .gift-star{flex:none;border:0;background:none;color:var(--muted);opacity:.45;padding:9px 8px;cursor:pointer}.gift-star svg{width:18px;height:18px;display:block}
 .gift-star.on{color:#F59E0B;opacity:1}
 .gift-sum{font-weight:700;margin:-4px 2px 0}.gift-p{color:var(--text)}
+.gift-ih{margin-top:8px}.gift-w{color:var(--text)}.gift-buy{flex:none;margin:8px 8px 0 0}.gift-wh{margin:6px 8px 0;width:calc(100% - 16px);padding:9px 10px}
 .gift-ed{flex-basis:100%;padding:0 8px 9px 9px;display:flex;flex-direction:column;gap:6px}.gift-row{display:flex;gap:4px}.gift-row .inp{padding:8px 10px;min-width:0;flex:1}.gift-row .icon-btn{flex:none;width:34px;height:auto;color:var(--text)}
 .gift-kinds{display:flex;flex-wrap:wrap;gap:4px}.gift-kinds .chip{padding:5px 8px;font-size:11px}.gift-kinds .ev-dot{margin-right:4px}
 .note-t small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:2px}
@@ -2509,8 +2506,8 @@ function nameFit(words, name){
 const VEG_FOOD = 'Mixed veg';
 /* each food as it was last had (latest name, portion and kcal), so an edit carries on to next time */
 const histF = f => ({name:f.name, kcal:Math.round(f.one), group:f.group, veg:f.veg, times:f.n, last:f.last});
-function amCandidates(){
-  const q = AM.q.trim().toLowerCase(), words = q.split(/[^a-z0-9]+/).filter(Boolean), seen = new Set(), out = [];
+function amCandidates(typed){
+  const q = (typed==null ? AM.q : typed).trim().toLowerCase(), words = q.split(/[^a-z0-9]+/).filter(Boolean), seen = new Set(), out = [];
   const push = (f, src) => { const k = f.name.toLowerCase(); if (seen.has(k)) return; if (words.length && nameFit(words, k) < 0) return; seen.add(k); out.push({...f, src}); };
   const ours = e => AM.who.includes(e.person) && !e.skip && e.food!=='Skipped' && e.meal!=='Drinks' && e.food!==VEG_FOOD && !(e.eaten===0 && /^Refused/.test(e.note||'')), yday = addDays(HD, -1);
   if (!q){
@@ -2523,14 +2520,7 @@ function amCandidates(){
   const fit = f => f.name.toLowerCase().startsWith(q) ? 0 : 1 + nameFit(words, f.name);
   return out.map((f,i)=>[f,i]).sort((a,b)=>fit(a[0])-fit(b[0]) || a[1]-b[1]).map(x=>x[0]).slice(0, 30);
 }
-/* + veg: a portion of mixed veg goes in as its own item next to the food. Remembered for lunch and dinner apart; dinner starts on */
-let AMS = {all:false, full:false, veg:{Lunch:false, Dinner:true}};
-try{ const v = JSON.parse(localStorage.getItem('ganymede-plus-veg2')); if (v) AMS.veg = v; }catch(e){}
-function amVegT(){ AMS.veg[AM.meal] = !AMS.veg[AM.meal]; try{ localStorage.setItem('ganymede-plus-veg2', JSON.stringify(AMS.veg)); }catch(e){} drawAddMeal(); }
-const amVegOn = () => !!AMS.veg[AM.meal] && !AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner');
-const vegFits = f => !f.person && f.group!=='Drink' && f.group!=='Takeaway' && !/\bveg|salad/i.test(f.name);
-/* a portion of mixed veg, its own row: 50 kcal and one of the five a day for an adult */
-const vegRow = (n, date, meal, portion, ate) => ({date, person:n, meal, food:VEG_FOOD, kcal:Math.round(50*portion*(ate==null?1:ate)), served:Math.round(50*portion), eaten:ate==null?1:ate, note:'', portion, veg:1, group:'Fruit & veg'});
+let AMS = {all:false, full:false};
 /* the meat for a meat-and-veg dinner, the ones we have most first */
 function meatChips(){
   const n = {}; H.meals.forEach(e=>{ if (!AM.who.includes(e.person) || e.meal!=='Dinner') return; const k = e.food.toLowerCase(); MEATS.forEach(([m])=>{ if (k.includes(m.toLowerCase())) n[m] = (n[m]||0)+1; }); });
@@ -2539,9 +2529,8 @@ function meatChips(){
 function amMeat(name){ const x = MEATS.find(p=>p[0]===name); if (x) amAdd({name:x[0], kcal:x[1], group:'Meal', veg:0, src:'meat'}); }
 const agoF = d => { if (!d) return ''; const n = daysBetween(d, today())-1; return n<=0 ? 'today' : n===1 ? 'yesterday' : n<7 ? n+' days ago' : n<60 ? Math.round(n/7)+' weeks ago' : Math.round(n/30.44)+' months ago'; };
 function drawAddMeal(){
-  const q = AM.q.trim(); let list = amCandidates(), more = 0;
-  if (q) list = list.slice(0, 8);
-  else { const y = list.filter(f=>f.src==='yesterday'), rc = list.filter(f=>f.src==='recent'), n = AMS.full ? 40 : 6; more = rc.length - n; list = y.concat(rc.slice(0, n)); }
+  let list = amCandidates(''), more = 0;
+  { const y = list.filter(f=>f.src==='yesterday'), rc = list.filter(f=>f.src==='recent'), n = AMS.full ? 40 : 6; more = rc.length - n; list = y.concat(rc.slice(0, n)); }
   AMLIST = list;
   const sc = AM.who.length===1 ? eatScores(AM.who[0]) : {};
   const row = (f, i) => `<button class="item food" onclick="amPick(${i})"><div class="dot" style="background:var(--card-2);font-size:16px">${GROUP_ICON[f.group]||'🍽️'}</div>
@@ -2564,13 +2553,9 @@ function drawAddMeal(){
     <div class="chips">${EATERS.map(n=>`<button class="chip ${AM.who.length===1&&AM.who[0]===n?'on':''}" style="--c:${COLOR[n]}" onclick="AM.who=['${n}'];drawAddMeal()">${n}</button>`).join('')}
       <button class="chip ${AM.who.length===EATERS.length?'on':''}" onclick="AM.who=EATERS.slice();drawAddMeal()">Both</button></div>`}
     ${AM.slot && !AM.swap ? '' : `<div class="seg four" style="margin-top:12px">${SLOTS.map(s=>`<button class="${AM.meal===s?'on':''}" onclick="AM.meal='${s}';drawAddMeal()"><span>${SLOT_ICON[s]}</span>${s}</button>`).join('')}</div>`}
-    <div class="am-q"><input class="inp" id="amQ" placeholder="Type what they had" value="${esc(AM.q)}" autocomplete="off" enterkeyhint="done" oninput="AM.q=this.value;AM.est=null;AM.online=null;$('#amGo').disabled=!this.value.trim();clearTimeout(window._aq);window._aq=setTimeout(amRedrawTyping,150)" onkeydown="if(event.key==='Enter'){AM.q=this.value;amTyped()}">
-      <button class="primary am-typed" id="amGo" ${q?'':'disabled'} onclick="amTyped()">${AM.swap?'Use':'Add'}</button></div>
-    ${q && !AMLIST.some(f=>f.name.toLowerCase()===q.toLowerCase()) ? `<div class="hint am-will">${AM.swap?'Uses':'Adds'} &ldquo;${esc(q.charAt(0).toUpperCase()+q.slice(1))}&rdquo;${amVegOn()&&!/veg|salad/i.test(q)?' + veg':''} when you tap ${AM.swap?'Use':'Add'}. Keep typing to change it.</div>` : ''}
-    ${!AM.swap && (AM.meal==='Lunch' || AM.meal==='Dinner') ? `<button class="veg-switch ${amVegOn()?'on':''}" onclick="amVegT()" aria-pressed="${amVegOn()}"><span class="vs-box">${amVegOn()?'&#x2713;':''}</span><span>&#x1F966; <b>+ veg</b><small>${amVegOn()?'A portion of mixed veg goes in with it':'Tap to add a portion of mixed veg with it'}</small></span></button>` : ''}
-    ${!q && !AM.swap && AM.meal==='Dinner' ? `<label class="f">Meat and veg</label><div class="chips wrap">${meatChips().map(([m])=>`<button class="chip" onclick="amMeat(${jsA(m)})">${esc(m)}</button>`).join('')}</div>` : ''}
-    ${q?`<label class="f">${AMLIST.length?'Or one we have had':''}</label>`:''}
-    ${q?sect('','usual')+sect('','base'):''}
+    <div class="am-q"><input class="inp" id="amQ" placeholder="Type what they had" value="${esc(AM.q)}" autocomplete="off" enterkeyhint="done" oninput="AM.q=this.value;$('#amGo').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'){AM.q=this.value;amTyped()}">
+      <button class="primary am-typed" id="amGo" ${AM.q.trim()?'':'disabled'} onclick="amTyped()">${AM.swap?'Use':'Add'}</button></div>
+    ${!AM.swap && AM.meal==='Dinner' ? `<label class="f">Meat and veg</label><div class="chips wrap">${meatChips().map(([m])=>`<button class="chip" onclick="amMeat(${jsA(m)})">${esc(m)}</button>`).join('')}</div>` : ''}
     <details class="am-opts" ${AM.optsOpen || AM.eaten<1 || AM.note ? 'open' : ''} ontoggle="AM.optsOpen=this.open">
       <summary><span>Portion, how much eaten, comment</span><b>${esc([{0.5:'Small',1:'Usual',1.5:'Big',2:'Double'}[AM.size], eatLabel(AM.eaten==null?1:AM.eaten)].join(' · '))}</b></summary>
       <div class="chips">${[[0.5,'Small'],[1,'Usual'],[1.5,'Big'],[2,'Double']].map(([v,l])=>`<button class="chip ${AM.size===v?'on':''}" onclick="AM.size=${v};drawAddMeal()">${l}</button>`).join('')}</div>
@@ -2578,12 +2563,11 @@ function drawAddMeal(){
       ${eatenCtl(AM.eaten==null?1:AM.eaten, 'amEat')}
       <input class="inp" id="amNote" placeholder="Comment (optional)" value="${esc(AM.note||'')}" oninput="AM.note=this.value" autocomplete="off" style="margin:8px 0 4px">
     </details>
-    ${sect('Worked out','estimate')}${sect('Found online','online')}
-    ${q?'':sect('Same as '+(HD===today()?'yesterday':'the day before'),'yesterday')}
-    ${q?'':`<div class="menu-h"><label class="f">Had before</label>
+    ${sect('Same as '+(HD===today()?'yesterday':'the day before'),'yesterday')}
+    ${`<div class="menu-h"><label class="f">Had before</label>
       <div class="mini-seg">${[[false,AM.meal],[true,'Any meal']].map(([v,l])=>`<button class="${AMS.all===v?'on':''}" onclick="AMS.all=${v};drawAddMeal()">${esc(l)}</button>`).join('')}</div></div>`}
-    ${q?'':sect('','recent') || '<div class="hint" style="margin:4px 2px">Nothing yet. Whatever you add shows here next time.</div>'}
-    ${q||(more<=0&&!AMS.full)?'':`<button class="link-btn" onclick="AMS.full=!AMS.full;drawAddMeal()">${AMS.full?'Show fewer':'Show more'}</button>`}
+    ${sect('','recent') || '<div class="hint" style="margin:4px 2px">Nothing yet. Whatever you add shows here next time.</div>'}
+    ${more<=0&&!AMS.full?'':`<button class="link-btn" onclick="AMS.full=!AMS.full;drawAddMeal()">${AMS.full?'Show fewer':'Show more'}</button>`}
     ${AM.slot && !AM.swap && !inSlot.length && !added ? `<div class="two am-close"><button class="secondary" onclick="slotSkip()">Skipped, had nothing</button><button class="secondary" onclick="closeSheet()">Close</button></div>`
       : `<button class="${added||(AM.slot&&inSlot.length)?'primary':'secondary'}" onclick="closeSheet()">${AM.swap?'Cancel':added||(AM.slot&&inSlot.length)?'Done':'Close'}</button>`}`;
 }
@@ -2606,19 +2590,11 @@ function amAdd(f){
     return hRun('editMeals', [list], `Swapped for ${f.name}`, ()=>hRun('editMeals',[old],'Put back'));
   }
   const eaters = f.person ? [f.person] : AM.who, mult = n => f.person ? AM.size : amMult(n);
-  const veg = amVegOn() && vegFits(f) && !H.meals.some(e=>e.date===HD && e.meal===AM.meal && eaters.includes(e.person) && e.food===VEG_FOOD);
-  const list = eaters.map(n=>({date:HD, person:n, meal:AM.meal, food:f.name, kcal:Math.round(f.kcal*mult(n)*ate), served:Math.round(f.kcal*mult(n)), eaten:ate, note, portion:mult(n), veg:f.veg||0, group:f.group||'Meal'}))
-    .concat(veg ? eaters.map(n=>vegRow(n, HD, AM.meal, mult(n), ate)) : []);
-  const who = eaters.length===EATERS.length && EATERS.length>1 ? 'both' : eaters.join(' & '), label = f.name + (veg ? ' + veg' : '');
+  const list = eaters.map(n=>({date:HD, person:n, meal:AM.meal, food:f.name, kcal:Math.round(f.kcal*mult(n)*ate), served:Math.round(f.kcal*mult(n)), eaten:ate, note, portion:mult(n), veg:f.veg||0, group:f.group||'Meal'}));
+  const who = eaters.length===EATERS.length && EATERS.length>1 ? 'both' : eaters.join(' & '), label = f.name;
   const stay = {keep:true, redraw:drawAddMeal, mark:'addMealSheet'}, batch = newId(), entry = {label, id:mealIds(batch, list)[0]};
-  AM.added = (AM.added||[]).concat(entry); AM.q = ''; AM.est = null; AM.online = null;
+  AM.added = (AM.added||[]).concat(entry); AM.q = '';
   hRun('addMeals', [list, null, batch], `${label} for ${who}${ate<1?' ('+eatLabel(ate).toLowerCase()+')':''}`, raw=>{ const i = AM.added.indexOf(entry); if (i > -1) AM.added.splice(i,1); return hRun('deleteMeal',[raw.batch],'Undone',null,stay); }, stay);
-}
-/* the redraw while typing gives focus back only if the box still has it, so tapping away closes the keyboard and adds nothing */
-function amRedrawTyping(){
-  const had = document.activeElement && document.activeElement.id==='amQ';
-  drawAddMeal();
-  if (had){ const i = $('#amQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
 }
 function amEditAdded(id){ if (!H.meals.some(e=>e.id===id)) return toast('That entry has gone, tap refresh'); editMeal(id); }
 
@@ -2698,7 +2674,6 @@ function emPart(i, v){ EM.parts[i].f = v; EM.eaten = Math.round(EM.parts.reduce(
 function emPortion(p){ EM.served = Math.round((EM.served||0)/(EM.portion||1)*p); EM.portion = p; drawEditMeal(); }
 function drawEditMeal(){
   const c = COLOR[EM.person], names = [EM.person].concat(EM.mates.map(id=>(H.meals.find(x=>x.id===id)||{}).person).filter(Boolean));
-  const vegIn = H.meals.some(e=>e.date===EM.date && e.meal===EM.meal && e.person===EM.person && e.food===VEG_FOOD);
   $('#sheet').innerHTML = `<div class="grab"></div>
     <h3 style="margin:0 0 2px">Change what ${esc(EM.person)} had</h3>
     <div class="hint" style="margin:0 0 6px">${EM.diary?'From the Food diary. Your changes stay unless that diary cell is edited again.':'Change anything, then Save.'}</div>
@@ -2728,7 +2703,6 @@ function drawEditMeal(){
     <label class="f">Type</label>
     <div class="chips wrap">${GROUPS.map(g=>`<button class="chip ${EM.group===g?'on':''}" onclick="EM.group='${g}';drawEditMeal()">${GROUP_ICON[g]} ${g}</button>`).join('')}</div>
     <div class="save-bar"><button class="primary" onclick="emSave()">Save changes</button></div>
-    ${EM.food===VEG_FOOD || vegIn || !['Lunch','Dinner'].includes(EM.meal) ? '' : `<button class="secondary" onclick="emVeg()">&#x1F966; + veg: add a portion of mixed veg</button>`}
     <button class="secondary" style="color:var(--neg)" onclick="emRemove()">Remove${EM.all&&EM.mates.length?' for everyone':''}</button>
     <button class="secondary" onclick="closeSheet()">Close</button>`;
 }
@@ -2755,9 +2729,6 @@ function emRemove(){
   const rows = emRows(), ids = rows.map(x=>x.id), back = rows.filter(x=>!x.diary).map(x=>({date:x.date, person:x.person, meal:x.meal, food:x.food, kcal:x.kcal, portion:x.portion, veg:x.veg, group:x.group, eaten:x.eaten, note:x.note, served:x.served}));
   hRun('deleteMeal', [ids], rows.length>1 ? `Removed for ${rows.length} people` : 'Removed', back.length ? ()=>hRun('addMeals',[back,null],'Put back') : null);
 }
-function emVeg(){ const rows = emRows().filter(x=>!H.meals.some(e=>e.date===x.date && e.meal===x.meal && e.person===x.person && e.food===VEG_FOOD));
-  if (!rows.length) return closeSheet();
-  hRun('addMeals', [rows.map(x=>vegRow(x.person, x.date, x.meal, x.portion||1, 1)), null], 'Added mixed veg', raw=>hRun('deleteMeal',[raw.batch],'Undone')); }
 /* a renamed food: kcal per portion from the last time we had that name, or scaled when only the number in front changed (2 sausages to 3) */
 function renamedOne(was, now, one){
   if (now.toLowerCase()===was.toLowerCase()) return one;
@@ -3142,8 +3113,8 @@ const dayLabel = d => { const n = dayN(d) - dayN(today());
   return n > 1 && n < 7 ? wd : wd + ' ' + x.getDate() + ' ' + shortMonth(d.slice(0,7)); };
 const hhmm = s => { const [h,m] = s.slice(11,16).split(':').map(Number); return (h%12||12) + (m ? ':' + String(m).padStart(2,'0') : '') + (h<12?'am':'pm'); };
 const evWhen = e => e.allDay ? (dayN(e.end)-dayN(e.start) > 1 ? 'All day, until ' + dayLabel(addDays(e.end,-1)) : 'All day') : hhmm(e.start) + ' to ' + (e.end.slice(0,10)===e.start.slice(0,10) ? hhmm(e.end) : dayLabel(e.end.slice(0,10)) + ' ' + hhmm(e.end));
-/* still to come or happening now */
-const evLive = e => e.allDay ? e.end > today() : e.end >= nowStamp();
+/* today's or later: an event stays listed all day, even once its time has passed (Tom, Nov 2026) */
+const evLive = e => e.allDay ? e.end > today() : e.end > today() + 'T00:00' || e.start.slice(0,10) === today();
 const evDay = e => { const s = e.start.slice(0,10); return s < today() ? today() : s; };
 function upcoming(days){
   if (!P.events) return [];
@@ -3314,7 +3285,7 @@ function calNote(){
 /* a note tagged #app is an idea for the app: the App ideas tab of the list on Home, the tag hidden */
 const APP_TAG = /(^|\s)#app\b/i;
 const isAppNote = n => noteKind(n)==='app';
-const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/#gift \S+(?: (?:christmas|birthday|clothes|learning|creative|digital|fun|soft|misc|star|p\d+(?:\.\d+)?)\b)*/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore|gift)\b/ig, ' ').replace(/\s+/g, ' ').trim();
+const noteText = t => String(t).replace(/#holiday \d{4}-\d{2}-\d{2}( \d{4}-\d{2}-\d{2})?/ig, ' ').replace(/#chore \S+ \S+/ig, ' ').replace(/#gift \S+(?: (?:christmas|birthday|clothes|learning|creative|digital|fun|soft|misc|star|idea|at:\S+|p\d+(?:\.\d+)?)\b)*/ig, ' ').replace(/#trip \S+/ig, ' ').replace(/(^|\s)#(app|shop|pack|hol|holiday|chore|gift)\b/ig, ' ').replace(/\s+/g, ' ').trim();
 let NOTE_APP = false;
 /* other tags on notes, each its own list: #shop the shopping list (Home), #pack and #hol the holiday packing list and
    things to do, #holiday the trip itself ("Majorca #holiday 2027-07-14 2027-07-21"), #gift and the child's name a present
@@ -3327,9 +3298,10 @@ const doneNote = n => n.done && !noteKind(n);
 function addTagged(inp, tag){
   const el = $('#' + inp), lines = String(el.value||'').split(/\n|;|,/).map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return el.focus();
-  lines.forEach(t=>{ const old = P.items.find(n=>noteKind(n)===tag && noteText(n.text).toLowerCase()===t.toLowerCase());
+  const h = (tag==='pack' || tag==='hol') && holiday(), first = firstTrip();
+  lines.forEach(t=>{ const old = P.items.find(n=>noteKind(n)===tag && (!h || tripOf(n, first)===h.id) && noteText(n.text).toLowerCase()===t.toLowerCase());
     if (old){ if (old.done) pRun('setNoteDone', [old.id, false], null, null, true); }
-    else pRun('addNote', [{id:newId(), text:t + ' #' + tag}], null, null, true); });
+    else pRun('addNote', [{id:newId(), text:t + ' #' + tag + (h ? ' #trip ' + h.id : '')}], null, null, true); });
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#' + inp); if (i){ i.value = ''; i.focus(); } }));
 }
 const tagInput = (inp, tag, ph) => `<div class="note-add"><input class="inp" id="${inp}" placeholder="${ph}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addTagged('${inp}','${tag}')}"><button class="chip on" onclick="addTagged('${inp}','${tag}')">Add</button></div>`;
@@ -3350,10 +3322,16 @@ function shopCard(){
 }
 /* ---- the holiday ---- */
 const HOL_RE = /#holiday (\d{4}-\d{2}-\d{2})(?: (\d{4}-\d{2}-\d{2}))?/i;
-function holiday(){
-  const n = P.items.find(x=>!x.done && noteKind(x)==='holiday'), m = n && n.text.match(HOL_RE);
-  return m ? {id:n.id, name:noteText(n.text) || 'Holiday', from:m[1], to:m[2] && m[2] >= m[1] ? m[2] : m[1]} : null;
-}
+const tripFrom = n => { const m = n.text.match(HOL_RE); return m ? {id:n.id, name:noteText(n.text) || 'Holiday', from:m[1], to:m[2] && m[2] >= m[1] ? m[2] : m[1], done:n.done} : null; };
+function holiday(){ const n = P.items.find(x=>!x.done && noteKind(x)==='holiday' && HOL_RE.test(x.text)); return n ? tripFrom(n) : null; }
+/* every trip keeps its own lists (Tom, Nov 2026): a to-do or packing item added while a trip is on carries "#trip <its id>".
+   Items from before that carry none and belong to the first trip (Hong Kong). "This holiday is over" ticks the trip note,
+   which archives it: the trip and its lists move to Past holidays, and a new trip can start from a copy of them. */
+const TRIP_RE = /#trip (\S+)/i;
+const trips = () => P.items.filter(n=>noteKind(n)==='holiday').map(tripFrom).filter(Boolean).sort((a,b)=>a.from<b.from?-1:1);
+const firstTrip = () => (trips()[0] || {}).id || '';
+const tripOf = (n, first) => { const m = String(n.text).match(TRIP_RE); return m ? m[1] : first; };
+const tripItems = (id, k) => { const first = firstTrip(); return P.items.filter(n=>noteKind(n)===k && tripOf(n, first)===id); };
 function holLeft(h){ const n = dayN(h.from) - dayN(today()), e = dayN(h.to) - dayN(today());
   return n > 1 ? {big:n, small:'days to go'} : n===1 ? {big:'Tomorrow', small:''} : n===0 ? {big:'Today', small:'Have a great time'} : e >= 0 ? {big:'On holiday', small:'Enjoy it'} : {big:'Back home', small:'Tick it off when you are ready for the next one'}; }
 const holFmt = d => dOf(d).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
@@ -3361,31 +3339,47 @@ const holDates = h => holFmt(h.from) + (h.to!==h.from ? ' to ' + holFmt(h.to) : 
 /* Home: one line while a trip is coming up */
 function holHome(){
   const h = holiday(); if (!h || dayN(h.to) < dayN(today())) return '';
-  const l = holLeft(h), todo = P.items.filter(n=>noteKind(n)==='hol' && !n.done).length;
+  const l = holLeft(h), todo = tripItems(h.id, 'hol').filter(n=>!n.done).length;
   return `<button class="card hol-line" onclick="pgo('hol')"><span>&#x1F334;</span><b>${esc(h.name)}</b><em>${typeof l.big==='number' ? l.big + ' days to go' : esc(l.big)}${todo ? ` &middot; ${todo} to do` : ''}</em><span class="chev">&nbsp;&rsaquo;</span></button>`;
 }
 const PACK_STARTER = ['Passports', 'Boarding passes', 'GHIC cards', 'Travel insurance', 'Money and cards', 'Phone chargers', 'Plug adapters', 'Sun cream', 'Sunglasses', 'Sun hats', 'Swimwear', 'Medicines', 'Calpol', 'Toothbrushes', 'Nappies and wipes', 'Snacks for the journey', 'Tablet and headphones'];
+const holOrder = l => l.filter(n=>!n.done).sort(byAt).concat(l.filter(n=>n.done).sort(byAt));
 function pHol(){
-  const h = holiday(), pack = P.items.filter(n=>noteKind(n)==='pack'), todo = P.items.filter(n=>noteKind(n)==='hol');
-  const order = l => l.filter(n=>!n.done).sort(byAt).concat(l.filter(n=>n.done).sort(byAt)), packed = pack.filter(n=>n.done).length, l = h && holLeft(h);
-  return `${h ? `<button class="card hol-hero" onclick="openHoliday()"><small>${esc(h.name)}</small><b>${esc(String(l.big))}</b>${l.small ? `<span>${esc(l.small)}</span>` : ''}<em>${esc(holDates(h))}</em></button>`
-      : `<div class="card hol-hero"><small>No holiday booked in the app</small><button class="primary" onclick="openHoliday()">Add a holiday</button></div>`}
+  const h = holiday(), past = trips().filter(t=>t.done).reverse();
+  const pastH = past.length ? `<h2>Past holidays</h2><div class="card list">${past.map(t=>`<button class="item" onclick="openPastTrip('${t.id}')"><div class="mid"><div class="t">${esc(t.name)}</div><div class="d">${esc(holDates(t))} ${esc(t.from.slice(0,4))} &middot; ${tripItems(t.id,'hol').length} to do, ${tripItems(t.id,'pack').length} to pack</div></div><span class="chev">&rsaquo;</span></button>`).join('')}</div>` : '';
+  if (!h) return `<div class="card hol-hero"><small>No holiday coming up</small><button class="primary" onclick="openHoliday()">Start a new holiday</button></div>${pastH}`;
+  const pack = tripItems(h.id, 'pack'), todo = tripItems(h.id, 'hol'), packed = pack.filter(n=>n.done).length, l = holLeft(h);
+  return `<button class="card hol-hero" onclick="openHoliday()"><small>${esc(h.name)}</small><b>${esc(String(l.big))}</b>${l.small ? `<span>${esc(l.small)}</span>` : ''}<em>${esc(holDates(h))}</em></button>
+  ${dayN(h.to) < dayN(today()) ? `<button class="primary" onclick="holidayOver()">This holiday is over: archive it</button><div class="hint">Its lists are kept under Past holidays, ready to copy for the next one.</div>` : ''}
   <h2>Things to do</h2>
   ${tagInput('holIn', 'hol', 'e.g. Book the airport parking')}
-  ${todo.length ? `<div class="card notes">${order(todo).map(noteRow).join('')}</div>` : ''}
+  ${todo.length ? `<div class="card notes">${holOrder(todo).map(noteRow).join('')}</div>` : ''}
   <h2>Packing list${pack.length ? ` <span class="h2-n">${packed} of ${pack.length} packed</span>` : ''}</h2>
   ${tagInput('packIn', 'pack', 'e.g. Sun cream')}
-  ${pack.length ? `<div class="card notes">${order(pack).map(noteRow).join('')}</div>` : `<button class="secondary" onclick="packStarter()">Start from a usual list</button>`}
+  ${pack.length ? `<div class="card notes">${holOrder(pack).map(noteRow).join('')}</div>` : `<button class="secondary" onclick="packStarter()">Start from a usual list</button>`}
   ${packed ? `<button class="secondary" onclick="unpackAll()">Untick the packing list for next time</button>` : ''}
-  ${h && dayN(h.to) < dayN(today()) ? `<button class="secondary" onclick="holidayOver()">This holiday is over</button>` : ''}`;
+  ${pastH}`;
 }
-function openHoliday(){
-  const h = holiday() || {name:'', from:'', to:''};
-  showSheet(`<h3>${h.id ? 'The holiday' : 'Add a holiday'}</h3>
+/* a past holiday: its lists as they were left, and a new holiday started from them */
+function openPastTrip(id){
+  const t = trips().find(x=>x.id===id); if (!t) return;
+  const todo = tripItems(id, 'hol'), pack = tripItems(id, 'pack');
+  showSheet(`<h3>${esc(t.name)}</h3><div class="hint" style="margin-top:0">${esc(holDates(t))} ${esc(t.from.slice(0,4))}</div>
+    ${holiday() ? '' : `<button class="primary" onclick="openHoliday('${id}')">Start a new holiday with these lists</button>`}
+    <label class="f">Things to do (${todo.length})</label>${todo.length ? `<div class="card notes">${holOrder(todo).map(noteRow).join('')}</div>` : '<div class="hint">None</div>'}
+    <label class="f">Packing list (${pack.length})</label>${pack.length ? `<div class="card notes">${holOrder(pack).map(noteRow).join('')}</div>` : '<div class="hint">None</div>'}
+    <button class="secondary" onclick="pRun('setNoteDone', ['${id}', false], 'Back as the current holiday')">Make this the current holiday again</button>`);
+}
+function openHoliday(src){
+  const h = holiday() || {name:'', from:'', to:''}, past = trips().filter(t=>t.done && tripItems(t.id,'hol').length + tripItems(t.id,'pack').length);
+  const from = !h.id && (past.find(t=>t.id===src) || past[past.length-1]);
+  showSheet(`<h3>${h.id ? 'The holiday' : 'Start a new holiday'}</h3>
     <label class="f">Where</label><input class="inp" id="holName" placeholder="e.g. Majorca" value="${esc(h.name)}">
     <div class="two"><div><label class="f">From</label><input class="inp" type="date" id="holFrom" value="${h.from}"></div>
     <div><label class="f">Back</label><input class="inp" type="date" id="holTo" value="${h.to}"></div></div>
     ${tripEvents().length ? `<label class="f">From the calendar</label><div class="chips wrap">${tripEvents().map(t=>`<button class="chip" onclick="pickTrip(${jsA(t)})">${esc(t.name)} &middot; ${esc(holFmt(t.from))}</button>`).join('')}</div>` : ''}
+    ${from ? `<label class="f">Lists</label><div class="chips wrap">${past.slice().reverse().map(t=>`<button class="chip ${t.id===from.id?'on':''}" data-trip="${t.id}" onclick="holCopy(this)">Copy ${esc(t.name)}'s lists</button>`).join('')}<button class="chip" data-trip="" onclick="holCopy(this)">Start empty</button></div>
+      <div class="hint">Everything unticked: things to do and the packing list.</div>` : ''}
     <button class="primary" onclick="saveHoliday()">Save</button>
     ${h.id ? `<button class="secondary neg" onclick="pRun('deleteNote', ['${h.id}'], 'Holiday removed', ()=>pRun('addNote', [{id:newId(), text:${jsA(P.items.find(n=>n.id===h.id).text)}}], null, null, true))">Remove</button>` : ''}`);
 }
@@ -3401,42 +3395,49 @@ function saveHoliday(){
   const name = $('#holName').value.trim() || 'Holiday', from = $('#holFrom').value, to = $('#holTo').value;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) return toast('Pick the day you go');
   const text = name + ' #holiday ' + from + (to && to > from ? ' ' + to : ''), h = holiday();
-  if (h) pRun('editNote', [h.id, text], 'Saved'); else pRun('addNote', [{id:newId(), text}], 'Holiday added');
+  if (h) return pRun('editNote', [h.id, text], 'Saved');
+  const id = newId(), c = $('#sheet .chip.on[data-trip]'), src = c && c.dataset.trip;
+  pRun('addNote', [{id, text}], 'Holiday added', null, !!src);
+  if (src) ['hol', 'pack'].forEach(k=>{ const seen = new Set(); holOrder(tripItems(src, k)).forEach(n=>{ const t = noteText(n.text), key = t.toLowerCase();
+    if (!t || seen.has(key)) return; seen.add(key); pRun('addNote', [{id:newId(), text:t + ' #' + k + ' #trip ' + id}], null, null, true); }); });
+  if (src) closeSheet();
 }
-function packStarter(){ PACK_STARTER.forEach(t=>pRun('addNote', [{id:newId(), text:t + ' #pack'}], null, null, true)); toast('Usual list added: take off what you do not need'); }
-function unpackAll(){ P.items.filter(n=>noteKind(n)==='pack' && n.done).forEach(n=>pRun('setNoteDone', [n.id, false], null, null, true)); toast('Packing list unticked'); }
-function holidayOver(){
-  const h = holiday(); if (h) pRun('setNoteDone', [h.id, true], null, null, true);
-  const ids = P.items.filter(n=>noteKind(n)==='hol' && n.done).map(n=>n.id); if (ids.length) pRun('clearDone', [ids], null, null, true);
-  unpackAll();
-}
+function holCopy(b){ b.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', x===b)); }
+function packStarter(){ const h = holiday(), tr = h ? ' #trip ' + h.id : ''; PACK_STARTER.forEach(t=>pRun('addNote', [{id:newId(), text:t + ' #pack' + tr}], null, null, true)); toast('Usual list added: take off what you do not need'); }
+function unpackAll(){ const h = holiday(); (h ? tripItems(h.id, 'pack') : []).filter(n=>n.done).forEach(n=>pRun('setNoteDone', [n.id, false], null, null, true)); toast('Packing list unticked'); }
+function holidayOver(){ const h = holiday(); if (h) pRun('setNoteDone', [h.id, true], h.name + ' archived: its lists are under Past holidays'); }
 /* ---- gifts: per child, a Christmas list and a Birthday list of what we have bought them; added to, never ticked, and an item
    moves between the two lists with one tap (Tom, 18 Oct 2026). Text: "Lego set #gift Nathan christmas" (no list = Christmas). */
 const GIFT_KIDS = [['Nathan', '#27AE60'], ['Evy', '#2E86C1']], GIFT_LISTS = [['christmas', 'Christmas', '&#x1F384;'], ['birthday', 'Birthday', '&#x1F382;']];
 /* after the child: the list, the kind of toy (colour-coded, set by hand), "star" for the main present and the price in
    pounds after a p, e.g. "Lego set #gift Nathan christmas creative star p24.99" (Tom, 18 Oct 2026). Column headers total the prices. */
 const GIFT_TYPES = [['clothes', 'Clothes', '#D946EF'], ['learning', 'Learning', '#14B8A6'], ['creative', 'Creative', '#F97316'], ['digital', 'Digital', '#6366F1'], ['fun', 'Fun', '#EF4444'], ['soft', 'Soft toys', '#A16207'], ['misc', 'Misc', '#64748B']];
-const GIFT_RE = /#gift (\S+)((?: (?:christmas|birthday|clothes|learning|creative|digital|fun|soft|misc|star|p\d+(?:\.\d+)?)\b)*)/i;
+const GIFT_RE = /#gift (\S+)((?: (?:christmas|birthday|clothes|learning|creative|digital|fun|soft|misc|star|idea|at:\S+|p\d+(?:\.\d+)?)\b)*)/i;
 function giftOf(n){
   const m = String(n.text).match(GIFT_RE) || [], w = String(m[2] || '').toLowerCase().split(' ');
   return {kid:m[1] || '', list:w.includes('birthday') ? 'birthday' : 'christmas', type:(GIFT_TYPES.find(t=>w.includes(t[0])) || [''])[0], star:w.includes('star'),
-    price:(w.map(x=>x.match(/^p(\d+(?:\.\d+)?)$/)).find(Boolean) || [])[1] || ''};
+    price:(w.map(x=>x.match(/^p(\d+(?:\.\d+)?)$/)).find(Boolean) || [])[1] || '', idea:w.includes('idea'),
+    where:(String(m[2] || '').split(' ').find(x=>/^at:/i.test(x)) || '').slice(3).replace(/_/g, ' ')};
 }
 const giftKid = n => giftOf(n).kid;
 const giftList = n => giftOf(n).list;
-const giftTag = g => ['#gift', g.kid || GIFT_KIDS[0][0], g.list || 'christmas', g.type, g.star ? 'star' : '', +g.price > 0 ? 'p' + (+g.price).toFixed(2) : ''].filter(Boolean).join(' ');
+/* an idea is a gift still to buy (Laura, Nov 2026): "idea", and where to buy it as "at:Smyths_Toys" (spaces as _) */
+const giftTag = g => ['#gift', g.kid || GIFT_KIDS[0][0], g.list || 'christmas', g.idea ? 'idea' : '', g.type, g.star ? 'star' : '', +g.price > 0 ? 'p' + (+g.price).toFixed(2) : '',
+  g.where && g.where.trim() ? 'at:' + g.where.trim().replace(/\s+/g, '_') : ''].filter(Boolean).join(' ');
+/* "Lego @ Smyths" typed in an Add box: where to buy comes off the end */
+const giftWhere = t => { const m = t.match(/^(.+?)\s*@\s*(.+)$/); return m ? {text:m[1], where:m[2]} : {text:t, where:''}; };
 /* "Lego set \u00a324.99" or "Lego set 24.99" typed in an Add box: the price comes off the end */
 const giftSplit = t => { const m = t.match(/^(.*?)\s*(?:\u00a3\s*(\d+(?:\.\d{1,2})?)|\s(\d+\.\d{2}))$/); return m && m[1] ? {text:m[1], price:m[2] || m[3]} : {text:t, price:''}; };
 const giftMoney = v => '\u00a3' + v.toLocaleString('en-GB', {minimumFractionDigits:v % 1 ? 2 : 0, maximumFractionDigits:2});
 function giftPrice(id, v){ const p = String(v||'').replace(/[^\d.]/g, ''); giftSet(id, {price:+p > 0 ? p : ''}); }
 /* the tag a note keeps when it is edited: "#gift Nathan birthday fun star", "#pack", or none */
-const noteTagOf = n => { const k = noteKind(n); return k==='gift' ? giftTag(giftOf(n)) : k ? '#' + k : ''; };
+const noteTagOf = n => { const k = noteKind(n), tr = String(n.text).match(TRIP_RE); return k==='gift' ? giftTag(giftOf(n)) : k ? '#' + k + (tr ? ' #trip ' + tr[1] : '') : ''; };
 let GIFT_SEL = '';   // the highlighted item, which opens its own price, move, edit and kind controls
 function giftPick(id){ GIFT_SEL = GIFT_SEL===id ? '' : id; render(); }
-function addGift(kid, list){
-  const inp = 'gift' + kid + list, el = $('#' + inp), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
+function addGift(kid, list, idea){
+  const inp = 'gift' + kid + list + (idea ? 'i' : ''), el = $('#' + inp), lines = String(el.value||'').split(/\n|;/).map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return el.focus();
-  lines.forEach(t=>{ const g = giftSplit(t); pRun('addNote', [{id:newId(), text:g.text + ' ' + giftTag({kid, list, price:g.price})}], null, null, true); });
+  lines.forEach(t=>{ const g = giftSplit(t), w = giftWhere(g.text); pRun('addNote', [{id:newId(), text:w.text + ' ' + giftTag({kid, list, price:g.price, idea:!!idea, where:w.where})}], null, null, true); });
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = $('#' + inp); if (i){ i.value = ''; i.focus(); } }));
 }
 function giftSet(id, ch, msg){
@@ -3450,19 +3451,27 @@ function giftStar(id){ const n = P.items.find(x=>x.id===id); if (n) giftSet(id, 
 const STAR = on => `<svg viewBox="0 0 24 24" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.3L12 17.4l-5.6 3 1.1-6.3L3 9.7l6.2-.9z"/></svg>`;
 function giftItem(n){
   const g = giftOf(n), t = GIFT_TYPES.find(x=>x[0]===g.type), on = GIFT_SEL===n.id;
-  return `<div class="gift-i ${on?'on':''}"${t ? ` style="border-left-color:${t[2]}"` : ''}><button class="gift-t" aria-pressed="${on}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${+g.price ? `<b class="gift-p">${giftMoney(+g.price)}</b> &middot; ` : ''}${t ? `<b style="color:${t[2]}">${t[1]}</b> &middot; ` : ''}${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button><button class="gift-star ${g.star?'on':''}" aria-label="${g.star ? 'Not the main present' : 'Main present'}" aria-pressed="${g.star}" onclick="giftStar('${n.id}')">${STAR(g.star)}</button>${on ? giftEd(n, g) : ''}</div>`;
+  return `<div class="gift-i ${on?'on':''}"${t ? ` style="border-left-color:${t[2]}"` : ''}><button class="gift-t" aria-pressed="${on}" onclick="giftPick('${n.id}')">${esc(noteText(n.text))}<small>${+g.price ? `<b class="gift-p">${giftMoney(+g.price)}</b> &middot; ` : ''}${g.where ? `<b class="gift-w">${esc(g.where)}</b> &middot; ` : ''}${t ? `<b style="color:${t[2]}">${t[1]}</b> &middot; ` : ''}${esc(n.by||'')}${n.at ? (n.by ? ', ' : '') + esc(dayLabel(n.at.slice(0,10)).toLowerCase()) : ''}</small></button>${g.idea
+    ? `<button class="tick gift-buy" aria-label="Bought ${esc(noteText(n.text))}" onclick="giftSet('${n.id}', {idea:false}, 'Bought: on the ${g.list==='birthday' ? 'Birthday' : 'Christmas'} list')"></button>`
+    : `<button class="gift-star ${g.star?'on':''}" aria-label="${g.star ? 'Not the main present' : 'Main present'}" aria-pressed="${g.star}" onclick="giftStar('${n.id}')">${STAR(g.star)}</button>`}${on ? giftEd(n, g) : ''}</div>`;
 }
 /* inside the highlighted item: its price, the arrow to the other list, edit, and its kind (Tom, 18 Oct 2026: all where you tapped) */
 const giftEd = (n, g) => `<div class="gift-ed"><div class="gift-row"><input class="inp" id="giftPr" inputmode="decimal" placeholder="\u00a3 price" aria-label="Price" value="${esc(g.price)}" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onchange="giftPrice('${n.id}', this.value)"><button class="icon-btn" aria-label="${g.list==='christmas' ? 'Move to Birthday' : 'Move to Christmas'}" onclick="giftSwap('${n.id}')">${ARROW(g.list==='christmas' ? 'r' : 'l')}</button><button class="icon-btn" aria-label="Edit" onclick="openNote('${n.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg></button></div>
+  <input class="inp gift-wh" id="giftWh" placeholder="Where to buy" aria-label="Where to buy" value="${esc(g.where)}" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onchange="giftSet('${n.id}', {where:this.value.trim()})">
+  ${g.idea ? '' : `<button class="link-btn" onclick="giftSet('${n.id}', {idea:true}, 'Back on the To buy list')">Not bought yet</button>`}
   <div class="gift-kinds">${GIFT_TYPES.map(([k, name, c])=>`<button class="chip ${g.type===k?'on':''}" aria-pressed="${g.type===k}" onclick="giftType('${n.id}','${k}')"><i class="ev-dot" style="background:${c}"></i>${name}</button>`).join('')}</div></div>`;
 const ARROW = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="${d==='r' ? 'M5 12h14M13 6l6 6-6 6' : 'M19 12H5M11 6l-6 6 6 6'}"/></svg>`;
 function pGifts(){
   return GIFT_KIDS.map(([kid, col])=>{
     const all = P.items.filter(n=>noteKind(n)==='gift' && giftKid(n).toLowerCase()===kid.toLowerCase()).sort((a,b)=>giftOf(b).star - giftOf(a).star || (a.at<b.at?1:-1));
-        const colHTML = ([k, name, ic]) => { const l = all.filter(n=>giftList(n)===k), sum = l.reduce((a,n)=>a + (+giftOf(n).price || 0), 0);
-      return `<div class="gift-col"><div class="gift-h">${ic} ${name}${l.length ? ` <span class="h2-n">${l.length}</span>` : ''}</div><div class="gift-sum">${giftMoney(Math.round(sum * 100) / 100)} spent</div>
+    const tot = l => Math.round(l.reduce((a,n)=>a + (+giftOf(n).price || 0), 0) * 100) / 100;
+    const colHTML = ([k, name, ic]) => { const l = all.filter(n=>giftList(n)===k && !giftOf(n).idea), ideas = all.filter(n=>giftList(n)===k && giftOf(n).idea);
+      return `<div class="gift-col"><div class="gift-h">${ic} ${name}${l.length ? ` <span class="h2-n">${l.length}</span>` : ''}</div><div class="gift-sum">${giftMoney(tot(l))} spent</div>
       <div class="gift-add"><input class="inp" id="gift${kid}${k}" placeholder="Add (and \u00a3)" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addGift('${kid}','${k}')}"><button class="icon-btn" aria-label="Add to ${name}" onclick="addGift('${kid}','${k}')">+</button></div>
-      ${l.map(giftItem).join('')}</div>`; };
+      ${l.map(giftItem).join('')}
+      <div class="gift-h gift-ih">&#x1F4A1; To buy${ideas.length ? ` <span class="h2-n">${ideas.length}</span>` : ''}</div>${tot(ideas) ? `<div class="gift-sum">${giftMoney(tot(ideas))} to spend</div>` : ''}
+      <div class="gift-add"><input class="inp" id="gift${kid}${k}i" placeholder="Idea (@ shop, \u00a3)" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addGift('${kid}','${k}',true)}"><button class="icon-btn" aria-label="Add an idea to ${name}" onclick="addGift('${kid}','${k}',true)">+</button></div>
+      ${ideas.map(giftItem).join('')}</div>`; };
     return `<h2><i class="ev-dot" style="background:${col}"></i>${kid}${all.length ? ` <span class="h2-n">${all.length}</span>` : ''}</h2>
     <div class="gift-cols">${colHTML(GIFT_LISTS[0])}
       ${colHTML(GIFT_LISTS[1])}</div>
@@ -3867,7 +3876,8 @@ function dots(s){
 }
 /* flare-ups (a kind named "... flare up"): estimated recovery, morning and evening, from the first flare-up to today.
    flareHeal(t) is the slow trend through the best mornings, t = days since the first flare-up, joining Tom's FLARE_TREND
-   points: 54% on 26 Sep (60% evening, Tom 18 Oct 2026), 64% on 14 Oct (70% evening) and 70% on 20 Oct (Tom 20 Oct);
+   points: 54% on 26 Sep (60% evening, Tom 18 Oct 2026), 64% on 14 Oct (70% evening), 70% on 20 Oct (Tom 20 Oct),
+   81% on 28 Oct (87% evening, Tom's note) and 92% on the morning of 8 Nov (Tom's note);
    past the last one it rises at the first-to-last rate. Each flare-up drops to a floor STEP points above the last one's
    (0%, 15%, 30%...), stays low and climbs back to the trend faster and faster ((k/S)^2 over S days, Tom 18 Oct: every arc
    starts low and speeds up towards the end), then follows it. The first arc takes FLARE_FIRST days, the 27 Sep one
@@ -3875,7 +3885,7 @@ function dots(s){
    of 18 Oct, three days after 15 Oct (two comebacks only, a rough fit). Evenings sit BOUNCE above the arc, and a morning
    is never better than the evening before it (Tom 20 Oct), so mornings lag behind a fast climb. */
 const FLARE = /flare.?up/i, FLARE_P = 2, FLARE_FIRST = 16, FLARE_BACK = 17, SPEEDUP = 4.7, BOUNCE = 6, STEP = 15;
-const FLARE_TREND = [[16, 54], [34, 64], [40, 70]];
+const FLARE_TREND = [[16, 54], [34, 64], [40, 70], [48, 81], [59, 92]];
 const flareHeal = t => { const P = FLARE_TREND, a = P[0], z = P[P.length-1];
   let i = 0; while (i < P.length - 2 && t > P[i+1][0]) i++;
   const [p, q] = t > z[0] ? [a, z] : [P[i], P[i+1]];
