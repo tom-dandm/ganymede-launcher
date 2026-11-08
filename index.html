@@ -1243,7 +1243,7 @@ function vSettings(){
   <h2>Bank statement and data</h2>
   <div class="card"><div class="hint" style="margin-top:0">The app keeps a copy of your transactions on this phone and only fetches new ones. If you edit old rows in the sheet by hand, reload them all.</div>
     <button class="secondary" onclick="load(true).then(()=>toast('All transactions reloaded'))">Reload everything from the sheet</button>
-    ${canP()?`<button class="primary" onclick="pickStatements()">Upload a Santander statement</button><div class="hint">Microsoft Excel (XLS) export. Several at once is fine; anything already in the sheet is skipped.</div>`:''}</div>
+    ${canP()?`<button class="primary" onclick="pickStatements()">Upload bank statements</button><div class="hint">Santander: the Microsoft Excel (XLS) export. Monzo and Revolut: the CSV export. Several at once is fine; anything already in the sheet is skipped, and money moved between our own accounts is left out.</div>`:''}</div>
   <h2>How it works</h2>
   <div class="card" style="font-size:13px;color:var(--muted)">
     <p style="margin-top:0">Every month, each pot gets its % of the family's profit: money in minus money spent. A month that makes a loss tops up nothing. Spending and extra money are logged in the sheet's spending log, so everything stays in one place.</p>
@@ -1846,9 +1846,9 @@ function drawDayChart(m){
 }
 
 /* ---- statement upload (Tom only) ---- */
-function readStatementFile(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsText(f,'windows-1252'); }); }
+function readStatementFile(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsText(f, /\.csv$/i.test(f.name) ? 'utf-8' : 'windows-1252'); }); }
 function pickStatements(){
-  const i = document.createElement('input'); i.type='file'; i.multiple=true; i.accept='.xls,.htm,.html,application/vnd.ms-excel,text/html';
+  const i = document.createElement('input'); i.type='file'; i.multiple=true; i.accept='.xls,.htm,.html,.csv,application/vnd.ms-excel,text/html,text/csv';
   i.onchange = async () => { if (!i.files.length) return; toast('Reading ' + i.files.length + ' file' + (i.files.length>1?'s':'') + '…');
     try { const texts = await Promise.all([...i.files].map(readStatementFile)); await importTexts(texts); } catch(e){ toast('\u26a0 ' + (e.message||e)); } };
   i.click();
@@ -1886,14 +1886,15 @@ function extDone(list){
 }
 function showImport(list){
   extDone(list);
-  const s = list.find(x=>x.added) || list[0] || {};
-  if (sheetShown()) return toast(s.added ? 'Statement added: ' + s.added + ' new' : 'Nothing new in that statement');
-  showSheet(`<div class="grab"></div><h3 style="margin:0 0 6px">${s.added?'Statement added':'Nothing new in that file'}</h3>
-      ${s.added?`<div class="stat-row"><span class="k">New transactions</span><span class="v">${s.added}</span></div>
+  const s = list.find(x=>x.added || x.other && x.other.added) || list[0] || {}, o = s.other;
+  const oLine = o ? `<div class="stat-row"><span class="k">${esc(o.banks || 'Monzo / Revolut')}</span><span class="v">${o.added} added${o.skipped ? ', ' + o.skipped + ' own transfers left out' : ''}</span></div>${o.misc ? `<div class="hint">${o.misc} to check: tap them in Spending to pick a category.</div>` : ''}` : '';
+  if (sheetShown()) return toast(s.added || o && o.added ? 'Statement added: ' + ((s.added||0) + (o ? o.added : 0)) + ' new' : 'Nothing new in that statement');
+  showSheet(`<div class="grab"></div><h3 style="margin:0 0 6px">${s.added || o && o.added ?'Statement added':'Nothing new in that file'}</h3>
+      ${oLine}${s.added?`<div class="stat-row"><span class="k">New transactions</span><span class="v">${s.added}</span></div>
       <div class="stat-row"><span class="k">From</span><span class="v">${esc(s.from)} to ${esc(s.to)}</span></div>
       <div class="stat-row"><span class="k">Balances</span><span class="v ${s.breaks?'neg':'pos'}">${s.breaks?'\u26a0 '+s.breaks+' gap'+(s.breaks>1?'s':'')+' \u2013 a missing export?':'\u2713 all add up'}</span></div>
       ${s.topups?`<div class="hint" style="white-space:pre-line">Top-ups: ${esc(s.topups)}</div>`:''}`
-      :`<div class="hint">All ${s.read||0} transactions in it were already in the sheet.</div>`}
+      :o ? '' : `<div class="hint">All ${s.read||0} transactions in it were already in the sheet.</div>`}
       <button class="secondary" onclick="closeSheet()">Done</button>`);
 }
 
@@ -1918,6 +1919,8 @@ function openCat(c){
   barChart(document.getElementById('catChart'), data, {});
 }
 const isPayPal = t => /^PayPal/.test(t.note||'');
+/* rows from PayPal, Monzo or Revolut carry the name at the start of the note (Banks.js) and their own day */
+const bankOf = t => ((t.note||'').match(/^(PayPal|Monzo|Revolut)\b/) || [])[1] || '';
 /* any list of payments, newest first, each one tappable */
 function txListSheet(title, list, sub){
   const l = list.slice().sort((a,b)=>a.date<b.date?1:-1), tin = l.filter(t=>t.amount>0).reduce((a,t)=>a+t.amount,0), tout = -l.filter(t=>t.amount<0).reduce((a,t)=>a+t.amount,0);
@@ -1933,7 +1936,7 @@ function openGroup(g){
 function txItem(t){
   return `<div class="item" style="--c:${t.amount>0?'var(--inc)':'var(--spd)'};cursor:pointer" onclick="editTx(${t.row})">
     <div class="dot" style="background:var(--bg);font-size:15px">${CAT_ICON[t.category]||'•'}</div>
-    <div class="mid"><div class="t">${esc(t.merchant)}</div><div class="d">${t.pot?`<span class="pp" style="color:${COLOR[t.pot]}">${esc(t.pot)}${t.potAmt!=null&&Math.abs(t.potAmt-t.amount)>0.005?' '+gbp(Math.abs(t.potAmt)):''}</span>`:''}${isPayPal(t)?'<span class="pp">PayPal</span>':''}${dateY(t.date)} · ${esc(t.category)}</div></div>
+    <div class="mid"><div class="t">${esc(t.merchant)}</div><div class="d">${t.pot?`<span class="pp" style="color:${COLOR[t.pot]}">${esc(t.pot)}${t.potAmt!=null&&Math.abs(t.potAmt-t.amount)>0.005?' '+gbp(Math.abs(t.potAmt)):''}</span>`:''}${bankOf(t)?`<span class="pp">${bankOf(t)}</span>`:''}${dateY(t.date)} · ${esc(t.category)}</div></div>
     <div class="amt ${t.amount<0?'neg':'pos'}">${gbpS(t.amount)}</div></div>`;
 }
 function editTx(row){
@@ -2897,7 +2900,7 @@ const jsA = v => esc(JSON.stringify(v));
 function bankTakeaways(from, to){
   if (!D || !D.transactions) return [];
   return D.transactions.filter(t=>t.category==='Eating out & takeaway' && t.type==='spend' && t.amount <= -10)
-    .map(t=>({date: t.used || /^PayPal/.test(t.note||'') ? t.date : addDays(t.date,-1), merchant:t.merchant, amount:-t.amount}))
+    .map(t=>({date: t.used || bankOf(t) ? t.date : addDays(t.date,-1), merchant:t.merchant, amount:-t.amount}))
     .filter(t=>t.date>=from && t.date<=to);
 }
 function recentPlaces(){
