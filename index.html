@@ -1887,7 +1887,7 @@ function extDone(list){
 function showImport(list){
   extDone(list);
   const s = list.find(x=>x.added || x.other && x.other.added) || list[0] || {}, o = s.other;
-  const oLine = o ? `<div class="stat-row"><span class="k">${esc(o.banks || 'Monzo / Revolut')}</span><span class="v">${o.added} added${o.skipped ? ', ' + o.skipped + ' own transfers left out' : ''}</span></div>${o.misc ? `<div class="hint">${o.misc} to check: tap them in Spending to pick a category.</div>` : ''}` : '';
+  const oLine = o ? `<div class="stat-row"><span class="k">${esc(o.banks || 'Monzo / Revolut')}</span><span class="v">${o.added} added${o.skipped ? ', ' + o.skipped + ' own transfers left out' : ''}${o.early ? ', ' + o.early + ' from before the bank history left out' : ''}</span></div>${o.misc ? `<div class="hint">${o.misc} to check: tap them in Spending to pick a category.</div>` : ''}` : '';
   if (sheetShown()) return toast(s.added || o && o.added ? 'Statement added: ' + ((s.added||0) + (o ? o.added : 0)) + ' new' : 'Nothing new in that statement');
   showSheet(`<div class="grab"></div><h3 style="margin:0 0 6px">${s.added || o && o.added ?'Statement added':'Nothing new in that file'}</h3>
       ${oLine}${s.added?`<div class="stat-row"><span class="k">New transactions</span><span class="v">${s.added}</span></div>
