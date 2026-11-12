@@ -3349,7 +3349,7 @@ const PACK_STARTER = ['Passports', 'Boarding passes', 'GHIC cards', 'Travel insu
 const holOrder = l => l.filter(n=>!n.done).sort(byAt).concat(l.filter(n=>n.done).sort(byAt));
 function pHol(){
   const h = holiday(), past = trips().filter(t=>t.done).reverse();
-  const pastH = past.length ? `<h2>Past holidays</h2><div class="card list">${past.map(t=>`<button class="item" onclick="openPastTrip('${t.id}')"><div class="mid"><div class="t">${esc(t.name)}</div><div class="d">${esc(holDates(t))} ${esc(t.from.slice(0,4))} &middot; ${tripItems(t.id,'hol').length} to do, ${tripItems(t.id,'pack').length} to pack</div></div><span class="chev">&rsaquo;</span></button>`).join('')}</div>` : '';
+  const pastH = past.length ? `<h2>Past holidays</h2><div class="card list">${past.map(t=>`<button class="item tap" onclick="openPastTrip('${t.id}')"><div class="mid"><div class="t">${esc(t.name)}</div><div class="d">${esc(holDates(t))} ${esc(t.from.slice(0,4))} &middot; ${tripItems(t.id,'hol').length} to do, ${tripItems(t.id,'pack').length} to pack</div></div><span class="chev">&rsaquo;</span></button>`).join('')}</div>` : '';
   if (!h) return `<div class="card hol-hero"><small>No holiday coming up</small><button class="primary" onclick="openHoliday()">Start a new holiday</button></div>${pastH}`;
   const pack = tripItems(h.id, 'pack'), todo = tripItems(h.id, 'hol'), packed = pack.filter(n=>n.done).length, l = holLeft(h);
   return `<button class="card hol-hero" onclick="openHoliday()"><small>${esc(h.name)}</small><b>${esc(String(l.big))}</b>${l.small ? `<span>${esc(l.small)}</span>` : ''}<em>${esc(holDates(h))}</em></button>
@@ -3868,7 +3868,7 @@ function pTrack(){
   ${st.map(s=>`<button class="card kind tap" onclick="openKind(${jsA(s.what)})">
     <div class="kind-h"><b>${esc(s.what)}</b>${s.list.some(m=>m.date===today()) ? '<span class="chip on">Today &#10003;</span>' : `<span class="chip" role="button" onclick="event.stopPropagation();markToday(${jsA(s.what)})">Mark today</span>`}</div>
     <div class="hint" style="margin-top:4px">Last time ${esc(agoText(s.since))} (${esc(niceDate(s.list[s.list.length-1].date))}) &middot; ${s.runs.length} time${s.runs.length>1?'s':''}${s.gap ? ` &middot; about every ${s.gap} days` : ''}${s.len ? `, lasting about ${s.len} days` : ''}</div>
-    ${s.next ? `<div class="kind-next">Next expected ${esc(niceDate(s.next))}, ${esc(inText(dayN(s.next)-dayN(today())))}</div>` : ''}
+    ${s.next && !FLARE.test(s.what) ? `<div class="kind-next">Next expected ${esc(niceDate(s.next))}, ${esc(inText(dayN(s.next)-dayN(today())))}</div>` : ''}
     ${FLARE.test(s.what) ? flareChart(s) : dots(s)}</button>`).join('') || '<div class="card empty" style="margin-top:12px">Nothing marked yet. Pick what happened and the day, then Mark.</div>'}`;
 }
 /* the last 8 weeks as a strip of days, marked days filled */
@@ -3912,11 +3912,14 @@ function flareChart(s){
   const x = i => L + (W-L-R)*i/n, y = v => T + (H-T-B)*(1 - v/100);
   let g = '';
   [0, 25, 50, 75, 100].forEach(v=>{ g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+3}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`; });
-  let lastX = -1e9;
+  /* date labels: each one's width estimated, kept inside the chart and at least 8 apart, so none overlap */
+  let lastR = -1e9;
   pts.forEach((p,i)=>{ if (p.pm) return;
     if (p.flare) g += `<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H-B}" stroke="var(--neg)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
-    if ((p.flare || (dayN(p.d) - dayN(pts[0].d)) % 7 === 0) && x(i) - lastX > 34){ lastX = x(i);
-      g += `<text x="${x(i)}" y="${H-6}" text-anchor="${x(i) > W-R-24 ? 'end' : 'middle'}" font-size="11" fill="var(--muted)">${esc(niceDate(p.d))}</text>`; } });
+    if (!p.flare && (dayN(p.d) - dayN(pts[0].d)) % 7) return;
+    const lab = niceDate(p.d), w = lab.length * 6.2, lx = Math.max(w/2, Math.min(W - R - w/2, x(i)));
+    if (lx - w/2 < lastR + 8) return; lastR = lx + w/2;
+    g += `<text x="${lx.toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(lab)}</text>`; });
   g += `<path d="${pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(p.v).toFixed(1)).join('')}" fill="none" stroke="var(--family-2)" stroke-width="1.6" stroke-linejoin="round"/>`;
   pts.forEach((p,i)=>{ g += `<circle cx="${x(i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.2" fill="${p.pm ? 'var(--family-2)' : 'var(--card)'}" stroke="var(--family-2)" stroke-width="1.2"><title>${esc(niceDate(p.d))} ${p.pm ? 'evening' : 'morning'}: ${p.v}%</title></circle>`; });
   const now = pts[pts.length-1];
@@ -3937,7 +3940,7 @@ function markToday(what){ const m = {id:newId(), what, date:today(), note:''};
 function openKind(what){
   const s = markStats().find(x=>x.what===what); if (!s) return;
   showSheet(`<h3>${esc(what)}</h3>
-    <div class="hint" style="margin-top:0">${s.runs.length} time${s.runs.length>1?'s':''}${s.gap ? `, about every ${s.gap} days` : ''}${s.len ? `, lasting about ${s.len} days` : ''}.${s.next ? ` Next expected ${esc(niceDate(s.next))}.` : ''}</div>
+    <div class="hint" style="margin-top:0">${s.runs.length} time${s.runs.length>1?'s':''}${s.gap ? `, about every ${s.gap} days` : ''}${s.len ? `, lasting about ${s.len} days` : ''}.${s.next && !FLARE.test(what) ? ` Next expected ${esc(niceDate(s.next))}.` : ''}</div>
     ${FLARE.test(what) ? flareChart(s) : ''}
     <button class="primary" onclick="pRun('addMark', [{id:newId(), what:${jsA(what)}, date:today(), note:''}], 'Marked today')">Mark today</button>
     <div class="card list" style="margin-top:14px">${s.list.slice().reverse().slice(0, 60).map(m=>`<div class="item"><div class="mid"><div class="t">${esc(niceDate(m.date))} ${esc(m.date.slice(0,4))}</div><div class="d">${esc(dayLabel(m.date))}${m.note ? ' &middot; ' + esc(m.note) : ''}${m.by ? ' &middot; ' + esc(m.by) : ''}</div></div>
